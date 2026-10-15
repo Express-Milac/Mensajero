@@ -2,34 +2,38 @@
 
 namespace Tests\Integration;
 
-use App\Enums\Role;
-use App\Models\User;
+use App\Enums\Rol;
+use App\Models\Usuario;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SqlServerAuthenticationTest extends TestCase
 {
-    public function test_migrations_local_login_and_logout_on_sql_server(): void
+    public function test_autenticacion_local_opcional_funciona_sobre_tabla_usuarios_en_espanol(): void
     {
-        config(['mensajero.auth.mode' => 'local']);
         $this->assertSame('sqlsrv', config('database.default'));
-        $this->assertStringEndsWith('_test', config('database.connections.sqlsrv.database'), 'Use a disposable database ending in _test.');
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->assertStringEndsWith('_test', config('database.connections.sqlsrv.database'), 'Use una base desechable terminada en _test.');
+        config(['mensajero.autenticacion.modo' => 'local']);
+        $this->artisan('migrate:fresh', ['--force' => true])->assertSuccessful();
 
         DB::beginTransaction();
         try {
-            $user = new User([
-                'name' => 'Integration',
-                'email' => 'integration-'.bin2hex(random_bytes(6)).'@example.test',
-                'password' => 'Test-password-1234!',
+            $usuario = new Usuario([
+                'nombre' => 'Integración',
+                'correo' => 'integracion-'.bin2hex(random_bytes(6)).'@example.test',
+                'clave' => 'Clave-segura-1234!',
             ]);
-            $user->role = Role::Viewer;
-            $user->save();
+            $usuario->rol = Rol::Visualizador;
+            $usuario->save();
 
-            $this->post('/login', ['email' => $user->email, 'password' => 'Test-password-1234!'])->assertRedirect('/dashboard');
-            $this->assertAuthenticatedAs($user);
-            $this->get('/health')->assertForbidden();
-            $this->post('/logout')->assertRedirect('/login');
+            $this->post('/acceso', [
+                'correo' => $usuario->correo,
+                'clave' => 'Clave-segura-1234!',
+            ])->assertRedirect('/tablero');
+
+            $this->assertAuthenticatedAs($usuario);
+            $this->get('/salud')->assertForbidden();
+            $this->post('/salir')->assertRedirect('/acceso');
             $this->assertGuest();
         } finally {
             DB::rollBack();
