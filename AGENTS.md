@@ -1,65 +1,55 @@
-# Mensajero: instrucciones del proyecto
+# Mensajero — instrucciones para agentes
 
-## Lectura obligatoria y continuidad
+Este archivo es la entrada técnica estándar para agentes de IA que continúen el proyecto. Todo el trabajo de dominio se realiza en español.
 
-Leer en orden: README.md, OBJETIVO.md, RESUMEN.md, TASKS.md, docs/milestones.md y
-docs/milac-integration-review.md. Después consultar los documentos técnicos del módulo.
-Este archivo es la entrada estándar para agentes; no crear un agends.md divergente.
-La documentación debe bastar sin acceso al historial del chat o a repositorios hermanos.
+## Lectura obligatoria
 
-## Papeles que debe asumir la IA
+Leer en este orden:
 
-- Arquitecto de software: proteger límites del monolito modular, contratos versionados y
-  decisiones justificadas. Documentar problema, opciones, ventajas, desventajas, riesgos y decisión.
-- Desarrollador senior: entregar incrementos funcionales, legibles, probados e idempotentes;
-  revisar el código existente antes de modificar y evitar infraestructura innecesaria.
-- Diseñador de base de datos: diseñar constraints, índices, relaciones, migraciones SQL Server,
-  transacciones y recuperación; conservar evidencia y separar datos de archivos.
-- Responsable de infraestructura: configuración portable, workers, backups, restauración,
-  health checks y despliegue compatible con los runtimes existentes.
-- Responsable de seguridad y trazabilidad: identidad central, autorización por módulo/chat,
-  firmas, secretos fuera de Git, mínimo privilegio y auditoría desde fuente hasta interpretación.
+1. `README.md`
+2. `OBJETIVO.md`
+3. `RESUMEN.md`
+4. `TAREAS.md`
+5. `docs/nomenclatura.md`
+6. los perfiles especializados de `AGENTES/`
+7. la documentación técnica aplicable al cambio
 
-Los papeles son responsabilidades de trabajo, no autorización para cambiar producción.
+## Agentes especializados
+
+Antes de dar por terminado un incremento, aplicar las listas de revisión de:
+
+- `AGENTES/CREACION.md`
+- `AGENTES/REVISION.md`
+- `AGENTES/PRUEBAS.md`
+- `AGENTES/SEGURIDAD.md`
+- `AGENTES/UI_UX.md`
+
+No son procesos autónomos en producción: son responsabilidades y controles obligatorios que deben aplicarse al código y dejar evidencia en pruebas/documentación.
+
+## Decisiones vigentes
+
+- WhatsApp Business con grupos existentes grandes.
+- Puerta de enlace WhatsApp autohospedada por MILAC; sin proveedor SaaS de captura.
+- Laravel/PHP 8.4+, SQL Server, Redis, Flysystem y Blade/Livewire.
+- Las tablas viven en una base SQL Server corporativa existente y usan prefijo `mensajero_`.
+- Tablas, columnas, clases, estados, rutas visibles y documentación propia en español.
+- Acceso temporal sin login; las acciones administrativas se restringen por IP hasta integrar autenticación corporativa.
+- Lista blanca por defecto denegado antes de evidencia cruda, multimedia e IA.
+- Adhesivos se ignoran.
+- Evidencia cruda y bandeja de salida se confirman en una misma transacción antes de considerar durable el evento.
+- Redis, Gemini y almacenamiento de multimedia no condicionan la persistencia inicial de evidencia cruda.
+- Archivos fuera de SQL Server.
 
 ## Protocolo de trabajo
 
-1. Inspeccionar Git, instrucciones, código, configuración de ejemplo y pruebas. Preservar
-   cambios ajenos. No asumir que una función existe porque esté descrita en arquitectura.
-2. Elegir la siguiente tarea de TASKS.md dentro del milestone vigente. Resolver decisiones
-   menores técnicamente; no exigir credenciales para trabajo que admite pruebas aisladas.
-3. Implementar un incremento concreto y comprobar fallos además del camino exitoso.
-4. Ejecutar validaciones pertinentes; indicar fecha, comandos y resultados reales.
-5. Actualizar RESUMEN.md, TASKS.md y milestones cuando cambie su estado. Dejar el siguiente
-   paso explícito y distinguir pendiente técnico, configuración y verificación real.
-6. Revisar el diff y secretos antes de commit/push. No desplegar ni migrar producción como
-   efecto secundario de publicar código. No usar force-push para resolver divergencias.
+1. Revisar el estado de Git y las tareas vigentes.
+2. Modificar únicamente lo necesario para el incremento actual.
+3. Añadir o actualizar pruebas que cubran éxito y fallos.
+4. Ejecutar la validación disponible y registrar resultados reales.
+5. Revisar seguridad, UI/UX, nomenclatura y secretos.
+6. Actualizar documentación si cambió una decisión o estado.
+7. No desplegar ni tocar producción como efecto secundario de publicar código.
 
-## Integración empresarial
+## Criterio de preparación para servidor
 
-La integración observada usa login de MilacServices y autorización propia de cada módulo.
-Valera/GPSGestor reutilizan dbLis desde el contenedor existente en servidor; no necesitan
-copiar credenciales. No pedir de nuevo settings.php, SSH o una base nueva como condición
-para avanzar con adaptadores y pruebas. No incluir dependencias Slim antiguas directamente
-en Laravel sin validar compatibilidad. Ver docs/milac-integration-review.md.
-
-El login local actual es provisional. No declarar identidad corporativa implementada ni
-dar acceso por el simple hecho de que IAVE/VALERA autentiquen. No copiar accesos de preview.
-
-## Reglas invariantes
-
-Leer README.md y docs/milestones.md antes de ampliar el alcance. Trabajar por milestone.
-SQL Server es el único motor operativo; nunca introducir PostgreSQL o usar SQLite para
-certificar SQL Server. PHP 8.4+, Laravel, Blade/Livewire; gateway separado en TypeScript.
-
-Allowlist default deny antes de RAW, descargas o IA. Stickers se descartan. RAW es evidencia
-inmutable. Persistir RAW + outbox antes de ACK. Redis y Gemini no deben ser condiciones de
-persistencia RAW. Archivos privados mediante Flysystem, SQL solo metadata y rutas relativas.
-
-No conectar el número empresarial sin verificar la decisión de proveedor documentada.
-No afirmar conectividad, ejecución de migraciones o tests de integración sin evidencia real.
-No guardar secretos, sesiones WhatsApp, payloads privados o binarios operativos en Git.
-
-Verificación: PHPUnit aislado, Pint y compilación de vistas. Integración SQL requiere base
-desechable terminada en _test. No lanzar migraciones contra producción para ejecutar tests.
-Actualizar documentación y estado del milestone, distinguiendo diseño de código implementado.
+No considerar Mensajero listo para desplegar hasta que PHPUnit, Pint, vistas, rutas, Composer y la integración SQL Server temporal estén en verde y no haya fallos de seguridad o nomenclatura pendientes.

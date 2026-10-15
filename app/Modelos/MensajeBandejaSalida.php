@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Modelos;
+
+use Illuminate\Database\Eloquent\Model;
+
+class MensajeBandejaSalida extends Model
+{
+    public const CREATED_AT = 'creado_en';
+    public const UPDATED_AT = 'actualizado_en';
+
+    protected $table = 'mensajero_bandeja_salida';
+    protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return [
+            'disponible_en' => 'immutable_datetime',
+            'reservado_hasta' => 'immutable_datetime',
+            'despachado_en' => 'immutable_datetime',
+        ];
+    }
+}

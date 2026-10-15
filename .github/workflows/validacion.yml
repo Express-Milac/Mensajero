@@ -1,0 +1,110 @@
+name: Validacion Mensajero
+
+"on":
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request: {}
+
+jobs:
+  calidad:
+    name: Codigo, pruebas y vistas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, fileinfo
+          coverage: none
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Ejecutar pruebas unitarias y funcionales
+        run: php artisan test
+
+      - name: Revisar formato
+        run: php vendor/laravel/pint/builds/pint --test
+
+      - name: Compilar vistas
+        run: php artisan view:cache
+
+      - name: Revisar rutas
+        run: php artisan route:list --except-vendor
+
+      - name: Validar Composer
+        run: composer validate --strict
+
+  integracion-sql-server:
+    name: Integracion SQL Server
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "SoloPruebas_Mensajero_2026!"
+        ports:
+          - 1433:1433
+    env:
+      APP_ENV: "testing"
+      APP_KEY: "base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      DB_CONNECTION: "sqlsrv"
+      DB_HOST: "127.0.0.1"
+      DB_PORT: "1433"
+      DB_DATABASE: "mensajero_ci_test"
+      DB_USERNAME: "sa"
+      DB_PASSWORD: "SoloPruebas_Mensajero_2026!"
+      DB_ENCRYPT: "no"
+      DB_TRUST_SERVER_CERTIFICATE: "true"
+      SESSION_DRIVER: "array"
+      CACHE_STORE: "array"
+      QUEUE_CONNECTION: "sync"
+      MAIL_MAILER: "array"
+      BROADCAST_CONNECTION: "null"
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar PHP y controladores SQL Server
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, fileinfo, sqlsrv, pdo_sqlsrv
+          coverage: none
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Crear base desechable de pruebas
+        shell: bash
+        run: |
+          php <<'PHP'
+          <?php
+          $ultimo = null;
+          for ($i = 0; $i < 30; $i++) {
+              try {
+                  $pdo = new PDO(
+                      'sqlsrv:Server=127.0.0.1,1433;TrustServerCertificate=true',
+                      getenv('DB_USERNAME'),
+                      getenv('DB_PASSWORD'),
+                      [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                  );
+                  $pdo->exec("IF DB_ID(N'mensajero_ci_test') IS NULL CREATE DATABASE [mensajero_ci_test]");
+                  exit(0);
+              } catch (Throwable $e) {
+                  $ultimo = $e;
+                  sleep(2);
+              }
+          }
+          fwrite(STDERR, 'SQL Server no quedo disponible: '.($ultimo?->getMessage() ?? 'error desconocido').PHP_EOL);
+          exit(1);
+          PHP
+
+      - name: Ejecutar pruebas de integracion
+        run: php artisan test --configuration=phpunit.integration.xml

@@ -1,50 +1,51 @@
-# Estado y traspaso a otra IA
+# Estado de Mensajero
 
-Actualizado: 2026-10-13. Este archivo describe lo implementado, no el producto final.
+Actualizado: 15/10/2026.
 
-## Lo que existe
+## Implementado en la rama de preparación
 
-- Laravel 13 / PHP 8.4; Composer lock, Livewire y Predis instalables.
-- Login local por email/contraseña, sesión, logout, limitación de intentos y roles.
-- Comandos mensajero:create-admin y mensajero:health.
-- Configuración exclusiva SQL Server y Redis; compose local solo para Redis.
-- Disco privado mensajero_local con raíz configurable y health de lectura/escritura/espacio.
-- Pantallas Blade de acceso e inicio; no muestran datos de operación simulados como reales.
-- Diagnóstico protegido /health y liveness /up.
-- Pruebas aisladas y suite opt-in para SQL Server real con base terminada en _test.
-- Diseño de arquitectura, entidades, allowlist, ingestión/outbox, storage y pipeline IA.
+- Laravel 13 / PHP 8.4 y SQL Server como motor operativo.
+- Redis para caché, sesiones temporales y colas.
+- Almacenamiento privado configurable con Flysystem.
+- Acceso temporal sin login; administración restringida por IP configurable.
+- Modo local de autenticación conservado únicamente para desarrollo/pruebas.
+- Modo corporativo preparado para fallar cerrado hasta implementar el adaptador definitivo.
+- Tablas y columnas propias en español y prefijo `mensajero_`.
+- Modelos de conexión, conversación monitoreada, contacto, evento crudo, bandeja de salida y mensaje.
+- Lista blanca con denegación por defecto y descarte de adhesivos.
+- Captura de evidencia cruda + bandeja de salida en una transacción SQL Server.
+- Deduplicación e idempotencia.
+- Tablero compatible con ausencia de usuario autenticado.
+- Agentes de creación, revisión, pruebas, seguridad y UI/UX documentados y aplicados al refactor.
+- Pruebas unitarias, HTTP y de integración SQL Server preparadas.
+- Validación continua configurada para calidad e integración SQL Server temporal.
 
-## Lo que todavía no existe
+## Hallazgos corregidos por los agentes
 
-Login corporativo, permisos corporativos persistidos, puente MilacServices, tablas operativas,
-allowlist administrable, ingestión RAW/outbox, gateway, descargas multimedia, timeline,
-búsqueda operativa, broadcasting, Gemini y revisión humana. No hay sesión WhatsApp vinculada.
-Livewire instalado no significa vistas operativas Livewire implementadas.
+1. El tablero anterior asumía que siempre existía un usuario autenticado y podía provocar error 500 con login deshabilitado.
+2. El modo sin login permitía también rutas administrativas; ahora estas exigen una IP incluida en la lista administrativa temporal.
+3. La base inicial creaba nombres genéricos/ingleses y tablas de framework innecesarias dentro de una base corporativa; se reemplazaron por tablas propias en español y Redis para caché/sesiones/colas.
+4. Las clases inglesas del dominio anterior fueron retiradas para evitar que pruebas o código siguieran usando accidentalmente el modelo viejo.
+5. Se agregó una prueba automática que falla si reaparecen nombres antiguos o tablas propias sin prefijo `mensajero_`.
 
-## Descubrimiento que cambia la siguiente implementación
+## Pendiente antes del servidor
 
-IAVE valida mediante MilacServices/Iave/api/loginv2. GPSGestor también usa Mml/api/login,
-luego exige autorización propia. Valera carga el bootstrap de MilacServices para recuperar
-dbLis sin copiar secretos. Los contratos y archivos observados están documentados en
-docs/milac-integration-review.md, incluyendo diferencias entre documentación antigua y código.
+- Conseguir que la validación continua quede completamente en verde.
+- Corregir cualquier hallazgo que surja de PHPUnit, Pint, vistas, rutas, Composer o SQL Server temporal.
+- Cerrar la revisión documental y de seguridad.
+- Integrar el cambio aprobado a la rama principal.
 
-No se necesita que el usuario entregue credenciales o SSH para continuar desarrollando.
-El login local inicial debe evolucionar al patrón corporativo. No imponer una base nueva.
-La documentación del servidor menciona PHP 7.4; dato aún no verificado en vivo. Laravel
-requiere runtime separado y una frontera compatible con la integración heredada.
+## Aún no implementado
 
-## Evidencia y límites
+- Administración visual completa de conversaciones monitoreadas.
+- API interna firmada puerta de enlace ↔ Laravel.
+- Relé de bandeja de salida hacia Redis.
+- Puerta de enlace WhatsApp autohospedada.
+- Descarga real de multimedia.
+- Línea de tiempo de mensajes originales.
+- Tiempo real operativo.
+- Gemini y eventos de IA.
+- Revisión humana de eventos.
+- Login corporativo definitivo.
 
-En la entrega inicial: 9 pruebas aisladas / 41 assertions aprobadas; Pint, rutas y vistas
-validados. No se han certificado SQL Server ni Redis reales. Diagnóstico inicial: storage OK,
-SQL/Redis failed, WhatsApp not_implemented, Gemini disabled. Son observaciones históricas,
-no estado garantizado del entorno actual. Ver docs/verification.md para la revisión reciente.
-
-No se ejecutaron migraciones empresariales ni se desplegó en producción. Las referencias a
-repositorios hermanos son evidencia de investigación; no están incluidos en este repositorio.
-
-## Próximo paso
-
-Tarea M1-01 de TASKS.md: diseñar e implementar adaptador de autenticación corporativa con
-pruebas HTTP simuladas y autorización propia, conservando aislamiento de credenciales y
-roles. Después resolver la conexión reutilizable y certificar milestone 1 en entorno disponible.
+No se ha conectado el número empresarial, no se han ejecutado migraciones productivas y no se ha desplegado esta rama al servidor de MILAC.
