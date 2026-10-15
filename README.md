@@ -19,8 +19,13 @@ Sistema interno de MILAC para convertir mensajes de grupos seleccionados de What
 - Evento crudo y buzón de salida se guardan en una sola transacción.
 - Diagnóstico de SQL Server, Redis y almacenamiento sin exponer errores internos.
 - Frontera de autenticación preparada para integración futura.
+- Código propio de autenticación organizado bajo `Autenticacion` y vista bajo `autenticacion`.
+- Agentes de arquitectura, creación, revisión, pruebas, seguridad, UI/UX y calidad documentados y aplicados.
 
 Todavía no existe una sesión real de WhatsApp, descubrimiento de grupos, descarga multimedia, pasarela autohospedada ni integración con Gemini.
+
+## Requisitos de ejecución
+Además de las extensiones requeridas por Laravel y SQL Server, el runtime debe incluir `mbstring`; Mensajero utiliza funciones multibyte en normalización y acceso.
 
 ## Configuración principal
 Copiar `.env.example` a `.env` y completar SQL Server/Redis. Variables propias principales:
@@ -34,10 +39,13 @@ Copiar `.env.example` a `.env` y completar SQL Server/Redis. Variables propias p
 
 Con autenticación temporal deshabilitada, abrir `/tablero`. El diagnóstico administrativo web `/estado` queda bloqueado; puede usarse `php artisan mensajero:diagnostico` desde consola.
 
-## Verificación requerida antes de integrar al servidor
+## Verificación antes de integrar al servidor
+El flujo está definido en `.github/workflows/validacion.yml`, pero al 15/10/2026 GitHub Actions presenta `startup_failure` antes de crear jobs. Por ello la validación completa debe ejecutarse también en un entorno funcional:
+
 ```powershell
+composer validate --strict
 composer install
-php -d extension=fileinfo vendor/phpunit/phpunit/phpunit
+php vendor/phpunit/phpunit/phpunit
 php vendor/laravel/pint/builds/pint --test
 php artisan route:list --except-vendor
 php artisan view:cache
@@ -45,6 +53,8 @@ php artisan mensajero:diagnostico
 ```
 
 Las pruebas de integración SQL deben ejecutarse únicamente contra una base desechable cuyo nombre termine en `_test`, usando `phpunit.integracion.xml`. No ejecutar migraciones de desarrollo contra la base corporativa productiva.
+
+La lógica aislada de captura fue comprobada con 9/9 casos; esto no sustituye PHPUnit completo ni la certificación SQL Server. Ver `docs/verificacion.md`.
 
 ## Continuidad
 Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md`, `docs/revision-previa-integracion.md` y `agentes/`.
