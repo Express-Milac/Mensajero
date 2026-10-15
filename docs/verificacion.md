@@ -10,12 +10,15 @@
 | `php -l` tras correcciones de seguridad y nomenclatura | Sin errores de sintaxis |
 | Arnés aislado de lógica de captura | 9/9 comprobaciones aprobadas |
 | Auditoría del árbol tras renombres | Sin referencias a `Controllers/Auth`, `views/auth`, `_tmp` ni `.keep` |
+| Validación sintáctica independiente del YAML de CI | Estructura válida |
 
 El arnés aislado comprobó: aceptación de chat autorizado, rechazo por lista permitida, rechazo de chat inactivo/desconocido, descarte de pegatinas, conservación de tipos futuros autorizados y comportamiento de deduplicación/hash.
 
 ### Validación automática en GitHub
 
 Se agregó `.github/workflows/validacion.yml` para ejecutar Composer, sintaxis, PHPUnit, Pint, rutas y compilación de vistas. Se intentó ejecutar tanto por `push` como por `pull_request`, pero GitHub Actions respondió `startup_failure` antes de crear cualquier `job`. También se eliminó la dependencia de una acción externa de preparación de PHP y el resultado siguió siendo el mismo.
+
+La estructura YAML del workflow fue validada de forma independiente y no presentó errores estructurales. El conector disponible no permite consultar la configuración administrativa de permisos de GitHub Actions del repositorio/organización, por lo que esa causa debe comprobarse fuera de este entorno.
 
 Por lo anterior, el fallo observado no certifica ni desaprueba PHPUnit/Pint: esas capas **no llegaron a ejecutarse** en GitHub Actions.
 
