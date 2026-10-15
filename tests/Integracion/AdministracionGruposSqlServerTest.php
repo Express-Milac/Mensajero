@@ -41,10 +41,13 @@ class AdministracionGruposSqlServerTest extends TestCase
 
             $cambiar = app(CambiarMonitoreoChat::class);
             $chat = $cambiar->ejecutar($chat->id, true, 'consola', null, 'Selección inicial de grupo');
+            $auditoriasChat = fn (): int => AuditoriaMonitoreoChat::query()
+                ->where('chat_monitoreado_id', $chat->id)
+                ->count();
 
             $this->assertTrue($chat->es_monitoreado);
             $this->assertSame(1, $chat->version_autorizacion);
-            $this->assertSame(1, AuditoriaMonitoreoChat::count());
+            $this->assertSame(1, $auditoriasChat());
             $this->assertDatabaseHas('mensajero_auditoria_monitoreo_chats', [
                 'chat_monitoreado_id' => $chat->id,
                 'version_autorizacion' => 1,
@@ -66,12 +69,12 @@ class AdministracionGruposSqlServerTest extends TestCase
 
             $sinCambio = $cambiar->ejecutar($chat->id, true, 'consola');
             $this->assertSame(1, $sinCambio->version_autorizacion);
-            $this->assertSame(1, AuditoriaMonitoreoChat::count());
+            $this->assertSame(1, $auditoriasChat());
 
             $chat = $cambiar->ejecutar($chat->id, false, 'consola', null, 'Retiro de prueba');
             $this->assertFalse($chat->es_monitoreado);
             $this->assertSame(2, $chat->version_autorizacion);
-            $this->assertSame(2, AuditoriaMonitoreoChat::count());
+            $this->assertSame(2, $auditoriasChat());
         } finally {
             DB::rollBack();
         }
