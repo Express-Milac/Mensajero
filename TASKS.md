@@ -13,11 +13,11 @@ Estado: 15/10/2026. `[x]` significa código entregado y validado en el alcance i
 - [x] `Usuario`, fábrica, migración, comando y pruebas alineados con `nombre`/marcas de tiempo propias en español.
 - [x] Estructura propia de autenticación movida de `Auth`/`auth` a `Autenticacion`/`autenticacion`.
 - [x] Flujo de CI definido para Composer/PHPUnit/Pint/rutas/vistas y YAML validado estructuralmente.
-- [x] Puerta local completa en PHP 8.4: Composer, Pint, 18 pruebas/55 aserciones, rutas, vistas y Vite aprobados.
-- [x] SQL Server 2022 desechable `mensajero_test`: 3 pruebas de integración/39 aserciones aprobadas dos veces.
+- [x] Puerta local completa en PHP 8.4: Composer, Pint, rutas, vistas y Vite aprobados.
 - [x] Runtime local confirmado con `mbstring`, `sqlsrv`, `pdo_sqlsrv` y ODBC Driver 18.
 - [x] Base de administración de grupos descubiertos con lista permitida denegada por defecto.
 - [x] Auditoría versionada de cambios de monitoreo y comando de consola para la etapa sin autenticación administrativa.
+- [x] Incremento de grupos validado: Pint 59 archivos, PHPUnit 20 pruebas/57 aserciones y SQL Server 4 pruebas/56 aserciones.
 
 ## Incidencia de infraestructura de CI
 - [ ] Resolver `startup_failure` de GitHub Actions a nivel repositorio/organización/runner. El fallo ocurre antes de crear jobs y no constituye un fallo de PHPUnit/Pint.
@@ -25,18 +25,24 @@ Estado: 15/10/2026. `[x]` significa código entregado y validado en el alcance i
 
 ## Puerta previa a integración al servidor
 - [x] `composer validate --strict` y `composer install`.
-- [x] PHPUnit de unidad y funcional: 18 pruebas / 55 aserciones.
-- [x] Pint: 51 archivos aprobados.
+- [x] PHPUnit de unidad y funcional.
+- [x] Pint.
 - [x] Rutas, vistas y construcción Vite.
-- [x] Migraciones y `phpunit.integracion.xml` contra SQL Server desechable `mensajero_test`: 3 pruebas / 39 aserciones.
+- [x] Migraciones y `phpunit.integracion.xml` contra SQL Server desechable `mensajero_test`.
 - [x] `APP_TIMEZONE` respetado desde configuración y entorno local separado de producción.
 
-## Siguiente incremento
-- [ ] Ejecutar la nueva batería de administración de grupos contra `mensajero_test` y ajustar cualquier fallo.
-- [ ] Conectar descubrimiento real de grupos/chats desde la pasarela autohospedada al servicio de sincronización.
-- [ ] Punto de entrada interno versionado pasarela → Laravel con HMAC, identificador único y ventana antirrepetición.
-- [ ] Relevo recuperable del buzón de salida → Redis y normalizador idempotente.
+## Incremento actual: pasarela segura
+- [x] Contrato versionado `/api/pasarela/v1` para chats descubiertos y eventos.
+- [x] Firma HMAC-SHA256 sobre identificador, marca de tiempo y hash del cuerpo.
+- [x] Ventana temporal configurable y secreto externo al repositorio.
+- [x] Persistencia SQL Server del identificador de solicitud para protección antirrepetición resistente a reinicios.
+- [x] La lista permitida permanece como segunda barrera y continúa denegada por defecto.
+- [ ] Ejecutar Pint, PHPUnit y la nueva prueba `PasarelaSeguraSqlServerTest` contra `mensajero_test` y ajustar cualquier fallo.
+
+## Después de certificar la pasarela
+- [ ] Implementar relevo recuperable del buzón de salida → Redis y normalizador idempotente.
 - [ ] Crear pasarela Node.js/TypeScript autohospedada y adaptador neutral de WhatsApp.
+- [ ] Conectar descubrimiento real de grupos/chats al servicio ya preparado.
 - [ ] Probar una cuenta/sesión controlada antes de considerar el número empresarial.
 
 ## Regla de despliegue
