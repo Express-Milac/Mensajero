@@ -13,19 +13,25 @@ jobs:
   calidad:
     name: Sintaxis, pruebas y calidad
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    container:
+      image: php:8.4-cli-bookworm
+    env:
+      COMPOSER_ALLOW_SUPERUSER: '1'
 
     steps:
+      - name: Preparar PHP del contenedor
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git unzip ca-certificates libonig-dev libxml2-dev libzip-dev
+          docker-php-ext-install -j"$(nproc)" mbstring dom xml xmlwriter zip
+          php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+          php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+          php -v
+          composer --version
+
       - name: Obtener código
         uses: actions/checkout@v4
-
-      - name: Preparar PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: fileinfo, mbstring, openssl, pdo_sqlsrv, sqlsrv
-          coverage: none
-          tools: composer:v2
 
       - name: Validar Composer
         run: composer validate --strict
