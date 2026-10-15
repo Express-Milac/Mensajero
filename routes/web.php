@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Auth\ControladorSesion;
+use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
 
@@ -11,7 +11,7 @@ Route::get('/acceso', function () {
         return redirect()->route('tablero');
     }
 
-    return view('auth.acceso');
+    return view('autenticacion.acceso');
 })->name('acceso');
 
 Route::post('/acceso', [ControladorSesion::class, 'iniciar'])
