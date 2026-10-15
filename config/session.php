@@ -3,16 +3,17 @@
 use Illuminate\Support\Str;
 
 return [
+    // Las claves de este archivo son parte del contrato de Laravel.
     'driver' => env('SESSION_DRIVER', 'redis'),
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
     'encrypt' => env('SESSION_ENCRYPT', true),
     'files' => storage_path('framework/sessions'),
     'connection' => env('SESSION_CONNECTION'),
-    'table' => env('SESSION_TABLE', 'mensajero_sessions'),
+    'table' => env('SESSION_TABLE', 'mensajero_sesiones'),
     'store' => env('SESSION_STORE'),
     'lottery' => [2, 100],
-    'cookie' => env('SESSION_COOKIE', Str::slug((string) env('APP_NAME', 'mensajero')).'-session'),
+    'cookie' => env('SESSION_COOKIE', Str::slug((string) env('APP_NAME', 'mensajero')).'-sesion'),
     'path' => env('SESSION_PATH', '/'),
     'domain' => env('SESSION_DOMAIN'),
     'secure' => env('SESSION_SECURE_COOKIE'),

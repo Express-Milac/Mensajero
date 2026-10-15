@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
-use Database\Factories\UserFactory;
+use App\Enums\Rol;
+use Database\Factories\UsuarioFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,17 +12,17 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class Usuario extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
+    /** @use HasFactory<UsuarioFactory> */
     use HasFactory, Notifiable;
 
-    protected $table = 'mensajero_users';
+    protected $table = 'mensajero_usuarios';
 
     protected function casts(): array
     {
         return [
-            'role' => Role::class,
+            'rol' => Rol::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

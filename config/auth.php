@@ -1,31 +1,31 @@
 <?php
 
-use App\Models\User;
+use App\Models\Usuario;
 
 return [
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'usuarios'),
     ],
 
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'usuarios',
         ],
     ],
 
     'providers' => [
-        'users' => [
+        'usuarios' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => env('AUTH_MODEL', Usuario::class),
         ],
     ],
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'mensajero_password_reset_tokens'),
+        'usuarios' => [
+            'provider' => 'usuarios',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'mensajero_tokens_restablecimiento_contrasena'),
             'expire' => 60,
             'throttle' => 60,
         ],

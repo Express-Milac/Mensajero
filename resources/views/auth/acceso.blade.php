@@ -3,7 +3,7 @@
         <p class="eyebrow">BIENVENIDO A MENSAJERO</p>
         <h1>La operación,<br>con contexto.</h1>
         <p class="muted">Accede al centro de información operativa.</p>
-        <form method="post" action="{{ route('login') }}">
+        <form method="post" action="{{ route('acceso.iniciar') }}">
             @csrf
             <label for="email">Correo electrónico</label>
             <input id="email" name="email" type="email" value="{{ old('email') }}" required autocomplete="username" autofocus maxlength="254">

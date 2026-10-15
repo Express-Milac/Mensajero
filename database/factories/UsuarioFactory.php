@@ -2,26 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Models\Usuario;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<User>
- */
-class UserFactory extends Factory
+/** @extends Factory<Usuario> */
+class UsuarioFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
+    protected $model = Usuario::class;
+
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
@@ -33,12 +25,9 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function sinVerificar(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $atributos) => [
             'email_verified_at' => null,
         ]);
     }
