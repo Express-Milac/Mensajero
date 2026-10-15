@@ -8,16 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Las columnas de autenticación conservan nombres exigidos por Laravel.
         Schema::create('mensajero_usuarios', function (Blueprint $tabla) {
             $tabla->id();
-            $tabla->string('name');
+            $tabla->string('nombre');
+            // email/password/remember_token se conservan por compatibilidad con autenticación Laravel.
             $tabla->string('email')->unique();
             $tabla->dateTime('email_verified_at', 6)->nullable();
             $tabla->string('password');
             $tabla->string('rol', 24)->default('visualizador');
             $tabla->rememberToken();
-            $tabla->timestamps();
+            $tabla->dateTime('creado_en', 6)->nullable();
+            $tabla->dateTime('actualizado_en', 6)->nullable();
         });
 
         Schema::create('mensajero_tokens_restablecimiento_contrasena', function (Blueprint $tabla) {
@@ -27,6 +28,7 @@ return new class extends Migration
         });
 
         Schema::create('mensajero_sesiones', function (Blueprint $tabla) {
+            // Estas columnas pertenecen al formato de sesión exigido por Laravel.
             $tabla->string('id')->primary();
             $tabla->bigInteger('user_id')->nullable()->index();
             $tabla->string('ip_address', 45)->nullable();
