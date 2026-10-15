@@ -1,75 +1,50 @@
 # Mensajero
 
-Sistema interno de evidencia operativa para transporte. SQL Server guarda datos estructurados,
-metadata y rutas; el storage privado guarda archivos; la allowlist delimita captura; RAW
-permanece como fuente verificable y Gemini se integra después de estabilizar la captura.
+Sistema interno de MILAC para convertir mensajes de grupos seleccionados de WhatsApp Business en evidencia operativa consultable y, más adelante, en eventos interpretados por IA.
 
-## Decisiones vigentes — 15/10/2026
+## Decisiones vigentes
+- Solo se capturan los grupos expresamente autorizados; el resto de chats no consume almacenamiento ni procesamiento.
+- No se usa un servicio administrado de terceros para la captura. La pasarela de WhatsApp será autohospedada por MILAC.
+- SQL Server corporativo existente es el único motor operativo.
+- Los archivos se almacenan fuera de SQL Server mediante una ruta configurable; la base guarda metadatos y rutas.
+- Temporalmente no existe inicio de sesión corporativo. El modo `deshabilitado` sirve únicamente para acceso interno controlado y no concede funciones administrativas.
 
-- El número operativo usa **WhatsApp Business** y participa en grupos existentes de al menos
-  ~30 personas.
-- No se usarán proveedores/SaaS de terceros para capturar WhatsApp. El gateway será
-  **autohospedado por MILAC** y aislado detrás de `WhatsAppProvider`.
-- Mensajero vivirá en el **servidor propio de MILAC**.
-- Sus tablas vivirán dentro de una **base SQL Server corporativa existente**. Por ello todos
-  los objetos propios usan prefijo `mensajero_`, incluido `mensajero_migrations`.
-- Temporalmente el producto funciona **sin login** (`MENSAJERO_AUTH_MODE=disabled`). El
-  middleware queda preparado para `local` y para la futura integración `corporate`; este
-  último modo falla cerrado mientras no exista el adaptador real.
+## Estado implementado
+- Laravel 13 / PHP 8.4.
+- Tablas de Mensajero aisladas con prefijo `mensajero_` y nombres de negocio en español.
+- Conexión WhatsApp, chats monitoreados, contactos, eventos crudos, buzón de salida y mensajes originales modelados.
+- Lista permitida por defecto denegada.
+- Pegatinas descartadas antes de persistir.
+- Captura idempotente: repetir el mismo evento no duplica evidencia.
+- Evento crudo y buzón de salida se guardan en una sola transacción.
+- Diagnóstico de SQL Server, Redis y almacenamiento sin exponer errores internos.
+- Frontera de autenticación preparada para integración futura.
 
-## Estado actual
+Todavía no existe una sesión real de WhatsApp, descubrimiento de grupos, descarga multimedia, pasarela autohospedada ni integración con Gemini.
 
-Implementado:
+## Configuración principal
+Copiar `.env.example` a `.env` y completar SQL Server/Redis. Variables propias principales:
+- `MENSAJERO_MODO_AUTENTICACION=deshabilitado|local|corporativo`
+- `MENSAJERO_RUTA_ALMACENAMIENTO=`
+- `MENSAJERO_BYTES_LIBRES_MINIMOS=`
+- `PROVEEDOR_WHATSAPP=web_autohospedado`
+- `WHATSAPP_PASARELA_URL=`
+- `WHATSAPP_PASARELA_SECRETO=`
+- `IA_HABILITADA=false`
 
-- Laravel 13 / PHP 8.4, Livewire y Redis configurables.
-- SQL Server como único motor operativo.
-- Storage privado configurable mediante Flysystem.
-- Health checks de infraestructura existentes.
-- Aislamiento de tablas de framework dentro de la BD compartida.
-- Modelo inicial de conexión WhatsApp, allowlist, contactos, RAW, outbox y mensajes originales.
-- Política `default deny`: chat desconocido/no monitoreado/inactivo se descarta; sticker se
-  descarta; tipo futuro/desconocido se conserva si el chat está autorizado.
-- Servicio transaccional `CaptureIncomingWhatsappEvent`: RAW + outbox se confirman juntos,
-  con deduplicación e idempotencia.
-- Modo de autenticación temporal desacoplado del dominio.
+Con autenticación temporal deshabilitada, abrir `/tablero`. El diagnóstico administrativo web `/estado` queda bloqueado; puede usarse `php artisan mensajero:diagnostico` desde consola.
 
-Todavía no existe conexión real al número empresarial, gateway operativo, descubrimiento de
-grupos, descarga multimedia, timeline final, broadcasting ni llamadas Gemini. No afirmar
-captura real hasta completar Milestone 4 con una sesión de prueba.
-
-## Inicio local
-
-Requiere PHP 8.4 con `sqlsrv`, `pdo_sqlsrv`, `fileinfo`, ODBC 18, SQL Server y Redis.
-
+## Verificación requerida antes de integrar al servidor
 ```powershell
 composer install
-Copy-Item .env.example .env
-php artisan key:generate
-# Configurar la base SQL Server de prueba/autorizada y Redis.
-docker compose up -d redis
-php artisan migrate
-php artisan serve --host=127.0.0.1
-```
-
-Con `MENSAJERO_AUTH_MODE=disabled`, abrir `/dashboard`. No ejecutar migraciones en la BD
-corporativa de producción como parte de desarrollo o pruebas. La suite SQL de integración
-solo se ejecuta contra una base desechable cuyo nombre termine en `_test`.
-
-## Verificación
-
-```powershell
 php -d extension=fileinfo vendor/phpunit/phpunit/phpunit
 php vendor/laravel/pint/builds/pint --test
 php artisan route:list --except-vendor
 php artisan view:cache
-php artisan mensajero:health
+php artisan mensajero:diagnostico
 ```
 
-La validación SQL real sigue pendiente hasta disponer de una base `_test` autorizada. Los
-archivos nuevos se validan además con `php -l`.
+Las pruebas de integración SQL deben ejecutarse únicamente contra una base desechable cuyo nombre termine en `_test`, usando `phpunit.integracion.xml`. No ejecutar migraciones de desarrollo contra la base corporativa productiva.
 
 ## Continuidad
-
-Leer, en orden: `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md`, `docs/milestones.md`,
-`docs/architecture.md`, `docs/sql-server.md`, `docs/whatsapp-provider.md` y
-`docs/message-ingestion.md`.
+Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md`, `docs/revision-previa-integracion.md` y `agentes/`.

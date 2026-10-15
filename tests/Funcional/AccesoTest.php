@@ -27,6 +27,12 @@ class AccesoTest extends TestCase
         $this->get('/acceso')->assertRedirect('/tablero');
     }
 
+    public function test_autenticacion_deshabilitada_no_expone_diagnostico_administrativo(): void
+    {
+        config(['mensajero.autenticacion.modo' => 'deshabilitado']);
+        $this->get('/estado')->assertForbidden();
+    }
+
     public function test_autenticacion_corporativa_falla_cerrado_hasta_tener_adaptador(): void
     {
         config(['mensajero.autenticacion.modo' => 'corporativo']);

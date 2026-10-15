@@ -15,6 +15,10 @@ class RequerirAccesoMensajero
         $modo = (string) config('mensajero.autenticacion.modo', 'deshabilitado');
 
         if ($modo === 'deshabilitado') {
+            if ($nivel === 'administrador') {
+                abort(403);
+            }
+
             return $siguiente($request);
         }
 

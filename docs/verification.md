@@ -1,21 +1,17 @@
 # Registro de validación
 
-## 2026-10-15 — decisiones empresariales + base allowlist/RAW
+## 15/10/2026 — refactorización en español y revisión multidisciplinaria
 
-Validación ejecutada en esta actualización:
+Ejecutado realmente:
 
-| Comando | Resultado |
+| Comprobación | Resultado |
 |---|---|
-| `php -l` sobre todos los PHP nuevos/modificados | Sin errores de sintaxis |
+| `php -l` sobre 41 archivos PHP del incremento | Sin errores de sintaxis |
+| `php -l` tras corrección de seguridad en middleware/prueba | Sin errores de sintaxis |
 
-No fue posible clonar el repositorio dentro del contenedor de ejecución porque ese entorno no
-tenía resolución de red hacia GitHub. Por ello **no se afirma** haber ejecutado Composer,
-PHPUnit, Pint, migraciones ni conexión SQL Server en este cambio.
+No ejecutado en este entorno: Composer, PHPUnit, Pint, compilación de vistas, listado de rutas, migraciones ni conexión a SQL Server. No se considera certificada ninguna de esas capas.
 
-Se añadieron tests unitarios/feature y SQL opt-in para esquema, allowlist, idempotencia y
-captura RAW. Las pruebas de integración deben correr exclusivamente contra SQL Server `_test`.
+Las pruebas de integración quedan preparadas en `tests/Integracion` y deben ejecutarse exclusivamente contra una base SQL Server desechable cuyo nombre termine en `_test`.
 
-## 2026-10-13 — base inicial
-
-Resultado histórico: 9 pruebas/41 assertions, Pint aprobado, vistas/rutas correctas y Composer
-válido. Ese resultado corresponde al commit inicial y no certifica el código del 15/10/2026.
+## 13/10/2026 — resultado histórico
+Se habían reportado 9 pruebas/41 aserciones, Pint aprobado y vistas/rutas correctas para el código de aquel momento. Ese resultado histórico no certifica la refactorización del 15/10/2026.
