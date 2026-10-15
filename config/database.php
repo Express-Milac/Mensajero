@@ -19,18 +19,14 @@ return [
         ],
     ],
 
-    // Mensajero comparte una base corporativa: su historial de migraciones no debe colisionar
-    // con otras aplicaciones Laravel que pudieran existir en la misma base.
     'migrations' => [
-        'table' => 'mensajero_migrations',
+        'table' => 'mensajero_migraciones',
         'update_date_on_publish' => true,
     ],
 
     'redis' => [
         'client' => env('REDIS_CLIENT', 'predis'),
-        'options' => [
-            'prefix' => env('REDIS_PREFIX', 'mensajero:'),
-        ],
+        'options' => ['prefix' => env('REDIS_PREFIX', 'mensajero:')],
         'default' => [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'password' => env('REDIS_PASSWORD'),
