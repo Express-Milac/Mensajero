@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\InfrastructureHealth;
+use App\Services\SaludInfraestructura;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
@@ -11,17 +11,19 @@ use Tests\TestCase;
 
 class HealthFailureTest extends TestCase
 {
-    public function test_storage_failure_is_reported_and_redis_failure_is_independent(): void
+    public function test_fallos_de_almacenamiento_y_redis_se_reportan_de_forma_independiente(): void
     {
         DB::shouldReceive('connection')->andReturnSelf();
-        DB::shouldReceive('select')->andReturn([['healthy' => 1]]);
-        Redis::shouldReceive('connection')->andThrow(new RuntimeException('unavailable'));
+        DB::shouldReceive('select')->andReturn([['saludable' => 1]]);
+        Redis::shouldReceive('connection')->andThrow(new RuntimeException('no disponible'));
         Storage::shouldReceive('disk')->andReturnSelf();
-        Storage::shouldReceive('put')->andThrow(new RuntimeException('disk full'));
+        Storage::shouldReceive('put')->andThrow(new RuntimeException('disco lleno'));
         Storage::shouldReceive('delete')->once()->andReturn(true);
-        $checks = app(InfrastructureHealth::class)->check();
-        $this->assertSame('ok', $checks['sql_server']);
-        $this->assertSame('failed', $checks['redis']);
-        $this->assertSame('failed', $checks['storage']);
+
+        $comprobaciones = app(SaludInfraestructura::class)->verificar();
+
+        $this->assertSame('correcto', $comprobaciones['sql_server']);
+        $this->assertSame('fallo', $comprobaciones['redis']);
+        $this->assertSame('fallo', $comprobaciones['almacenamiento']);
     }
 }
