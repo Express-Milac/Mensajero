@@ -10,6 +10,10 @@ return [
     'modelo_gemini' => env('MODELO_GEMINI'),
     'clave_api_gemini' => env('CLAVE_API_GEMINI'),
 
+    'seguridad_pasarela' => [
+        'ventana_segundos' => (int) env('MENSAJERO_VENTANA_FIRMA_SEGUNDOS', 300),
+    ],
+
     'autenticacion' => [
         // deshabilitado: acceso interno temporal sin inicio de sesión.
         // local: autenticación Laravel provisional para desarrollo y pruebas.
