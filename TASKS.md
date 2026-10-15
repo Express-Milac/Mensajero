@@ -5,14 +5,22 @@ Estado: 15/10/2026. `[x]` significa código entregado en el alcance indicado; no
 ## Entregado
 - [x] Arquitectura base sobre SQL Server corporativo, Redis y almacenamiento privado configurable.
 - [x] Decisiones de negocio registradas: WhatsApp Business, grupos 30+, pasarela autohospedada, servidor MILAC y autenticación pospuesta.
-- [x] Nomenclatura de negocio migrada al español en tablas, columnas, clases, rutas, estados y pruebas principales.
+- [x] Nomenclatura de negocio migrada al español en tablas, columnas propias, clases, rutas, estados y pruebas principales.
 - [x] Conexión, chats monitoreados, contactos, evento crudo, buzón de salida y mensajes originales modelados.
 - [x] Lista permitida por defecto denegada, descarte de pegatinas e idempotencia.
 - [x] Agentes de arquitectura, creación, revisión, pruebas, seguridad, UI/UX y calidad definidos y aplicados.
 - [x] Corrección del tablero sin usuario, validación de administrador y bloqueo de diagnóstico administrativo cuando no hay autenticación.
+- [x] `Usuario`, fábrica, migración, comando y pruebas alineados con `nombre`/marcas de tiempo propias en español.
+- [x] Estructura propia de autenticación movida de `Auth`/`auth` a `Autenticacion`/`autenticacion`.
+- [x] Arnés aislado de captura con 9/9 comprobaciones aprobadas y auditoría de referencias limpia.
+- [x] Flujo de CI definido para Composer/PHPUnit/Pint/rutas/vistas.
+
+## Incidencia de infraestructura de validación
+- [ ] Resolver `startup_failure` de GitHub Actions a nivel repositorio/organización/runner. El fallo ocurre antes de crear jobs y no constituye un fallo de PHPUnit/Pint.
+- [ ] Confirmar que el entorno de validación y el servidor incluyan `mbstring`.
 
 ## Puerta inmediata antes de integración al servidor
-- [ ] Ejecutar `composer install`/validación de Composer en un entorno con acceso al repositorio.
+- [ ] Ejecutar `composer validate` y `composer install` en un entorno funcional.
 - [ ] Ejecutar PHPUnit de unidad y funcional.
 - [ ] Ejecutar Pint.
 - [ ] Compilar vistas y revisar rutas.
