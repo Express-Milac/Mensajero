@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ConexionWhatsapp extends Model
 {
     public const CREATED_AT = 'creado_en';
+
     public const UPDATED_AT = 'actualizado_en';
 
     protected $table = 'mensajero_conexiones_whatsapp';
+
     protected $guarded = [];
 
     protected function casts(): array

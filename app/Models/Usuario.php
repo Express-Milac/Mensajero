@@ -18,6 +18,7 @@ class Usuario extends Authenticatable
     use HasFactory, Notifiable;
 
     public const CREATED_AT = 'creado_en';
+
     public const UPDATED_AT = 'actualizado_en';
 
     protected $table = 'mensajero_usuarios';

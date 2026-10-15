@@ -15,8 +15,7 @@ final class CapturarEventoWhatsappEntrante
 {
     public function __construct(
         private readonly FiltroMensajeEntrante $filtro,
-    ) {
-    }
+    ) {}
 
     public function ejecutar(EventoWhatsappEntrante $evento): ResultadoCaptura
     {

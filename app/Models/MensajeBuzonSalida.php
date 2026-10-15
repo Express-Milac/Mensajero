@@ -9,6 +9,7 @@ class MensajeBuzonSalida extends Model
     public $timestamps = false;
 
     protected $table = 'mensajero_buzon_salida';
+
     protected $guarded = [];
 
     protected function casts(): array

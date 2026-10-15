@@ -10,8 +10,7 @@ final readonly class ResultadoCaptura
         public string $estado,
         public DisposicionEntrada $disposicion,
         public ?int $eventoCrudoId = null,
-    ) {
-    }
+    ) {}
 
     public static function aceptado(int $eventoCrudoId): self
     {

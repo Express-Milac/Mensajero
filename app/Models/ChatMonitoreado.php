@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ChatMonitoreado extends Model
 {
     public const CREATED_AT = 'creado_en';
+
     public const UPDATED_AT = 'actualizado_en';
 
     protected $table = 'mensajero_chats_monitoreados';
+
     protected $guarded = [];
 
     protected function casts(): array
