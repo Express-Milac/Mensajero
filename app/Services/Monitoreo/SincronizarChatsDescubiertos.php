@@ -5,8 +5,8 @@ namespace App\Services\Monitoreo;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
 use Carbon\CarbonImmutable;
-use InvalidArgumentException;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class SincronizarChatsDescubiertos
 {

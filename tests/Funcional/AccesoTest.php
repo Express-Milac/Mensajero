@@ -23,7 +23,7 @@ class AccesoTest extends TestCase
     public function test_autenticacion_deshabilitada_permite_tablero_interno_sin_usuario(): void
     {
         config(['mensajero.autenticacion.modo' => 'deshabilitado']);
-        $this->get('/tablero')->assertOk()->assertSee('Acceso interno temporal')->assertSee('Sin conectar');
+        $this->get('/tablero')->assertOk()->assertSee('Acceso interno temporal')->assertSee('Preparando conexión');
         $this->get('/acceso')->assertRedirect('/tablero');
     }
 
@@ -51,7 +51,7 @@ class AccesoTest extends TestCase
     {
         config(['mensajero.autenticacion.modo' => 'local']);
         $this->actingAs($this->usuario(Rol::Visualizador));
-        $this->get('/tablero')->assertOk()->assertSee('Sin conectar');
+        $this->get('/tablero')->assertOk()->assertSee('Preparando conexión');
         $this->get('/estado')->assertForbidden();
         $this->assertFalse(Gate::allows('revisar-eventos'));
     }
