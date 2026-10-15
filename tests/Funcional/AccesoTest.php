@@ -13,7 +13,7 @@ class AccesoTest extends TestCase
 {
     private function usuario(Rol $rol): Usuario
     {
-        $usuario = new Usuario(['name' => 'Operación', 'email' => 'prueba@example.test']);
+        $usuario = new Usuario(['nombre' => 'Operación', 'email' => 'prueba@example.test']);
         $usuario->id = 1;
         $usuario->rol = $rol;
 
