@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit bootstrap="vendor/autoload.php" colors="true">
-    <testsuites><testsuite name="SQL Server"><directory>tests/Integration</directory></testsuite></testsuites>
+    <testsuites><testsuite name="SQL Server"><directory>tests/Integracion</directory></testsuite></testsuites>
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_KEY" value="base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="/>
