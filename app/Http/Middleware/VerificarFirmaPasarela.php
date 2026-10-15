@@ -16,7 +16,7 @@ class VerificarFirmaPasarela
         private readonly ValidadorFirmaPasarela $validador,
     ) {}
 
-    public function handle(Request $request, Closure $siguiente, string $protegerRepeticion = 'si'): Response
+    public function handle(Request $request, Closure $siguiente): Response
     {
         $secreto = (string) config('mensajero.pasarela_secreto', '');
         $ventana = (int) config('mensajero.seguridad_pasarela.ventana_segundos', 300);
@@ -34,22 +34,20 @@ class VerificarFirmaPasarela
             return $this->error('Solicitud de pasarela no autorizada.', 401);
         }
 
-        if ($protegerRepeticion !== 'no') {
-            try {
-                SolicitudPasarela::create([
-                    'identificador_solicitud' => $identificador,
-                    'marca_tiempo_pasarela' => (int) $marcaTiempo,
-                    'hash_cuerpo_sha256' => hash('sha256', $cuerpo),
-                    'ruta' => '/'.$request->path(),
-                    'recibido_en' => now(),
-                ]);
-            } catch (QueryException $excepcion) {
-                if ($this->esDuplicado($excepcion)) {
-                    return $this->error('Solicitud de pasarela repetida.', 409);
-                }
-
-                throw $excepcion;
+        try {
+            SolicitudPasarela::create([
+                'identificador_solicitud' => $identificador,
+                'marca_tiempo_pasarela' => (int) $marcaTiempo,
+                'hash_cuerpo_sha256' => hash('sha256', $cuerpo),
+                'ruta' => '/'.$request->path(),
+                'recibido_en' => now(),
+            ]);
+        } catch (QueryException $excepcion) {
+            if ($this->esDuplicado($excepcion)) {
+                return $this->error('Solicitud de pasarela repetida.', 409);
             }
+
+            throw $excepcion;
         }
 
         $request->attributes->set('mensajero_identificador_solicitud', $identificador);

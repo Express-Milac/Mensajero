@@ -17,9 +17,6 @@
 /.zed
 /auth.json
 /node_modules
-/pasarela-whatsapp/node_modules/
-/pasarela-whatsapp/dist/
-/pasarela-whatsapp/datos/
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
