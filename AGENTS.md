@@ -24,9 +24,13 @@ Cada incremento pasa, en orden, por: arquitectura, creación, revisión, pruebas
 - Archivos privados fuera de SQL Server; la base guarda metadatos y rutas.
 - No conectar el número empresarial antes de la prueba controlada de la pasarela.
 - No ejecutar migraciones de desarrollo contra la base corporativa productiva.
+- No marcar un incremento como certificado si GitHub Actions falla antes de crear jobs o si no se ejecutó la capa correspondiente.
 
 ## Idioma
 El dominio, tablas, columnas propias, rutas, pruebas, documentación y textos visibles deben usar español. Se permiten términos literales en inglés solo cuando son contratos obligatorios de Laravel/PHP/SQL Server, nombres de productos o valores recibidos de un proveedor externo; esas excepciones no deben propagarse al dominio.
 
 ## Archivos convencionales
 `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, directorios estándar de Laravel y claves internas del framework conservan sus nombres convencionales para compatibilidad con herramientas.
+
+## Requisitos del runtime
+PHP 8.4+ con las extensiones requeridas por Laravel, SQL Server y `mbstring`. Las pruebas de integración de esquema solo se ejecutan contra una base desechable cuyo nombre termine en `_test`.
