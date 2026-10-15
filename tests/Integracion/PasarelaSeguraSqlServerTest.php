@@ -8,6 +8,7 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\SolicitudPasarela;
 use App\Services\Monitoreo\CambiarMonitoreoChat;
 use App\Services\Seguridad\ValidadorFirmaPasarela;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -31,88 +32,93 @@ class PasarelaSeguraSqlServerTest extends TestCase
         $this->assertStringEndsWith('_test', config('database.connections.sqlsrv.database'));
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
 
-        $sufijo = bin2hex(random_bytes(6));
-        $conexion = ConexionWhatsapp::create([
-            'clave_conexion' => 'pasarela-'.$sufijo,
-            'proveedor' => 'web_autohospedado',
-            'estado' => 'conectado',
-        ]);
+        DB::beginTransaction();
+        try {
+            $sufijo = bin2hex(random_bytes(6));
+            $conexion = ConexionWhatsapp::create([
+                'clave_conexion' => 'pasarela-'.$sufijo,
+                'proveedor' => 'web_autohospedado',
+                'estado' => 'conectado',
+            ]);
 
-        $idChat = 'grupo-'.$sufijo.'@g.us';
-        $descubrimiento = [
-            'clave_conexion' => $conexion->clave_conexion,
-            'chats' => [[
-                'id_chat_proveedor' => $idChat,
-                'tipo_chat' => 'grupo',
-                'nombre_grupo' => 'Grupo de integración',
-                'es_activo' => true,
-            ]],
-        ];
+            $idChat = 'grupo-'.$sufijo.'@g.us';
+            $descubrimiento = [
+                'clave_conexion' => $conexion->clave_conexion,
+                'chats' => [[
+                    'id_chat_proveedor' => $idChat,
+                    'tipo_chat' => 'grupo',
+                    'nombre_grupo' => 'Grupo de integración',
+                    'es_activo' => true,
+                ]],
+            ];
 
-        $idDescubrimiento = 'descubrimiento-'.$sufijo.'-0001';
-        $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idDescubrimiento)
-            ->assertOk()
-            ->assertJsonPath('estado', 'aceptado')
-            ->assertJsonPath('resultado.creados', 1);
+            $idDescubrimiento = 'descubrimiento-'.$sufijo.'-0001';
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idDescubrimiento)
+                ->assertOk()
+                ->assertJsonPath('estado', 'aceptado')
+                ->assertJsonPath('resultado.creados', 1);
 
-        $chat = ChatMonitoreado::query()
-            ->where('conexion_id', $conexion->id)
-            ->where('id_chat_proveedor', $idChat)
-            ->firstOrFail();
+            $chat = ChatMonitoreado::query()
+                ->where('conexion_id', $conexion->id)
+                ->where('id_chat_proveedor', $idChat)
+                ->firstOrFail();
 
-        $this->assertFalse($chat->es_monitoreado);
-        $this->assertSame(0, $chat->version_autorizacion);
-        $this->assertTrue(SolicitudPasarela::query()->where('identificador_solicitud', $idDescubrimiento)->exists());
+            $this->assertFalse($chat->es_monitoreado);
+            $this->assertSame(0, $chat->version_autorizacion);
+            $this->assertTrue(SolicitudPasarela::query()->where('identificador_solicitud', $idDescubrimiento)->exists());
 
-        $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idDescubrimiento)
-            ->assertStatus(409)
-            ->assertJsonPath('mensaje', 'Solicitud de pasarela repetida.');
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idDescubrimiento)
+                ->assertStatus(409)
+                ->assertJsonPath('mensaje', 'Solicitud de pasarela repetida.');
 
-        $idFirmaIncorrecta = 'firma-incorrecta-'.$sufijo;
-        $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, firmaValida: false)
-            ->assertUnauthorized();
-        $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idFirmaIncorrecta)->exists());
+            $idFirmaIncorrecta = 'firma-incorrecta-'.$sufijo;
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, firmaValida: false)
+                ->assertUnauthorized();
+            $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idFirmaIncorrecta)->exists());
 
-        $idCaducada = 'firma-caducada-'.$sufijo;
-        $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, desfaseSegundos: -301)
-            ->assertUnauthorized();
-        $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idCaducada)->exists());
+            $idCaducada = 'firma-caducada-'.$sufijo;
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, desfaseSegundos: -301)
+                ->assertUnauthorized();
+            $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idCaducada)->exists());
 
-        $evento = [
-            'clave_conexion' => $conexion->clave_conexion,
-            'chat_id' => $idChat,
-            'tipo_evento' => 'mensaje',
-            'tipo_mensaje' => 'texto',
-            'evento_externo_id' => 'evento-'.$sufijo.'-001',
-            'mensaje_proveedor_id' => 'mensaje-'.$sufijo.'-001',
-            'contenido_crudo' => '{"texto":"Unidad lista"}',
-            'recibido_en' => now()->toIso8601String(),
-            'version_contrato' => 'v1',
-        ];
+            $evento = [
+                'clave_conexion' => $conexion->clave_conexion,
+                'chat_id' => $idChat,
+                'tipo_evento' => 'mensaje',
+                'tipo_mensaje' => 'texto',
+                'evento_externo_id' => 'evento-'.$sufijo.'-001',
+                'mensaje_proveedor_id' => 'mensaje-'.$sufijo.'-001',
+                'contenido_crudo' => '{"texto":"Unidad lista"}',
+                'recibido_en' => now()->toIso8601String(),
+                'version_contrato' => 'v1',
+            ];
 
-        $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, 'evento-no-autorizado-'.$sufijo)
-            ->assertOk()
-            ->assertJsonPath('estado', 'ignorado')
-            ->assertJsonPath('disposicion', 'ignorar_no_monitoreado');
-        $this->assertSame(0, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, 'evento-no-autorizado-'.$sufijo)
+                ->assertOk()
+                ->assertJsonPath('estado', 'ignorado')
+                ->assertJsonPath('disposicion', 'ignorar_no_monitoreado');
+            $this->assertSame(0, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
 
-        app(CambiarMonitoreoChat::class)->ejecutar((int) $chat->id, true, 'prueba_integracion', null, 'Autorizar prueba de pasarela');
+            app(CambiarMonitoreoChat::class)->ejecutar((int) $chat->id, true, 'prueba_integracion', null, 'Autorizar prueba de pasarela');
 
-        $idEvento = 'evento-autorizado-'.$sufijo;
-        $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, $idEvento)
-            ->assertOk()
-            ->assertJsonPath('estado', 'aceptado')
-            ->assertJsonPath('disposicion', 'aceptar');
-        $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
+            $idEvento = 'evento-autorizado-'.$sufijo;
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, $idEvento)
+                ->assertOk()
+                ->assertJsonPath('estado', 'aceptado')
+                ->assertJsonPath('disposicion', 'aceptar');
+            $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
 
-        $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, $idEvento)
-            ->assertStatus(409);
-        $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, $idEvento)
+                ->assertStatus(409);
+            $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
 
-        $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, 'evento-dominio-duplicado-'.$sufijo)
-            ->assertOk()
-            ->assertJsonPath('estado', 'duplicado');
-        $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $evento, 'evento-dominio-duplicado-'.$sufijo)
+                ->assertOk()
+                ->assertJsonPath('estado', 'duplicado');
+            $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
+        } finally {
+            DB::rollBack();
+        }
     }
 
     /**
