@@ -1,23 +1,39 @@
-# Guía de contribución
+# Contribuir a Mensajero
 
-Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md`, `docs/revision-previa-integracion.md` y los criterios de `agentes/`. Trabajar por hitos y mantener cambios revisables. Las ramas de trabajo usan `codex/<descripcion>` salvo instrucción distinta.
+## Antes de modificar
+1. Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md` y `agentes/`.
+2. Confirmar el hito vigente y preservar cambios ajenos.
+3. Mantener la nomenclatura de negocio en español.
 
-## Preparación
-PHP 8.4 y Composer. Instalar desde `composer.lock`; no actualizar dependencias sin necesidad. Copiar `.env.example` a `.env`, generar `APP_KEY` y configurar servicios de desarrollo. Nunca registrar secretos.
+## Flujo mínimo
+1. Arquitectura valida límites y contratos.
+2. Creación implementa el incremento completo.
+3. Revisión busca referencias rotas y defectos.
+4. Pruebas ejecuta y registra evidencia real.
+5. Seguridad verifica exposición, secretos y permisos.
+6. UI/UX revisa flujo y textos.
 
 ## Validación
-```text
+Para cambios que no requieren SQL Server real:
+
+```bash
+composer validate --strict
+composer install
 php vendor/phpunit/phpunit/phpunit
 php vendor/laravel/pint/builds/pint --test
-php artisan view:cache
 php artisan route:list --except-vendor
-composer validate --strict
-git diff --check
+php artisan view:cache
 ```
 
-Para SQL Server usar únicamente una base desechable `_test` y `phpunit.integracion.xml`. Revisar `docs/despliegue.md` y `docs/verificacion.md`.
+Si GitHub Actions termina antes de crear jobs, el resultado no cuenta como ejecución de estas pruebas.
+
+Los cambios de esquema o canal de captura deben probarse además con `phpunit.integracion.xml` exclusivamente contra una base SQL Server desechable cuyo nombre termine en `_test`.
+
+## Reglas de seguridad
+- No guardar secretos, sesiones WhatsApp, payloads privados ni binarios operativos en Git.
+- No ejecutar migraciones de desarrollo contra producción.
+- No conectar el número empresarial como efecto secundario de una entrega de código.
+- El runtime debe disponer de `mbstring` y extensiones SQL Server necesarias.
 
 ## Entrega
-Explicar problema, comportamiento resultante, validación realmente ejecutada y limitaciones. Actualizar `TASKS.md`, `RESUMEN.md` y el hito correspondiente si cambia el estado. Revisar que `.env`, llaves, registros, sesiones de proveedores y evidencia operativa no entren al cambio.
-
-No afirmar despliegue, disponibilidad o aprobación de pruebas basándose únicamente en código, simulaciones o pruebas no ejecutadas.
+Actualizar `RESUMEN.md`, `TASKS.md`, `docs/verificacion.md` y, cuando corresponda, `docs/revision-previa-integracion.md`. Distinguir siempre lo implementado de lo realmente certificado.
