@@ -17,14 +17,14 @@ class CrearAdministrador extends Command
     public function handle(): int
     {
         $datos = [
-            'name' => $this->ask('Nombre'),
+            'nombre' => $this->ask('Nombre'),
             'email' => mb_strtolower(trim((string) $this->ask('Correo'))),
             'password' => $this->secret('Contraseña (mínimo 12 caracteres)'),
             'password_confirmation' => $this->secret('Confirmar contraseña'),
         ];
 
         $validador = Validator::make($datos, [
-            'name' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:254', Rule::unique(Usuario::class, 'email')],
             'password' => 'required|string|min:12|max:1024|confirmed',
         ]);
@@ -38,7 +38,7 @@ class CrearAdministrador extends Command
         }
 
         $usuario = new Usuario;
-        $usuario->fill(collect($datos)->only(['name', 'email', 'password'])->all());
+        $usuario->fill(collect($datos)->only(['nombre', 'email', 'password'])->all());
         $usuario->rol = Rol::Administrador;
         $usuario->save();
         $this->info('Administrador creado.');
