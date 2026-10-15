@@ -1,48 +1,19 @@
 # Modelo SQL Server
 
-Motor operativo exclusivo: Microsoft SQL Server. Mensajero **no tendrá una base dedicada por
-defecto**: sus objetos vivirán dentro de una base corporativa existente configurada en `.env`.
+Motor operativo exclusivo: Microsoft SQL Server. Mensajero usa una base corporativa existente configurada en `.env`.
 
-## Aislamiento obligatorio
+## Aislamiento
+- historial de migraciones: `mensajero_migraciones`;
+- autenticación futura: `mensajero_usuarios`, `mensajero_sesiones`, `mensajero_tokens_restablecimiento_contrasena`;
+- infraestructura Laravel: `mensajero_cache`, `mensajero_bloqueos_cache`, `mensajero_trabajos`, `mensajero_lotes_trabajos`, `mensajero_trabajos_fallidos`;
+- dominio: todas las tablas propias comienzan con `mensajero_`.
 
-Para no interferir con otros sistemas:
+No se usa prefijo global de la conexión porque Mensajero puede requerir lecturas controladas de datos corporativos existentes.
 
-- historial Laravel: `mensajero_migrations`;
-- framework: `mensajero_users`, `mensajero_sessions`, `mensajero_cache`, `mensajero_jobs`, etc.;
-- dominio: todas las tablas comienzan con `mensajero_`.
+## Captura
+Tablas: `mensajero_conexiones_whatsapp`, `mensajero_chats_monitoreados`, `mensajero_contactos_whatsapp`, `mensajero_eventos_crudos_whatsapp`, `mensajero_buzon_salida` y `mensajero_mensajes_whatsapp`.
 
-No configurar `prefix` global en la conexión SQL porque en el futuro Mensajero podría requerir
-lecturas controladas de tablas corporativas existentes; el aislamiento se realiza mediante
-nombres explícitos.
-
-## Tablas implementadas
-
-- `mensajero_whatsapp_connections`
-- `mensajero_monitored_chats`
-- `mensajero_whatsapp_contacts`
-- `mensajero_whatsapp_raw_events`
-- `mensajero_outbox`
-- `mensajero_whatsapp_messages`
-
-La allowlist es `default deny`: `is_monitored` nace en `false`.
-
-IDs internos: bigint identity. IDs de WhatsApp: cadenas opacas con collation binaria; no
-suponer que el teléfono es la identidad primaria. Texto largo/JSON serializado: NVARCHAR(MAX).
-Tiempos operativos: datetime2/UTC.
-
-RAW contiene `deduplication_key`, `payload_sha256`, payload original y estado independiente.
-Outbox vive en la misma transacción que RAW y tiene disponibilidad, lease, intentos y despacho.
-Mensajes tienen identidad única por conexión/chat/provider_message_id, referencia a RAW y
-estados separados de captura, media e IA.
+La lista permitida niega por defecto (`es_monitoreado=false`). Los identificadores del proveedor se tratan como cadenas opacas y las fechas operativas se almacenan en UTC.
 
 ## Validación
-
-Las migraciones nuevas no se certifican con SQLite. Antes de producción:
-
-1. usar SQL Server desechable cuyo nombre termine en `_test`;
-2. ejecutar `php artisan migrate --force`;
-3. correr `phpunit.integration.xml`;
-4. revisar constraints e índices reales;
-5. solo entonces preparar instalación en la BD corporativa.
-
-Nunca ejecutar las pruebas de integración contra la base productiva.
+Las migraciones no se certifican con SQLite. Antes de producción: usar una base SQL Server desechable terminada en `_test`, ejecutar migraciones, correr `phpunit.integracion.xml`, revisar restricciones/índices y solo después preparar la instalación corporativa.
