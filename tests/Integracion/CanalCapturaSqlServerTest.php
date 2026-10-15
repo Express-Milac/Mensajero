@@ -25,6 +25,10 @@ class CanalCapturaSqlServerTest extends TestCase
             $conexion = ConexionWhatsapp::create(['clave_conexion' => 'canal-principal', 'proveedor' => 'web_autohospedado', 'estado' => 'conectado']);
             $chat = ChatMonitoreado::create(['conexion_id' => $conexion->id, 'id_chat_proveedor' => 'operacion-prueba@g.us', 'tipo_chat' => 'grupo']);
             $captura = app(CapturarEventoWhatsappEntrante::class);
+            $buzonInicial = MensajeBuzonSalida::count();
+            $eventosConexion = fn (): int => EventoCrudoWhatsapp::query()
+                ->where('conexion_id', $conexion->id)
+                ->count();
             $evento = new EventoWhatsappEntrante(
                 conexionId: (int) $conexion->id,
                 chatId: $chat->id_chat_proveedor,
@@ -39,20 +43,20 @@ class CanalCapturaSqlServerTest extends TestCase
             $ignorado = $captura->ejecutar($evento);
             $this->assertSame('ignorado', $ignorado->estado);
             $this->assertSame(DisposicionEntrada::IgnorarNoMonitoreado, $ignorado->disposicion);
-            $this->assertSame(0, EventoCrudoWhatsapp::count());
-            $this->assertSame(0, MensajeBuzonSalida::count());
+            $this->assertSame(0, $eventosConexion());
+            $this->assertSame($buzonInicial, MensajeBuzonSalida::count());
 
             $chat->update(['es_monitoreado' => true]);
             $aceptado = $captura->ejecutar($evento);
             $this->assertSame('aceptado', $aceptado->estado);
-            $this->assertSame(1, EventoCrudoWhatsapp::count());
-            $this->assertSame(1, MensajeBuzonSalida::count());
+            $this->assertSame(1, $eventosConexion());
+            $this->assertSame($buzonInicial + 1, MensajeBuzonSalida::count());
 
             $duplicado = $captura->ejecutar($evento);
             $this->assertSame('duplicado', $duplicado->estado);
             $this->assertSame($aceptado->eventoCrudoId, $duplicado->eventoCrudoId);
-            $this->assertSame(1, EventoCrudoWhatsapp::count());
-            $this->assertSame(1, MensajeBuzonSalida::count());
+            $this->assertSame(1, $eventosConexion());
+            $this->assertSame($buzonInicial + 1, MensajeBuzonSalida::count());
 
             $pegatina = new EventoWhatsappEntrante(
                 conexionId: (int) $conexion->id,
@@ -66,8 +70,8 @@ class CanalCapturaSqlServerTest extends TestCase
             );
             $ignoradoPegatina = $captura->ejecutar($pegatina);
             $this->assertSame(DisposicionEntrada::IgnorarPegatina, $ignoradoPegatina->disposicion);
-            $this->assertSame(1, EventoCrudoWhatsapp::count());
-            $this->assertSame(1, MensajeBuzonSalida::count());
+            $this->assertSame(1, $eventosConexion());
+            $this->assertSame($buzonInicial + 1, MensajeBuzonSalida::count());
         } finally {
             DB::rollBack();
         }
