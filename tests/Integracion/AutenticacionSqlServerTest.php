@@ -18,7 +18,7 @@ class AutenticacionSqlServerTest extends TestCase
 
         DB::beginTransaction();
         try {
-            $usuario = new Usuario(['name' => 'Integración', 'email' => 'integracion-'.bin2hex(random_bytes(6)).'@example.test', 'password' => 'Prueba-segura-1234!']);
+            $usuario = new Usuario(['nombre' => 'Integración', 'email' => 'integracion-'.bin2hex(random_bytes(6)).'@example.test', 'password' => 'Prueba-segura-1234!']);
             $usuario->rol = Rol::Visualizador;
             $usuario->save();
 
