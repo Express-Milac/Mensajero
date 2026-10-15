@@ -30,8 +30,9 @@ Ejecutado en esta revisión:
 - `php -l` sobre el incremento y correcciones posteriores: sin errores de sintaxis reportados.
 - Arnés aislado de la lógica de captura: 9/9 comprobaciones aprobadas.
 - Auditoría estática de referencias tras renombres: limpia.
+- Validación sintáctica independiente de `.github/workflows/validacion.yml`: estructura válida.
 
-La validación automática de GitHub se intentó por `push` y `pull_request`, pero terminó en `startup_failure` antes de crear jobs, incluso después de eliminar la acción externa de preparación de PHP. Por tanto, PHPUnit, Pint, rutas y compilación de vistas todavía no están certificados por CI.
+La validación automática de GitHub se intentó por `push` y `pull_request`, pero terminó en `startup_failure` antes de crear jobs, incluso después de eliminar la acción externa de preparación de PHP. Por tanto, PHPUnit, Pint, rutas y compilación de vistas todavía no están certificados por CI. El conector disponible tampoco permite consultar la configuración administrativa de permisos de Actions, por lo que debe revisarse desde GitHub fuera de este entorno.
 
 El contenedor local disponible no incluye `mbstring`; el runtime de Mensajero debe incluir esa extensión.
 
