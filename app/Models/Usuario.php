@@ -10,12 +10,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['nombre', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class Usuario extends Authenticatable
 {
     /** @use HasFactory<UsuarioFactory> */
     use HasFactory, Notifiable;
+
+    public const CREATED_AT = 'creado_en';
+    public const UPDATED_AT = 'actualizado_en';
 
     protected $table = 'mensajero_usuarios';
 
