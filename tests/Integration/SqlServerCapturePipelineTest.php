@@ -2,80 +2,97 @@
 
 namespace Tests\Integration;
 
-use App\Data\WhatsApp\IncomingWhatsappEvent;
-use App\Enums\InboundDisposition;
-use App\Models\MonitoredChat;
-use App\Models\OutboxMessage;
-use App\Models\WhatsappConnection;
-use App\Models\WhatsappRawEvent;
-use App\Services\Capture\CaptureIncomingWhatsappEvent;
+use App\Data\WhatsApp\EventoEntranteWhatsapp;
+use App\Enums\DisposicionEntrada;
+use App\Models\ConexionWhatsapp;
+use App\Models\ConversacionMonitoreada;
+use App\Models\EventoCrudoWhatsapp;
+use App\Models\MensajeBandejaSalida;
+use App\Services\Capture\CapturarEventoEntranteWhatsapp;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SqlServerCapturePipelineTest extends TestCase
 {
-    public function test_allowlist_sticker_and_idempotency_before_raw(): void
+    public function test_lista_blanca_adhesivos_e_idempotencia_antes_de_evidencia_cruda(): void
     {
-        $this->assertStringEndsWith('_test', config('database.connections.sqlsrv.database'), 'Use a disposable database ending in _test.');
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->assertStringEndsWith('_test', config('database.connections.sqlsrv.database'), 'Use una base desechable terminada en _test.');
+        $this->artisan('migrate:fresh', ['--force' => true])->assertSuccessful();
 
         DB::beginTransaction();
         try {
-            $connection = WhatsappConnection::create([
-                'connection_key' => 'pipeline-primary',
-                'provider' => 'self_hosted_web',
-                'status' => 'connected',
+            $conexion = ConexionWhatsapp::create([
+                'clave_conexion' => 'principal-pruebas',
+                'proveedor' => 'web_autohospedado',
+                'estado' => 'conectado',
             ]);
-            $chat = MonitoredChat::create([
-                'connection_id' => $connection->id,
-                'provider_chat_id' => 'operation-test@g.us',
-                'chat_type' => 'group',
+
+            $conversacion = ConversacionMonitoreada::create([
+                'conexion_id' => $conexion->id,
+                'id_conversacion_proveedor' => 'operacion-prueba@g.us',
+                'tipo_conversacion' => 'grupo',
             ]);
-            $capture = app(CaptureIncomingWhatsappEvent::class);
-            $event = new IncomingWhatsappEvent(
-                connectionId: (int) $connection->id,
-                chatId: $chat->provider_chat_id,
-                eventType: 'message',
-                messageType: 'text',
-                externalEventId: 'evt-001',
-                providerMessageId: 'msg-001',
-                rawPayload: '{"id":"evt-001","text":"Unidad lista"}',
-                receivedAt: CarbonImmutable::parse('2026-10-15T18:00:00Z'),
+
+            $captura = app(CapturarEventoEntranteWhatsapp::class);
+            $evento = new EventoEntranteWhatsapp(
+                conexionId: (int) $conexion->id,
+                conversacionId: $conversacion->id_conversacion_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: 'evt-001',
+                mensajeProveedorId: 'msg-001',
+                contenidoCrudo: '{"id":"evt-001","texto":"Unidad lista"}',
+                recibidoEn: CarbonImmutable::parse('2026-10-15T18:00:00Z'),
             );
 
-            $ignored = $capture->handle($event);
-            $this->assertSame('ignored', $ignored->status);
-            $this->assertSame(InboundDisposition::IgnoreNotMonitored, $ignored->disposition);
-            $this->assertSame(0, WhatsappRawEvent::count());
-            $this->assertSame(0, OutboxMessage::count());
+            $ignorado = $captura->manejar($evento);
+            $this->assertSame('ignorado', $ignorado->estado);
+            $this->assertSame(DisposicionEntrada::IgnorarNoMonitoreada, $ignorado->disposicion);
+            $this->assertSame(0, EventoCrudoWhatsapp::count());
+            $this->assertSame(0, MensajeBandejaSalida::count());
 
-            $chat->update(['is_monitored' => true]);
-            $accepted = $capture->handle($event);
-            $this->assertSame('accepted', $accepted->status);
-            $this->assertSame(1, WhatsappRawEvent::count());
-            $this->assertSame(1, OutboxMessage::count());
+            $conversacion->update(['esta_monitoreada' => true]);
+            $aceptado = $captura->manejar($evento);
+            $this->assertSame('aceptado', $aceptado->estado);
+            $this->assertSame(1, EventoCrudoWhatsapp::count());
+            $this->assertSame(1, MensajeBandejaSalida::count());
 
-            $duplicate = $capture->handle($event);
-            $this->assertSame('duplicate', $duplicate->status);
-            $this->assertSame($accepted->rawEventId, $duplicate->rawEventId);
-            $this->assertSame(1, WhatsappRawEvent::count());
-            $this->assertSame(1, OutboxMessage::count());
+            $duplicado = $captura->manejar($evento);
+            $this->assertSame('duplicado', $duplicado->estado);
+            $this->assertSame($aceptado->eventoCrudoId, $duplicado->eventoCrudoId);
+            $this->assertSame(1, EventoCrudoWhatsapp::count());
+            $this->assertSame(1, MensajeBandejaSalida::count());
 
-            $sticker = new IncomingWhatsappEvent(
-                connectionId: (int) $connection->id,
-                chatId: $chat->provider_chat_id,
-                eventType: 'message',
-                messageType: 'sticker',
-                externalEventId: 'evt-002',
-                providerMessageId: 'msg-002',
-                rawPayload: '{"id":"evt-002","type":"sticker"}',
-                receivedAt: CarbonImmutable::parse('2026-10-15T18:01:00Z'),
+            $adhesivo = new EventoEntranteWhatsapp(
+                conexionId: (int) $conexion->id,
+                conversacionId: $conversacion->id_conversacion_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'sticker',
+                eventoExternoId: 'evt-002',
+                mensajeProveedorId: 'msg-002',
+                contenidoCrudo: '{"id":"evt-002","tipo":"sticker"}',
+                recibidoEn: CarbonImmutable::parse('2026-10-15T18:01:00Z'),
             );
-            $ignoredSticker = $capture->handle($sticker);
-            $this->assertSame(InboundDisposition::IgnoreSticker, $ignoredSticker->disposition);
-            $this->assertSame(1, WhatsappRawEvent::count());
-            $this->assertSame(1, OutboxMessage::count());
+
+            $ignoradoAdhesivo = $captura->manejar($adhesivo);
+            $this->assertSame(DisposicionEntrada::IgnorarAdhesivo, $ignoradoAdhesivo->disposicion);
+            $this->assertSame(1, EventoCrudoWhatsapp::count());
+            $this->assertSame(1, MensajeBandejaSalida::count());
+
+            $conversacion->update(['esta_activa' => false]);
+            $eventoTardio = new EventoEntranteWhatsapp(
+                conexionId: (int) $conexion->id,
+                conversacionId: $conversacion->id_conversacion_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: 'evt-003',
+                mensajeProveedorId: 'msg-003',
+                contenidoCrudo: '{"id":"evt-003","texto":"No debe entrar"}',
+                recibidoEn: CarbonImmutable::parse('2026-10-15T18:02:00Z'),
+            );
+            $this->assertSame(DisposicionEntrada::IgnorarConversacionInactiva, $captura->manejar($eventoTardio)->disposicion);
+            $this->assertSame(1, EventoCrudoWhatsapp::count());
         } finally {
             DB::rollBack();
         }
