@@ -1,19 +1,21 @@
 # Registro de validación
 
-## 2026-10-13 — preparación del repositorio para continuidad por IA
+## 2026-10-15 — decisiones empresariales + base allowlist/RAW
+
+Validación ejecutada en esta actualización:
 
 | Comando | Resultado |
 |---|---|
-| php -d extension=fileinfo vendor/phpunit/phpunit/phpunit | 9 pruebas, 41 assertions, aprobado |
-| php vendor/laravel/pint/builds/pint --test | Aprobado |
-| php artisan view:cache | Compilación correcta |
-| php artisan route:list --except-vendor | 6 rutas de aplicación registradas |
-| composer validate --strict | Manifest válido |
+| `php -l` sobre todos los PHP nuevos/modificados | Sin errores de sintaxis |
 
-PHPUnit necesitó ejecución fuera del sandbox porque el proceso restringido no podía abrir
-vendor/autoload.php. No fue un fallo de la suite. Los tests son aislados con dobles; no
-certifican login corporativo, SQL Server, Redis, gateway ni Gemini reales.
+No fue posible clonar el repositorio dentro del contenedor de ejecución porque ese entorno no
+tenía resolución de red hacia GitHub. Por ello **no se afirma** haber ejecutado Composer,
+PHPUnit, Pint, migraciones ni conexión SQL Server en este cambio.
 
-No se ejecutaron migraciones, llamadas de login empresariales ni despliegues. No hay cambios
-de lógica de aplicación en esta actualización documental. La primera publicación incluye
-la base de aplicación previamente implementada, que aún no tenía commits.
+Se añadieron tests unitarios/feature y SQL opt-in para esquema, allowlist, idempotencia y
+captura RAW. Las pruebas de integración deben correr exclusivamente contra SQL Server `_test`.
+
+## 2026-10-13 — base inicial
+
+Resultado histórico: 9 pruebas/41 assertions, Pint aprobado, vistas/rutas correctas y Composer
+válido. Ese resultado corresponde al commit inicial y no certifica el código del 15/10/2026.

@@ -1,48 +1,48 @@
 # Tareas de continuidad
 
-Estado: 2026-10-13. [x] terminado en el alcance indicado; [ ] pendiente. El roadmap completo
-vive en docs/milestones.md. No marcar un milestone certificado por pasar pruebas simuladas.
+Estado: 2026-10-15. `[x]` significa código entregado en el alcance indicado; no equivale a
+certificación en producción.
 
 ## Entregado
 
-- [x] M0-01 Documentar arquitectura, SQL Server, storage y contratos de ingestión.
-- [x] M0-02 Investigar integración WhatsApp y documentar incertidumbre sobre grupos existentes.
-- [x] M1-00 Crear base Laravel, login local, roles, configuración y pruebas aisladas.
-- [x] INT-00 Revisar IAVE/GPSGestor/Valera y documentar integración corporativa reutilizable.
-- [x] DOC-01 Preparar instrucciones, objetivos, estado y tareas para agentes.
+- [x] M0-01 Arquitectura, SQL Server, storage, contrato de ingestión y análisis proveedor.
+- [x] M1-00 Base Laravel 13/PHP 8.4, Redis/storage/health y autenticación local provisional.
+- [x] DEC-01 Registrar decisiones: WhatsApp Business, grupos 30+, gateway autohospedado,
+  servidor MILAC, BD corporativa existente y login pospuesto.
+- [x] DB-01 Aislar tablas propias/framework con prefijo `mensajero_` y migraciones separadas.
+- [x] AUTH-00 Introducir `MENSAJERO_AUTH_MODE`; `disabled` temporal y `corporate` fail-closed.
+- [x] M2-CORE Modelo SQL y dominio inicial de allowlist default deny.
+- [x] M3-CORE RAW + outbox transaccional, deduplicación y política de stickers.
 
-## Prioridad inmediata: milestone 1
+## Prioridad inmediata
 
-- [ ] M1-01 Adaptador de login corporativo servidor a servidor. Contrato {name,password},
-  validar identidad/respuesta; distinguir rechazo, bloqueo y servicio no disponible. Timeout,
-  TLS, sin logs de credenciales ni respuesta completa. No reutilizar permisos IAVE como roles.
-  Aceptación: tests HTTP falsos para éxito, bloqueo, respuesta inválida, timeout y falta de acceso.
-- [ ] M1-02 Autorización propia por identificador central alfanumérico: roles y estado activo;
-  revocación verificable y sesión regenerada. No copiar hashes/contraseñas centrales. Probar
-  credencial válida sin autorización, rol limitado y revocación durante sesión.
-- [ ] M1-03 Definir frontera Laravel ↔ MilacServices para reutilizar dbLis con runtime compatible.
-  Preparar puente autenticado o mecanismo equivalente con operaciones acotadas. No SQL libre,
-  no secretos hardcodeados, no mezclar autoloaders sin comprobar. Documentar decisión.
-- [ ] M1-04 Verificar conexión SQL y Redis reales en entorno autorizado. Probar migraciones solo
-  en base desechable _test. Confirmar destino/aislamiento de tablas antes de instalación real.
-- [ ] M1-05 Actualizar instalación, login y comandos para que reflejen el modo corporativo final.
+- [ ] M2-UI Descubrimiento de grupos/chats y pantalla para activar/desactivar monitoreo.
+- [ ] M2-AUDIT Auditoría de cambios de allowlist e incremento de `authorization_version`.
+- [ ] M3-API Endpoint interno versionado gateway → backend con HMAC, nonce, ventana anti-replay
+  y respuestas 202/200/204/422/401/503 según contrato.
+- [ ] M3-RELAY Relay recuperable outbox → Redis y normalizador idempotente hacia mensajes.
+- [ ] M3-SQL Ejecutar migraciones y tests únicamente contra SQL Server desechable `_test`.
 
-## Siguiente: captura RAW
+## Gateway propio
 
-- [ ] M2 Allowlist auditable, descubrimiento mínimo y pruebas default deny.
-- [ ] M3 RAW + outbox transaccional, ACK posterior al commit, deduplicación y recuperación.
-- [ ] M4 Contrato WhatsAppProvider, gateway y verificación con grupos reales de prueba.
-- [ ] M5–M6 Storage portable, media asíncrona, MIME/checksum y pruebas de fallos.
-- [ ] M7–M8 Dashboard/timeline paginada, filtros, búsqueda y canales privados.
-- [ ] M9 Ensayo de aceptación de OBJETIVO.md, fallos de SQL/Redis/storage y restauración.
+- [ ] M4-01 Crear `services/whatsapp-gateway` Node.js/TypeScript.
+- [ ] M4-02 Implementar `WhatsAppProvider` neutral y adaptador WhatsApp Web autohospedado.
+- [ ] M4-03 Guardar sesión fuera de Git, restringir sincronización histórica y no persistir
+  contenido de chats no autorizados.
+- [ ] M4-04 Probar grupos reales de laboratorio (30+ participantes cuando sea posible),
+  texto, cita, foto, audio, video, documento, reinicio, desconexión y reconexión.
+- [ ] M4-05 Solo después de la prueba controlada evaluar vincular el número empresarial.
 
-## Después de estabilizar RAW
+## Después
 
-- [ ] M10–M11 Gemini desacoplado, schema, fuentes verificadas y contexto incremental.
-- [ ] M12–M13 Eventos N:M mensajes, vista IA y navegación exacta a originales.
-- [ ] M14 Revisión humana versionada: confirmar/corregir/descartar/fusionar/dividir.
+- [ ] M5–M6 Storage portable y multimedia asíncrona.
+- [ ] M7–M8 Dashboard/timeline RAW, filtros, búsqueda y tiempo real.
+- [ ] M9 Ensayo A/B/C + sticker, fallos y recuperación.
+- [ ] M10–M14 Gemini, contexto incremental, eventos N:M y revisión humana.
+- [ ] AUTH-FUTURE Integración definitiva del login corporativo cuando MILAC estabilice su
+  mecanismo de identidad; retirar modo `disabled` antes de exposición no controlada.
 
-## Criterio de cierre de cada tarea
+## Regla de despliegue
 
-Código funcional en su alcance, validación pertinente, documentación actualizada, limitaciones
-explícitas y ausencia de secretos/datos operativos en Git. Registrar resultados, no suposiciones.
+No ejecutar `php artisan migrate` contra la BD corporativa productiva desde desarrollo. Primero
+certificar las migraciones en una base SQL Server desechable `_test` y revisar nombres/permiso.

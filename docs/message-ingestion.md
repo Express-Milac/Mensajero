@@ -1,28 +1,52 @@
-# Contrato y entrega
+# Contrato e ingestión durable
 
-Contrato v1: JSON UTF-8, conexión conocida, event_id estable, chat_id opaco, event_type,
-message_id, sender{id,phone?,display_name?}, timestamp RFC3339 con zona, type, text?, caption?,
-quoted_message_id?, media{provider_media_id,mime_type?,size?}?, raw (objeto original).
-No enviar binarios/base64 ni URL arbitraria de descarga. Tamaño máximo de request definido
-antes de parsear. Unknown conserva el payload; sticker se rechaza antes de persistir.
+## Contrato v1 previsto
 
-API interna prevista: POST /api/internal/v1/events, GET /api/internal/v1/allowlist y
-POST /api/internal/v1/chats para metadata de descubrimiento. TLS y HMAC SHA256 sobre
-timestamp + nonce + método + ruta + SHA256(body), con comparación constante, ventana de
-5 minutos y protección de replay. Cada reintento usa nonce nuevo y mismo event_id.
-Secretos por conexión y rotación; no confiar en connection_id aportado sin vincular firma.
+JSON UTF-8 con conexión confiable, `event_id`, `chat_id`, `event_type`, `message_id`, remitente,
+timestamp, tipo, texto/caption, cita, descriptor de media y objeto RAW original.
 
-202: RAW/outbox confirmados; 200: duplicado durable; 204: ignorado; 422: contrato inválido;
-401: firma; 429: backoff; 503: no confirmado, reintentar. ACK no significa normalizado.
-Nunca registrar body ni Authorization en logs. Persistir bytes originales aceptados y hash;
-normalización es una proyección separada, no reescritura de evidencia.
+No enviar binarios/base64 dentro del request. Sticker se rechaza antes de RAW. Un tipo
+desconocido de un chat autorizado se conserva.
 
-Transacción SQL: verificar allowlist bloqueada, insertar RAW y outbox. Relay reclama lote
-con lease, publica Redis, marca envío; caída entre publicar y marcar duplica entrega,
-no contenido. Workers con unique constraints y transacciones; citas fuera de orden se
-resuelven al llegar el original. Ordenar sent_at,id; ausencia de sent_at se marca explícitamente.
+## Core implementado
 
-Retries exponenciales con jitter, timeout menor que retry_after; límite y cola de fallos.
-Reprocesar desde RAW por ID/version, con auditoría. Captura, media e IA tienen estados propios.
-Alertas: edad del RAW más antiguo pendiente, retraso outbox, fallos, latencia, duplicados,
-descartes agregados sin identificación personal y último heartbeat.
+`IncomingWhatsappEvent` representa el evento interno aceptado por captura.
+
+`CaptureIncomingWhatsappEvent` ejecuta:
+
+```text
+buscar chat + lock
+    ↓
+InboundMessageGate
+    ↓
+¿autorizado?
+   no ──► ignored
+   sí
+    ↓
+deduplicación
+    ↓
+RAW + OUTBOX
+misma transacción SQL
+```
+
+Resultados: `accepted`, `duplicate` o `ignored`.
+
+La clave de deduplicación es SHA-256. SQL Server tiene constraints únicos como última defensa
+ante carreras.
+
+## API interna pendiente
+
+Previstas: `POST /api/internal/v1/events`, `GET /api/internal/v1/allowlist` y
+`POST /api/internal/v1/chats`.
+
+Seguridad: TLS + HMAC SHA-256 con timestamp, nonce, método, ruta y hash del body; ventana
+temporal y protección anti-replay.
+
+Semántica: 202 durable, 200 duplicado, 204 ignorado, 401 firma, 422 contrato, 429 backoff y
+503 no confirmado. ACK significa durable, no normalizado.
+
+## Outbox
+
+El relay a Redis sigue pendiente. Publicar y marcar son operaciones separadas, por lo que el
+relay puede entregar dos veces; los consumidores posteriores deben ser idempotentes. Redis no
+es la copia primaria de trabajo pendiente.

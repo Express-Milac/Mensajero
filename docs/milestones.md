@@ -2,23 +2,30 @@
 
 No dar por terminado un milestone solo porque exista su diseño.
 
-| Hito | Entrega verificable | Estado inicial |
+| Hito | Entrega verificable | Estado 15/10/2026 |
 |---|---|---|
-| 0 | Arquitectura, dominio, modelo, storage, contrato, análisis proveedor | Documentado; compatibilidad de cuenta real pendiente |
-| 1 | Laravel, SQL Server, login/roles, Redis, health y pruebas | Base implementada; 9 tests aislados pasan; SQL/Redis reales pendientes |
-| 2 | Administración de allowlist auditada + fixtures | Pendiente |
-| 3 | RAW + outbox + idempotencia + pruebas de descarte | Pendiente |
-| 4 | Gateway neutral y prueba real de grupos/reconexión | Pendiente |
-| 5 | Storage privado configurable y pruebas de portabilidad | Pendiente |
-| 6 | Jobs de multimedia y pruebas de fallos | Pendiente |
-| 7 | Dashboard, navegación y timeline RAW paginada | Pendiente |
-| 8 | Broadcasting privado, búsqueda y filtros | Pendiente |
-| 9 | Ensayo A/B/C + sticker, recuperación, backups y carga | Pendiente |
-| 10 | Gemini desacoplado, schema, retries y versionado | Pendiente |
-| 11 | Contexto incremental, citas y mensajes tardíos | Pendiente |
-| 12 | Eventos operativos con fuentes N:M verificadas | Pendiente |
-| 13 | Vista IA + RAW permanente y fuentes exactas | Pendiente |
-| 14 | Confirmar/corregir/descartar/fusionar/dividir auditado | Pendiente |
+| 0 | Arquitectura, dominio, storage, contrato y análisis proveedor | Documentado; decisión autohospedada confirmada |
+| 1 | Laravel, SQL Server, Redis, health y frontera de acceso | Base implementada; login corporativo pospuesto |
+| 2 | Allowlist auditada + descubrimiento + fixtures | Core SQL/política implementado; UI/auditoría pendientes |
+| 3 | RAW + outbox + idempotencia + descarte | Core transaccional implementado; API/relay y SQL real pendientes |
+| 4 | Gateway propio y prueba real de grupos/reconexión | Pendiente |
+| 5 | Storage privado configurable y portabilidad | Base configurable existente; pruebas futuras pendientes |
+| 6 | Jobs multimedia y fallos | Pendiente |
+| 7 | Dashboard, navegación y timeline RAW | Pendiente |
+| 8 | Tiempo real, búsqueda y filtros | Pendiente |
+| 9 | Ensayo A/B/C + sticker, recuperación y carga | Pendiente |
+| 10 | Gemini desacoplado | Pendiente |
+| 11 | Contexto incremental | Pendiente |
+| 12 | Eventos + fuentes N:M | Pendiente |
+| 13 | Vista IA + RAW permanente | Pendiente |
+| 14 | Revisión humana auditada | Pendiente |
 
-Cada entrega incorpora código, documentación actualizada y evidencia de pruebas. Antes de
-milestone 4 se requiere una sesión de prueba y comprobar capacidades reales del proveedor.
+## Cambio de orden por decisión empresarial
+
+La autenticación corporativa ya no bloquea la captura. Mientras MILAC redefine el login,
+`MENSAJERO_AUTH_MODE=disabled` permite desarrollar dentro de un entorno controlado. La capa de
+acceso permanece en middleware para activar después el modo corporativo sin modificar dominio.
+
+Mensajero comparte una base existente: todos los objetos nuevos deben usar `mensajero_*`.
+Milestone 4 no puede usar un proveedor SaaS de WhatsApp; el gateway deberá ejecutarse en
+infraestructura MILAC.

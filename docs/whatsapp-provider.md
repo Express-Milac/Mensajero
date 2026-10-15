@@ -1,50 +1,55 @@
 # ADR: proveedor WhatsApp
 
-Fecha de análisis: 2026-10-10. Estado: decisión provisional; sin cuenta empresarial vinculada.
+Actualizado: 2026-10-15.
+
+## Contexto confirmado
+
+- El número usa WhatsApp Business.
+- Es compartido con otros chats no relacionados con Mensajero.
+- Los grupos operativos que interesan ya existen y tienen al menos ~30 participantes.
+- Negocio no acepta un proveedor/SaaS de terceros para capturar WhatsApp.
+- El servicio se alojará en infraestructura propia de MILAC.
 
 ## Problema
 
-Escuchar 5–6 grupos existentes usando un número compartido con otros chats. No migrar el
-número ni vincular una sesión de producción como efecto de instalar el proyecto.
+Necesitamos escuchar 5–6 grupos existentes sin procesar el resto del número. La Groups API
+oficial no debe asumirse compatible con ese escenario; antes de depender de ella tendría que
+demostrarse que puede consumir exactamente los grupos existentes, tamaño y coexistencia real.
 
-## Opciones, ventajas y desventajas
+## Opciones
 
-1. Cloud API / Groups API oficial: soporte oficial y webhooks. Su existencia no demuestra
-   acceso a cualquier grupo existente. Es necesario comprobar elegibilidad y compatibilidad
-   de coexistencia, tamaño de grupos, recepción y multimedia con la cuenta real.
-2. Proveedor administrado: reduce operación del gateway, pero puede usar mecanismos no
-   oficiales; pedir evidencia de soporte de grupos existentes y condiciones de servicio.
-3. Baileys en servicio aislado: biblioteca TypeScript para WhatsApp Web. Permite explorar
-   eventos de grupos con una sesión vinculada; no es integración oficial ni garantía de entrega.
+### API oficial / Groups API
 
-## Fuentes y verificación
+Ventajas: soporte oficial, webhooks y contrato del proveedor.
 
-- [Meta Groups API](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups):
-  consulta directa devolvió HTTP 429; **no se certificaron sus restricciones actuales**.
-- [Bird, documentación de su integración de grupos](https://bird.com/docs/guides/whatsapp/groups):
-  describe grupos pequeños y límites de Meta; no acredita acceso a los grupos de esta empresa.
-- [Baileys, repositorio mantenido por sus autores](https://github.com/WhiskeySockets/Baileys):
-  declara explícitamente no estar afiliado ni autorizado por WhatsApp y advierte cambios
-  incompatibles en la versión 7. Debe fijarse versión y probar reconexiones.
+Desventaja crítica: no existe evidencia de que pueda adjuntarse libremente a estos grupos
+existentes de ~30+ personas. No diseñar el producto alrededor de una capacidad no demostrada.
 
-## Riesgos
+### Proveedor administrado
 
-Bloqueo de cuenta, pérdida de sesión, cambios de protocolo, identificación mediante LID,
-multimedia expirada y huecos de entrega. La sesión vinculada puede recibir transitoriamente
-chats personales: prohibir sincronización histórica persistente, logs de payloads y descargas
-automáticas. Secretos de sesión cifrados y fuera de Git. QR solo administrador, corta vigencia.
+Descartado por decisión empresarial: Mensajero debe ser un sistema propio y la captura de
+WhatsApp no dependerá de un SaaS intermedio.
 
-## Decisión recomendada
+### Gateway WhatsApp Web autohospedado
 
-Implementar primero contrato neutral y proveedor simulado. Evaluar Baileys en una cuenta
-de prueba para grupos existentes; adoptar producción solo tras prueba de compatibilidad y
-aceptación empresarial del riesgo sobre el número compartido. No implementar ahora un
-adaptador Cloud que prometa capacidades no verificadas.
+Decisión de trabajo. Servicio Node.js/TypeScript operado por MILAC, usando una librería
+compatible con WhatsApp Web/multi-device detrás de la interfaz `WhatsAppProvider`.
 
-Puerta de salida de milestone 4: demostrar descubrimiento de grupos reales, recepción,
-respuesta/cita, fotografía/audio/video/documento, reinicio, expiración de sesión, desconexión
-y deduplicación; documentar mensajes omitidos y no almacenar contenido de chats ignorados.
+Una librería open-source es una dependencia técnica local, no un servicio externo. Aun así,
+este mecanismo no es una integración oficial y tiene riesgos de cambios de protocolo,
+desconexión o medidas sobre la cuenta. Por ello la librería concreta debe ser reemplazable.
 
-`WhatsAppProvider`: getChat, getGroup, getGroups, getParticipants, getConnectionStatus,
-receiveMessage (suscripción), normalizeMessage (mínima), downloadMedia (stream bajo demanda).
-No contiene Gemini ni reglas de transporte. Servicio previsto: services/whatsapp-gateway.
+## Contrato
+
+`WhatsAppProvider` deberá ofrecer conceptualmente: estado, grupos, metadata/participantes,
+recepción, normalización mínima, descarga de media bajo demanda y reconexión.
+
+El gateway no contiene reglas de transporte, Gemini, eventos operativos ni SQL empresarial.
+
+## Regla de seguridad
+
+No vincular el número empresarial durante desarrollo inicial. Antes se debe demostrar con una
+sesión controlada: grupos, texto, citas, foto, audio, video, documento, IDs estables, reinicio,
+desconexión/reconexión, descarte de chats ignorados y deduplicación.
+
+La sesión y llaves del gateway viven fuera de Git.

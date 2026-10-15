@@ -1,58 +1,61 @@
 # Arquitectura de Mensajero
 
-## Alcance y decisiones
+## Decisiones vigentes
 
-Monolito modular Laravel 13 / PHP 8.4, SQL Server como única base operativa,
-Redis para colas, sesiones y cache; gateway Node.js/TypeScript independiente.
-UTC en persistencia y America/Mexico_City en presentación.
+Monolito modular Laravel 13 / PHP 8.4, SQL Server como única base operativa y Redis para
+colas/cache. Blade + Livewire + Alpine en la aplicación principal. El único componente
+separado será el gateway WhatsApp Node.js/TypeScript cuando la captura real lo requiera.
 
-**Problema:** operación pequeña con evidencia permanente y futura interpretación contextual.
-**Opciones:** SPA Inertia/Vue o Blade/Livewire/Alpine.
-**Ventajas de Blade/Livewire:** autorización y consultas en PHP, menor duplicación del dominio.
-**Desventajas:** interacciones dependientes del servidor.
-**Riesgos:** consultas repetidas y saturación si se usa polling indiscriminado.
-**Decisión:** Blade + Livewire + Alpine, con broadcasting privado en milestone 8.
-El inicio de sesión utiliza formularios Blade convencionales. No se requiere Horizon;
-workers Redis supervisados en Linux son suficientes inicialmente.
+Mensajero se instalará en servidor propio de MILAC y sus tablas convivirán dentro de una base
+SQL Server corporativa existente. Ningún objeto nuevo utilizará nombres genéricos: tablas,
+historial de migraciones y estructuras persistentes propias usan prefijo `mensajero_`.
+
+Temporalmente `MENSAJERO_AUTH_MODE=disabled`. Las rutas del producto pasan por un middleware
+propio; cuando el modo sea `corporate`, el sistema falla cerrado mientras no exista el adaptador.
+Así la ausencia temporal de login no queda mezclada con controladores o lógica de negocio.
 
 ```mermaid
 flowchart TD
-  WA[WhatsApp] --> GW[Gateway / WhatsAppProvider]
-  GW --> AL{Allowlist vigente}
-  AL -->|No / sticker| STOP[Descartar sin contenido persistido]
-  AL -->|Sí| RAW[SQL Server: RAW + outbox en transacción]
-  RAW --> ACK[ACK durable]
+  WA[WhatsApp Business] --> GW[Gateway autohospedado MILAC]
+  GW --> P[WhatsAppProvider]
+  P --> AL{Allowlist vigente}
+  AL -->|No / sticker| STOP[Descartar]
+  AL -->|Sí| RAW[SQL Server: RAW + outbox]
+  RAW --> ACK[Confirmación durable]
   RAW --> RELAY[Relay recuperable]
-  RELAY --> Q[Redis / workers idempotentes]
-  Q --> MSG[Normalización / mensajes originales]
-  MSG --> MEDIA[Descarga asíncrona / storage privado]
-  MSG --> UI[Mensajes originales / canal privado]
+  RELAY --> Q[Redis]
+  Q --> MSG[Mensajes originales]
+  MSG --> MEDIA[Storage privado]
+  MSG --> UI[Timeline RAW]
   MSG --> CTX[Contexto incremental]
-  CTX --> AI[Gemini / salida validada]
-  AI --> EVENTS[Eventos + fuentes + revisión humana]
+  CTX --> AI[Gemini]
+  AI --> EVENTS[Eventos + fuentes + revisión]
 ```
 
-## Límites de módulos
+## Garantía de captura
 
-Identity: usuarios, roles y acceso por chat. Connections: estado e historial del proveedor.
-Capture: allowlist, RAW inmutable, deduplicación y outbox. Messages: proyección consultable.
-Media: archivos privados, metadata, reintentos y salud. Intelligence: contextos, análisis,
-eventos y fuentes. Audit: actor, acción, fecha, motivo y cambios, sin secretos.
+`CaptureIncomingWhatsappEvent` consulta y bloquea la fila de allowlist dentro de la misma
+transacción que crea RAW y outbox. Un chat desconocido/no monitoreado/inactivo o un sticker
+termina antes de persistir contenido. El mismo evento usa una clave SHA-256 de deduplicación;
+los índices SQL protegen carreras y reintentos.
 
-RAW nunca se sobrescribe por normalización, eliminación remota o IA. Una edición o
-revocación es otro evento enlazado al mensaje. El usuario de aplicación no tendrá permisos
-de borrar evidencia; las migraciones usarán otra identidad. Backups SQL y storage coherentes,
-restauraciones ensayadas y retención sin purga automática hasta definir política empresarial.
+RAW y outbox se confirman juntos. Redis no participa en esa transacción y por tanto una caída
+de Redis no debe causar pérdida de evidencia ya recibida. El relay futuro puede duplicar
+entregas, pero los consumidores deberán ser idempotentes.
 
-## Garantías y límites
+## WhatsApp
 
-ACK solamente después de confirmar RAW y outbox en SQL. Redis no es la única copia de trabajo
-pendiente. El relay puede publicar repetidamente; cada consumidor debe ser idempotente.
-Si SQL falla: 503, no ACK y reintento del gateway. Si Redis falla: captura durable continúa.
-No es posible prometer cero pérdida antes de que el proveedor entregue el evento ni recuperar
-siempre archivos expirados. Medir y alertar esos intervalos, no ocultarlos.
+No se adoptará un proveedor administrado/SaaS. Los grupos actuales tienen alrededor de 30 o
+más participantes y ya existen; no se asume que la Groups API oficial pueda consumirlos.
+Se utilizará una integración WhatsApp Web autohospedada detrás de `WhatsAppProvider`.
+La librería concreta es reemplazable y no puede contener reglas de transporte, Gemini ni
+acceso directo al dominio.
 
-Filtrado doble: gateway antes de descargas o spool y backend antes de RAW. Ante allowlist
-desconocida, no procesar contenido. Consultar de nuevo y pedir redelivery si el proveedor lo
-permite. Disponibilidad y privacidad entran en conflicto durante una desconexión: prevalece
-no capturar chats no autorizados; registrar la brecha sin contenido.
+No conectar el número productivo antes de probar una sesión controlada.
+
+## Datos y archivos
+
+SQL Server: conexiones, chats/allowlist, contactos, RAW, outbox, mensajes, metadata y rutas.
+
+Storage/Flysystem: fotos, video, audio, documentos y cualquier binario. Las rutas guardadas
+son relativas a un `disk`; nunca rutas absolutas del servidor.

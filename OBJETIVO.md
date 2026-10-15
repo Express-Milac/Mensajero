@@ -3,43 +3,49 @@
 Convertir conversaciones de WhatsApp de la operación de transporte en evidencia organizada
 y, posteriormente, eventos operativos interpretados por Gemini y verificables por personas.
 
-El número es compartido con conversaciones ajenas. Solo aproximadamente 5–6 grupos
-seleccionados deben generar almacenamiento y procesamiento. Su selección será administrable
-por ID real del proveedor, nunca por nombres o IDs hardcodeados.
+El número es WhatsApp Business y es compartido con conversaciones ajenas. Solo los 5–6 grupos
+seleccionados deben generar almacenamiento y procesamiento. Esos grupos ya existen y tienen
+al menos alrededor de 30 participantes, por lo que no se diseñará el producto suponiendo que
+la Groups API oficial pueda reemplazarlos.
 
 ## Principios
 
 WhatsApp es la fuente. RAW conserva evidencia. Gemini interpreta. Mensajero presenta.
 El humano verifica. Primero capturar, conservar y trazar; después interpretar y presentar.
 
-- Allowlist default deny; ignorar chats no autorizados y stickers antes de persistencia.
-- Conservar tipos desconocidos de chats autorizados para poder normalizarlos después.
-- SQL Server almacena datos, metadata y rutas; archivos viven en storage privado portable.
-- Confirmar recepción después de RAW + outbox durable; procesos reintentables e idempotentes.
-- Mantener las vistas Mensajero IA y Mensajes originales permanentemente.
-- Cada evento IA enlaza exactamente a sus mensajes fuente; nunca modifica la evidencia.
-- Gemini caído no impide captura, multimedia ni consulta de originales.
+- Allowlist `default deny` antes de RAW, multimedia o IA.
+- Stickers se descartan incluso en grupos autorizados.
+- Tipos desconocidos de chats autorizados conservan RAW para evolución futura.
+- SQL Server guarda datos, metadata y rutas; archivos viven en storage privado portable.
+- RAW + outbox se confirman en una misma transacción antes de considerar durable el evento.
+- Redis y Gemini nunca son condición para aceptar RAW.
+- Cada evento IA deberá enlazar exactamente a sus mensajes fuente.
+- La vista Mensajes Originales será permanente.
+- El gateway WhatsApp será autohospedado por MILAC; no se utilizará un SaaS de terceros para
+  capturar los grupos operativos.
+- El dominio no conocerá la librería concreta del gateway: todo pasa por `WhatsAppProvider`.
 
-## Primer objetivo funcional: captura RAW controlada
+## Infraestructura confirmada
 
-Login corporativo con permisos propios, estado de conexión, descubrimiento y selección de
-grupos, recepción de mensajes, remitentes, fechas UTC, citas y contenido original. Fotografías,
-videos, audio y documentos fuera de SQL. Consulta paginada, búsqueda, filtros, actualizaciones
-en tiempo real y errores visibles. Stickers y chats no monitoreados no generan contenido,
-descargas, procesamiento IA ni eventos.
+Mensajero se desplegará en servidor propio de MILAC. Sus tablas vivirán en una base SQL Server
+corporativa ya existente, aisladas mediante nombres `mensajero_*`; no se crea una base nueva
+por defecto.
 
-## Aceptación operativa
+Temporalmente no existe login. `MENSAJERO_AUTH_MODE=disabled` permite avanzar en la captura.
+La aplicación conserva una frontera de autorización para integrar después el login corporativo
+sin reescribir rutas o lógica de negocio. El modo `corporate` falla cerrado hasta implementarse.
 
-Grupo A y B monitoreados: texto/foto y texto/audio se conservan con identidad, RAW y rutas
-de archivos comprobables. Grupo C ignorado: texto/video no se guardan ni descargan. Sticker
-de A: se descarta. Repetir un evento no duplica el mensaje. Mensajes tardíos se ordenan por
-sent_at; respuestas conservan referencia. Cambiar root de storage no modifica servicios.
+## Primer objetivo funcional
 
-Después: contexto incremental, salida Gemini estructurada validada, eventos con fuentes N:M
-y corrección humana auditada. Nunca considerar una maqueta como aceptación de captura real.
+Captura RAW controlada: conexión, descubrimiento de grupos, allowlist administrable, recepción,
+remitente, fecha UTC, citas, contenido original, multimedia fuera de SQL, consulta paginada,
+búsqueda, filtros y actualización en tiempo real.
 
-## Alcance tecnológico
+Aceptación mínima:
 
-Laravel/PHP 8.4+, SQL Server, Redis, Flysystem, Blade/Livewire/Alpine. Monolito modular con
-gateway WhatsApp Node/TypeScript separado cuando corresponda. Evitar microservicios extra.
-Los detalles y fases están en docs/architecture.md y docs/milestones.md.
+- Grupo A/B monitoreados: texto y multimedia se conservan.
+- Grupo C ignorado: no crea RAW, no descarga archivos y no llega a IA.
+- Sticker de un grupo monitoreado: no se almacena.
+- Repetir un evento: no duplica RAW ni outbox.
+- Desactivar un grupo: detiene nuevas capturas sin borrar evidencia previa.
+- Caída de Redis/Gemini: no impide persistir RAW en SQL.

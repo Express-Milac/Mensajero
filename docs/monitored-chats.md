@@ -1,20 +1,31 @@
 # Allowlist
 
-Default deny. Chat nuevo: solo metadata mínima para descubrimiento, monitored=false.
-La clave real es conexión + provider_chat_id; nombre interno es etiqueta modificable.
-Solo administrador cambia monitoreo/actividad; registrar antes/después, actor y fecha.
-Supervisor consulta/revisa eventos; visualizador consulta. Todos los endpoints, canales,
-descargas y búsquedas deben aplicar la misma política de acceso por chat.
+## Regla
 
-Aceptar únicamente `is_monitored && is_active`. Filtrar stickers incluso si el chat está
-autorizado. Desactivar conserva evidencia histórica, revoca nuevos trabajos y detiene
-multimedia/IA pendientes al volver a comprobar autorización en cada job. Reactivar no
-importa automáticamente historial. Invalidación de cache con versión y comprobación final
-en SQL durante captura evita que una cache vieja autorice nuevos mensajes.
+`default deny`.
 
-En una carrera entre desactivación y captura, ambos bloquean la fila de autorización dentro
-de transacción: el orden de commit define el instante de revocación.
+Un chat descubierto nace con `is_monitored = false` e `is_active = true`.
 
-Pruebas de aceptación previstas: monitoreado acepta; no monitoreado, privado y desactivado
-no crean RAW, mensajes, outbox ni llamadas media/IA; sticker nunca crea contenido; desconocido
-de chat autorizado conserva RAW. Fixtures explícitas, nunca IDs reales hardcodeados.
+Solo `is_monitored && is_active` permite persistir contenido. Un sticker se descarta incluso
+si el chat está autorizado. Un tipo desconocido se conserva si el chat sí está autorizado.
+
+La identidad de un chat es `connection_id + provider_chat_id`; el nombre visible o interno no
+forma parte de la clave y puede cambiar.
+
+## Estado implementado
+
+`mensajero_monitored_chats` contiene ID proveedor, tipo, nombres, monitoreo, actividad,
+`authorization_version` y first/last seen.
+
+`InboundMessageGate` aplica la política antes de RAW. `CaptureIncomingWhatsappEvent` vuelve a
+consultar la fila dentro de una transacción con bloqueo para evitar autorizar un mensaje usando
+un estado obsoleto.
+
+## Pendiente
+
+- descubrimiento real desde gateway;
+- UI para activar/desactivar;
+- auditoría append-only;
+- incremento de `authorization_version`;
+- endpoint mínimo para refrescar allowlist del gateway;
+- permisos por grupo cuando se integre login.
