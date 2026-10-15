@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Autenticacion\ControladorSesion;
+use App\Http\Controllers\Grupos\ControladorGrupos;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,12 @@ Route::post('/acceso', [ControladorSesion::class, 'iniciar'])
 Route::middleware('mensajero.acceso')->group(function () {
     Route::post('/salir', [ControladorSesion::class, 'salir'])->name('salir');
     Route::view('/tablero', 'tablero')->name('tablero');
+    Route::get('/grupos', [ControladorGrupos::class, 'indice'])->name('grupos.indice');
+
+    Route::patch('/grupos/{chat}/monitoreo', [ControladorGrupos::class, 'actualizarMonitoreo'])
+        ->whereNumber('chat')
+        ->middleware('mensajero.acceso:administrador')
+        ->name('grupos.monitoreo.actualizar');
 
     Route::get('/estado', function (DiagnosticoInfraestructura $diagnostico) {
         $comprobaciones = $diagnostico->comprobar();

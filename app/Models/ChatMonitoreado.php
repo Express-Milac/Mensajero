@@ -21,6 +21,7 @@ class ChatMonitoreado extends Model
         return [
             'es_monitoreado' => 'boolean',
             'es_activo' => 'boolean',
+            'version_autorizacion' => 'integer',
             'visto_primera_vez_en' => 'immutable_datetime',
             'visto_ultima_vez_en' => 'immutable_datetime',
         ];
@@ -39,5 +40,10 @@ class ChatMonitoreado extends Model
     public function mensajes(): HasMany
     {
         return $this->hasMany(MensajeWhatsapp::class, 'chat_monitoreado_id');
+    }
+
+    public function auditorias(): HasMany
+    {
+        return $this->hasMany(AuditoriaMonitoreoChat::class, 'chat_monitoreado_id');
     }
 }

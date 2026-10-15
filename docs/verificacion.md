@@ -1,42 +1,38 @@
 # Registro de validación
 
-## 15/10/2026 — refactorización en español y revisión multidisciplinaria
+## 15/10/2026 — puerta local completa aprobada
 
-### Ejecutado realmente
+Validación ejecutada en Windows con PHP 8.4.7 y una instancia desechable Microsoft SQL Server 2022 Developer en Docker.
 
 | Comprobación | Resultado |
 |---|---|
-| `php -l` sobre 41 archivos PHP del incremento inicial | Sin errores de sintaxis |
-| `php -l` tras correcciones de seguridad y nomenclatura | Sin errores de sintaxis |
-| Arnés aislado de lógica de captura | 9/9 comprobaciones aprobadas |
-| Auditoría del árbol tras renombres | Sin referencias a `Controllers/Auth`, `views/auth`, `_tmp` ni `.keep` |
-| Validación sintáctica independiente del YAML de CI | Estructura válida |
+| `composer validate --strict` | Aprobado |
+| `composer install` | Aprobado; lock instalable en la plataforma |
+| Sintaxis PHP sobre `app`, `database`, `routes` y `tests` | Sin errores |
+| `php vendor/laravel/pint/builds/pint --test` | 51 archivos aprobados |
+| PHPUnit unidad + funcional | 18 pruebas / 55 aserciones aprobadas |
+| `php artisan route:list --except-vendor` | 6 rutas cargadas correctamente antes del incremento de grupos |
+| `php artisan view:cache` | Aprobado |
+| `npm install` | 0 vulnerabilidades reportadas |
+| `npm run build` | Vite 8.3.4 aprobado; aviso opcional de `fontaine` no bloqueante |
+| Conexión Laravel → SQL Server | `mensajero_test` confirmada |
+| `phpunit.integracion.xml` | 3 pruebas / 39 aserciones aprobadas |
+| Repetición de integración | 3 pruebas / 39 aserciones aprobadas nuevamente |
 
-El arnés aislado comprobó: aceptación de chat autorizado, rechazo por lista permitida, rechazo de chat inactivo/desconocido, descarte de pegatinas, conservación de tipos futuros autorizados y comportamiento de deduplicación/hash.
+El entorno confirmó `mbstring`, `sqlsrv`, `pdo_sqlsrv` 5.13.3 y Microsoft ODBC Driver 18. La base utilizada fue exclusivamente `mensajero_test`; las pruebas mantienen una protección que exige el sufijo `_test` antes de migrar.
 
-### Validación automática en GitHub
+También se corrigió `config/app.php` para respetar `APP_TIMEZONE=America/Mexico_City` en vez de fijar UTC.
 
-Se agregó `.github/workflows/validacion.yml` para ejecutar Composer, sintaxis, PHPUnit, Pint, rutas y compilación de vistas. Se intentó ejecutar tanto por `push` como por `pull_request`, pero GitHub Actions respondió `startup_failure` antes de crear cualquier `job`. También se eliminó la dependencia de una acción externa de preparación de PHP y el resultado siguió siendo el mismo.
+### Estado de GitHub Actions
 
-La estructura YAML del workflow fue validada de forma independiente y no presentó errores estructurales. El conector disponible no permite consultar la configuración administrativa de permisos de GitHub Actions del repositorio/organización, por lo que esa causa debe comprobarse fuera de este entorno.
+`.github/workflows/validacion.yml` continúa presentando `startup_failure` antes de crear jobs. La validación local anterior demuestra que el código sí supera la puerta ejecutable, pero el CI debe repararse de forma independiente revisando permisos/runner a nivel GitHub.
 
-Por lo anterior, el fallo observado no certifica ni desaprueba PHPUnit/Pint: esas capas **no llegaron a ejecutarse** en GitHub Actions.
+## 15/10/2026 — refactorización en español y revisión multidisciplinaria
 
-### Limitación del contenedor local
+Antes de disponer del entorno local completo se ejecutaron comprobaciones aisladas de sintaxis, un arnés de captura con 9/9 casos aprobados, auditoría de referencias tras renombres y validación estructural del YAML de CI. Esas evidencias quedan como antecedentes; la puerta local completa descrita arriba las sustituye como certificación del estado base.
 
-El PHP disponible para el arnés aislado no incluía `mbstring`. La lógica se probó con un sustituto mínimo únicamente dentro del arnés. El runtime real de Mensajero debe incluir `mbstring`; no se modificó el código productivo para ocultar esa dependencia.
+## Próxima certificación
 
-### Aún pendiente de certificación
+El incremento de administración de grupos agrega sincronización de chats descubiertos, auditoría versionada y cambios de lista permitida. Debe ejecutarse nuevamente Pint, PHPUnit normal, migraciones y `phpunit.integracion.xml` sobre `mensajero_test` antes de continuar con la pasarela real.
 
-- `composer validate` / `composer install` en un entorno funcional.
-- PHPUnit completo de `tests/Unidad` y `tests/Funcional`.
-- Pint.
-- `php artisan route:list --except-vendor`.
-- `php artisan view:cache`.
-- Migraciones y `phpunit.integracion.xml` contra SQL Server desechable cuyo nombre termine en `_test`.
-
-No ejecutar migraciones de desarrollo contra la base corporativa productiva.
-
-## 13/10/2026 — resultado histórico
-
-Se habían reportado 9 pruebas/41 aserciones, Pint aprobado y vistas/rutas correctas para el código de aquel momento. Ese resultado histórico no certifica la refactorización del 15/10/2026.
+Nunca ejecutar migraciones de desarrollo contra la base corporativa productiva.

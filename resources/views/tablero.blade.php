@@ -3,13 +3,13 @@
     <section class="intro">
         <p class="eyebrow">CENTRO OPERATIVO</p>
         <h1>Todo empieza con<br>la evidencia.</h1>
-        <p class="muted">Hola, {{ $usuario?->nombre ?? 'equipo MILAC' }}. Esta instalación está en preparación.</p>
+        <p class="muted">Hola, {{ $usuario?->nombre ?? 'equipo MILAC' }}. La base de captura ya fue validada en SQL Server.</p>
     </section>
     <div class="grid">
         <section class="card">
-            <span class="badge">Hito 1</span>
+            <span class="badge">Hito 1 validado</span>
             <h2>Base del sistema</h2>
-            <p>Acceso controlado y configuración de infraestructura.</p>
+            <p>Acceso controlado, almacenamiento desacoplado y núcleo de captura probados.</p>
             @if(config('mensajero.autenticacion.modo') === 'deshabilitado')
                 <p class="fine"><strong>Acceso interno temporal:</strong> la autenticación corporativa aún no está integrada.</p>
             @else
@@ -18,9 +18,10 @@
             @can('administrar')<a href="{{ route('estado') }}">Consultar diagnóstico de servicios →</a>@endcan
         </section>
         <section class="card">
-            <span class="badge neutral">Sin conectar</span>
-            <h2>WhatsApp</h2>
-            <p>Aún no hay una sesión vinculada. El descubrimiento y la selección de grupos se habilitarán en la siguiente entrega.</p>
+            <span class="badge neutral">Preparando conexión</span>
+            <h2>Grupos de WhatsApp</h2>
+            <p>La lista permitida ya puede administrarse sobre los grupos que vaya descubriendo la pasarela.</p>
+            <a href="{{ route('grupos.indice') }}">Revisar grupos descubiertos →</a>
         </section>
     </div>
     <section class="card evidence">

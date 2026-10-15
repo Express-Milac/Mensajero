@@ -1,9 +1,9 @@
 # Revisión previa a integración — 15/10/2026
 
-Esta revisión aplica los agentes del directorio `agentes/` al estado actual de la rama de trabajo.
+Esta revisión aplica los agentes del directorio `agentes/` al estado de la rama de trabajo.
 
 ## Arquitectura
-Resultado: conforme con observaciones pendientes.
+Resultado: conforme para continuar con el siguiente incremento.
 
 - Se conserva SQL Server corporativo y prefijo `mensajero_`.
 - Las tablas, columnas y estados propios de dominio usan español.
@@ -11,49 +11,43 @@ Resultado: conforme con observaciones pendientes.
 - La captura mantiene lista permitida por defecto denegada y no depende de Redis/Gemini.
 - La ubicación de archivos sigue siendo configurable y fuera de SQL Server.
 - La autenticación queda separada del dominio para permitir la integración corporativa futura.
-
-Pendiente: certificar migraciones contra SQL Server `_test` y construir la pasarela real de WhatsApp.
+- La administración de grupos conserva `es_monitoreado=false` al descubrir nuevos chats y versiona cada cambio explícito de autorización.
 
 ## Revisión de código
 Hallazgos corregidos:
-- El tablero dereferenciaba un usuario inexistente cuando la autenticación estaba deshabilitada; ahora usa un estado interno seguro.
-- El comando para crear administradores validaba contra una tabla incorrecta; ahora usa el modelo `Usuario`.
-- `name` y marcas de tiempo propias del usuario fueron sustituidas por `nombre`, `creado_en` y `actualizado_en`.
-- El controlador y la vista de autenticación fueron movidos de `Auth`/`auth` a `Autenticacion`/`autenticacion`.
-- Pruebas, rutas, configuración, modelos y migraciones quedaron alineados con la nomenclatura vigente.
-- La auditoría del árbol no encontró referencias antiguas ni archivos temporales.
+- El tablero funciona sin usuario cuando la autenticación está temporalmente deshabilitada.
+- El comando para crear administradores usa el modelo `Usuario` y la tabla correcta.
+- Usuario y marcas de tiempo propias usan nomenclatura española.
+- Autenticación propia se encuentra bajo `Autenticacion`/`autenticacion`.
+- `APP_TIMEZONE` ya se obtiene del entorno y no queda fijado en UTC.
+- Modelos, migraciones, pruebas y rutas están alineados con el esquema vigente.
 
-Excepciones técnicas documentadas: identificadores exigidos por Laravel para autenticación/sesión, como `email`, `password`, `remember_token`, `user_id`, `payload` y equivalentes del contrato del framework.
+Las excepciones técnicas de nombres en inglés se limitan a contratos impuestos por Laravel, SQL Server, protocolos o proveedores.
 
 ## Pruebas
-Ejecutado en esta revisión:
-- `php -l` sobre el incremento y correcciones posteriores: sin errores de sintaxis reportados.
-- Arnés aislado de la lógica de captura: 9/9 comprobaciones aprobadas.
-- Auditoría estática de referencias tras renombres: limpia.
-- Validación sintáctica independiente de `.github/workflows/validacion.yml`: estructura válida.
+Puerta base ejecutada realmente:
+- Composer: validación e instalación aprobadas.
+- Sintaxis PHP: sin errores.
+- Pint: 51 archivos aprobados.
+- PHPUnit normal: 18 pruebas / 55 aserciones aprobadas.
+- Rutas y vistas: cargadas/compiladas correctamente.
+- Vite: compilación aprobada y `npm install` reportó 0 vulnerabilidades.
+- SQL Server 2022 `mensajero_test`: 3 pruebas / 39 aserciones aprobadas dos veces.
 
-La validación automática de GitHub se intentó por `push` y `pull_request`, pero terminó en `startup_failure` antes de crear jobs, incluso después de eliminar la acción externa de preparación de PHP. Por tanto, PHPUnit, Pint, rutas y compilación de vistas todavía no están certificados por CI. El conector disponible tampoco permite consultar la configuración administrativa de permisos de Actions, por lo que debe revisarse desde GitHub fuera de este entorno.
-
-El contenedor local disponible no incluye `mbstring`; el runtime de Mensajero debe incluir esa extensión.
-
-No ejecutado/certificado todavía: migraciones ni pruebas contra SQL Server `_test`.
+GitHub Actions continúa con `startup_failure` previo a jobs. Es una incidencia de infraestructura de CI separada y no invalida la certificación local.
 
 ## Seguridad
-Hallazgos corregidos:
-- El modo `corporativo` continúa fallando cerrado.
-- El modo temporal `deshabilitado` permite el tablero interno, pero no concede nivel administrador ni expone `/estado`.
-- Los diagnósticos no devuelven mensajes internos ni secretos.
-- La lista permitida se aplica antes de almacenar eventos crudos.
-- Las pegatinas se ignoran antes de persistencia.
-
-Condición de despliegue: el modo sin autenticación solo puede existir detrás de controles de red internos. Antes de una exposición no controlada debe integrarse identidad corporativa.
+- El modo `corporativo` falla cerrado.
+- El modo temporal `deshabilitado` no concede nivel administrador ni expone cambios de lista permitida por web.
+- Durante esta etapa, el servidor puede cambiar la lista permitida mediante un comando de consola auditado.
+- Los grupos descubiertos nacen no monitoreados y el redescubrimiento no cambia silenciosamente su autorización.
+- Cada cambio efectivo incrementa `version_autorizacion` y deja auditoría.
+- Las pegatinas se ignoran antes de persistencia y la lista permitida se aplica antes del evento crudo.
 
 ## UI/UX
-Hallazgos corregidos:
-- El tablero funciona sin usuario autenticado.
-- Se muestra el aviso “Acceso interno temporal” cuando corresponde.
-- Rutas principales, estructura propia de autenticación y textos visibles están en español.
-- La interfaz mantiene “Sin conectar” mientras no exista una sesión real de WhatsApp.
+- El tablero comunica que la base fue validada.
+- Existe una vista de grupos descubiertos con estados de monitoreo, actividad, versión de autorización y última detección.
+- En modo sin autenticación los cambios administrativos aparecen bloqueados en la web y se explica la operación temporal por consola.
 
 ## Dictamen
-**No integrar todavía a producción.** El refactor y la revisión multidisciplinaria están aplicados, pero falta la puerta ejecutable completa: Composer, PHPUnit, Pint, rutas/vistas y, especialmente, migraciones/pruebas contra SQL Server `_test`. Después de aprobarla puede continuar el descubrimiento y selección de grupos.
+**Puerta técnica base aprobada para continuar desarrollo e integración controlada en servidor de pruebas.** No se autoriza todavía conectar el número empresarial ni desplegar a producción: primero debe validarse el incremento de grupos, construir el punto interno HMAC/pasarela autohospedada y probar una sesión controlada.
