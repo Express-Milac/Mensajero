@@ -3,7 +3,7 @@
     <section class="intro">
         <p class="eyebrow">CENTRO OPERATIVO</p>
         <h1>Todo empieza con<br>la evidencia.</h1>
-        <p class="muted">Hola, {{ $usuario?->name ?? 'equipo MILAC' }}. Esta instalación está en preparación.</p>
+        <p class="muted">Hola, {{ $usuario?->nombre ?? 'equipo MILAC' }}. Esta instalación está en preparación.</p>
     </section>
     <div class="grid">
         <section class="card">
