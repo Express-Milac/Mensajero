@@ -1,56 +1,55 @@
-# Mensajero: instrucciones del proyecto
+# Mensajero — instrucciones para agentes
+
+Este archivo es la entrada técnica estándar para agentes de IA que continúen el proyecto. Todo el trabajo de dominio se realiza en español.
 
 ## Lectura obligatoria
 
-Leer en orden: README.md, OBJETIVO.md, RESUMEN.md, TASKS.md, docs/milestones.md,
-docs/architecture.md, docs/sql-server.md, docs/whatsapp-provider.md y
-docs/message-ingestion.md.
+Leer en este orden:
 
-## Decisiones empresariales vigentes
+1. `README.md`
+2. `OBJETIVO.md`
+3. `RESUMEN.md`
+4. `TAREAS.md`
+5. `docs/nomenclatura.md`
+6. los perfiles especializados de `AGENTES/`
+7. la documentación técnica aplicable al cambio
 
-- WhatsApp Business.
-- Grupos existentes con al menos ~30 participantes.
-- Sin proveedor/SaaS de terceros para captura WhatsApp.
-- Gateway Node/TypeScript autohospedado por MILAC detrás de `WhatsAppProvider`.
-- Servidor propio de MILAC.
-- Tablas dentro de una BD SQL Server corporativa existente, siempre `mensajero_*`.
-- Login pospuesto: `MENSAJERO_AUTH_MODE=disabled`. Conservar frontera para integración futura.
-  `corporate` debe fallar cerrado mientras el adaptador no esté implementado.
+## Agentes especializados
 
-Estas decisiones sustituyen la prioridad anterior de implementar el login corporativo antes
-de la captura.
+Antes de dar por terminado un incremento, aplicar las listas de revisión de:
 
-## Responsabilidades
+- `AGENTES/CREACION.md`
+- `AGENTES/REVISION.md`
+- `AGENTES/PRUEBAS.md`
+- `AGENTES/SEGURIDAD.md`
+- `AGENTES/UI_UX.md`
 
-- Arquitectura: monolito modular, contratos versionados y cambios reemplazables.
-- Desarrollo: incrementos funcionales, idempotentes y probados.
-- Datos: constraints, índices, transacciones, SQL Server real y evidencia inmutable.
-- Infraestructura: configuración portable, workers, backups, health y despliegue.
-- Seguridad: secretos fuera de Git, gateway autenticado, mínimo privilegio y auditoría.
+No son procesos autónomos en producción: son responsabilidades y controles obligatorios que deben aplicarse al código y dejar evidencia en pruebas/documentación.
 
-## Protocolo
+## Decisiones vigentes
 
-1. Revisar estado Git y TASKS antes de modificar.
-2. Trabajar por milestone; no implementar Gemini antes de estabilizar RAW.
-3. Resolver decisiones menores técnicamente.
-4. Ejecutar validaciones pertinentes y registrar lo realmente ejecutado.
-5. Actualizar RESUMEN/TASKS/milestones.
-6. No desplegar, migrar producción ni vincular el número empresarial como efecto secundario
-   de publicar código.
-7. Revisar secretos, sesiones, payloads y evidencia antes de commit.
+- WhatsApp Business con grupos existentes grandes.
+- Puerta de enlace WhatsApp autohospedada por MILAC; sin proveedor SaaS de captura.
+- Laravel/PHP 8.4+, SQL Server, Redis, Flysystem y Blade/Livewire.
+- Las tablas viven en una base SQL Server corporativa existente y usan prefijo `mensajero_`.
+- Tablas, columnas, clases, estados, rutas visibles y documentación propia en español.
+- Acceso temporal sin login; las acciones administrativas se restringen por IP hasta integrar autenticación corporativa.
+- Lista blanca por defecto denegado antes de evidencia cruda, multimedia e IA.
+- Adhesivos se ignoran.
+- Evidencia cruda y bandeja de salida se confirman en una misma transacción antes de considerar durable el evento.
+- Redis, Gemini y almacenamiento de multimedia no condicionan la persistencia inicial de evidencia cruda.
+- Archivos fuera de SQL Server.
 
-## Invariantes
+## Protocolo de trabajo
 
-- SQL Server único motor operativo.
-- No PostgreSQL ni SQLite como sustituto de certificación SQL Server.
-- Todas las tablas de Mensajero usan prefijo `mensajero_`.
-- Allowlist default deny antes de RAW, descargas o IA.
-- Sticker se descarta.
-- Tipo desconocido de chat autorizado conserva RAW.
-- RAW + outbox antes de ACK.
-- Redis y Gemini no son condición para RAW.
-- Archivos privados mediante Flysystem; SQL guarda metadata/rutas, nunca binarios.
-- El gateway es el único componente acoplado a la librería concreta de WhatsApp.
-- No conectar el número empresarial hasta completar prueba controlada de Milestone 4.
-- Login deshabilitado solo es aceptable durante esta etapa/control de red; antes de una
-  exposición no controlada debe integrarse autenticación definitiva.
+1. Revisar el estado de Git y las tareas vigentes.
+2. Modificar únicamente lo necesario para el incremento actual.
+3. Añadir o actualizar pruebas que cubran éxito y fallos.
+4. Ejecutar la validación disponible y registrar resultados reales.
+5. Revisar seguridad, UI/UX, nomenclatura y secretos.
+6. Actualizar documentación si cambió una decisión o estado.
+7. No desplegar ni tocar producción como efecto secundario de publicar código.
+
+## Criterio de preparación para servidor
+
+No considerar Mensajero listo para desplegar hasta que PHPUnit, Pint, vistas, rutas, Composer y la integración SQL Server temporal estén en verde y no haya fallos de seguridad o nomenclatura pendientes.
