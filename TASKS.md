@@ -13,10 +13,11 @@ Estado: 15/10/2026. `[x]` significa código entregado en el alcance indicado; no
 - [x] `Usuario`, fábrica, migración, comando y pruebas alineados con `nombre`/marcas de tiempo propias en español.
 - [x] Estructura propia de autenticación movida de `Auth`/`auth` a `Autenticacion`/`autenticacion`.
 - [x] Arnés aislado de captura con 9/9 comprobaciones aprobadas y auditoría de referencias limpia.
-- [x] Flujo de CI definido para Composer/PHPUnit/Pint/rutas/vistas.
+- [x] Flujo de CI definido para Composer/PHPUnit/Pint/rutas/vistas y YAML validado estructuralmente.
 
 ## Incidencia de infraestructura de validación
 - [ ] Resolver `startup_failure` de GitHub Actions a nivel repositorio/organización/runner. El fallo ocurre antes de crear jobs y no constituye un fallo de PHPUnit/Pint.
+- [ ] Revisar desde GitHub la configuración administrativa de permisos/uso de Actions; el conector disponible no expone esa configuración.
 - [ ] Confirmar que el entorno de validación y el servidor incluyan `mbstring`.
 
 ## Puerta inmediata antes de integración al servidor
