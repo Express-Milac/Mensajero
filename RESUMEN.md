@@ -30,7 +30,9 @@ WhatsApp Business; 5–6 grupos seleccionados; grupos existentes de 30+ particip
 - Sintaxis PHP revisada sin errores en el incremento y correcciones posteriores.
 - Arnés aislado de lógica de captura: 9/9 comprobaciones aprobadas.
 - Auditoría de referencias tras renombres: limpia.
+- Estructura YAML del workflow validada de forma independiente.
 - GitHub Actions se intentó por `push` y `pull_request`, pero terminó en `startup_failure` antes de crear jobs. PHPUnit/Pint/rutas/vistas no se consideran ejecutados por CI.
+- El conector disponible no permite consultar la configuración administrativa de permisos de Actions; revisar esa configuración desde GitHub.
 - El contenedor local disponible no incluye `mbstring`; el runtime real debe incluir esa extensión.
 
 ## Siguiente puerta obligatoria
