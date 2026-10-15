@@ -11,4 +11,7 @@ Coordinar arquitectura, creación, revisión, pruebas, seguridad y UI/UX antes d
 5. Seguridad revisa exposición y datos.
 6. UI/UX revisa flujos y mensajes.
 
-Un incremento no está listo para integración al servidor si existe un hallazgo crítico abierto o si no se ha probado la migración contra SQL Server `_test` cuando el cambio toca esquema.
+## Criterio de salida
+Un incremento no está listo para integración al servidor si existe un hallazgo crítico abierto, si las pruebas necesarias no fueron realmente ejecutadas o si no se ha probado la migración contra SQL Server `_test` cuando el cambio toca esquema.
+
+Los fallos de infraestructura del sistema de CI deben registrarse por separado. Un workflow que termina antes de crear jobs no aprueba ni desaprueba el código.
