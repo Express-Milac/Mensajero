@@ -1,79 +1,71 @@
 # Mensajero
 
-Sistema interno de evidencia operativa para transporte. SQL Server guarda datos y referencias;
-storage privado guarda archivos; allowlist delimita captura; RAW permanece como fuente verificable.
+Sistema interno de MILAC para convertir conversaciones operativas de WhatsApp Business en evidencia organizada y, posteriormente, eventos interpretados por IA que siempre puedan verificarse contra los mensajes originales.
 
-## Continuar con una IA
+## Principios
 
-Leer [AGENTS.md](AGENTS.md) para instrucciones y responsabilidades, [OBJETIVO.md](OBJETIVO.md)
-para alcance y aceptación, [RESUMEN.md](RESUMEN.md) para estado real y [TASKS.md](TASKS.md)
-para el siguiente trabajo. [CONTRIBUTING.md](CONTRIBUTING.md) explica validaciones y entrega.
-No es necesario disponer del historial del chat para continuar.
+- WhatsApp es la fuente.
+- La evidencia cruda se conserva antes de normalizar o interpretar.
+- La lista blanca determina qué conversaciones consumen recursos.
+- Los adhesivos se ignoran.
+- SQL Server guarda datos estructurados, metadatos y rutas; los archivos viven fuera de la base.
+- La bandeja de salida y la evidencia cruda se confirman en una misma transacción.
+- Redis, Gemini y multimedia no condicionan la captura inicial.
+- Toda la nomenclatura propia del dominio se mantiene en español.
 
-## Entrega actual: arquitectura y base de aplicación
+## Decisiones vigentes
 
-Siguiendo el requerimiento, se inicia por milestones 0 y 1, sin mezclar todas las fases.
-Implementado: Laravel 13 / PHP 8.4, dependencias bloqueadas en composer.lock, acceso mediante
-sesión, roles Administrador/Supervisor/Visualizador, rate limit de login, comando para crear
-administrador, configuración SQL Server/Redis, disco privado configurable y diagnóstico
-web/CLI. Blade para acceso e inicio; Livewire instalado para las próximas vistas operativas.
+- Número: WhatsApp Business compartido con conversaciones ajenas.
+- Grupos de interés: aproximadamente 5–6 grupos existentes, con 30 o más participantes.
+- Captura: puerta de enlace autohospedada por MILAC; no se utilizará un proveedor SaaS de captura.
+- Aplicación: Laravel 13 / PHP 8.4+.
+- Datos: Microsoft SQL Server dentro de una base corporativa existente.
+- Colas y caché: Redis.
+- Archivos: Laravel Filesystem/Flysystem, almacenamiento privado y portable.
+- Interfaz: Blade + Livewire/Alpine para las vistas operativas.
+- Login: temporalmente deshabilitado; las acciones administrativas se restringen por IP hasta integrar autenticación corporativa.
 
-**Todavía no captura WhatsApp.** No hay gateway conectado, ingestión, timeline, multimedia,
-broadcasting ni llamadas Gemini. El modelo operativo y sus contratos están diseñados en docs,
-no presentados como funcionalidad implementada. No hay datos demo ni credenciales por defecto.
+## Tablas actuales
 
-## Inicio
+- `mensajero_usuarios`
+- `mensajero_conexiones_whatsapp`
+- `mensajero_conversaciones_monitoreadas`
+- `mensajero_contactos_whatsapp`
+- `mensajero_eventos_crudos_whatsapp`
+- `mensajero_bandeja_salida`
+- `mensajero_mensajes_whatsapp`
+- `mensajero_migraciones`
 
-Requiere PHP con sqlsrv/pdo_sqlsrv/fileinfo, ODBC 18, SQL Server y Redis.
-Consultar [instalación detallada](docs/deployment.md).
+No se crean tablas SQL para caché, sesiones o colas ordinarias porque esas responsabilidades se asignan a Redis.
 
-```powershell
+## Continuidad por IA
+
+Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TAREAS.md`, `PRUEBAS.md`, `CONTRIBUCION.md`, `docs/nomenclatura.md` y los perfiles de `AGENTES/`.
+
+## Desarrollo local
+
+```text
 composer install
 Copy-Item .env.example .env
 php artisan key:generate
-# Completar credenciales SQL y Redis en .env.
-docker compose up -d redis
-php artisan migrate
-php artisan mensajero:create-admin
 php artisan serve --host=127.0.0.1
 ```
 
-Abrir http://localhost:8000/login. No se debe exponer `artisan serve` en producción.
-No ejecutar migraciones con credenciales empresariales sin preparar antes base y permisos.
+No ejecutar migraciones contra una base corporativa hasta validar primero en una base desechable terminada en `_test`.
 
-## Pruebas y estado
+## Validación
 
-```powershell
-php -d extension=fileinfo vendor/phpunit/phpunit/phpunit
-php artisan route:list --except-vendor
+```text
+php artisan test
+php vendor/laravel/pint/builds/pint --test
 php artisan view:cache
-php artisan mensajero:health
+php artisan route:list --except-vendor
+composer validate --strict
+php artisan test --configuration=phpunit.integration.xml
 ```
 
-Resultado local: **9 pruebas aisladas, 41 assertions, todas pasan**. Rutas, vistas y manifest
-Composer validados. Las pruebas usan dobles para servicios y no utilizan SQLite ni sustituyen
-la validación SQL Server. Suite SQL real disponible en `phpunit.integration.xml`; requiere
-base desechable terminada en `_test`. No ejecutada en este entorno.
+La última orden requiere SQL Server real de pruebas. GitHub Actions tiene una validación preparada para levantar un SQL Server temporal; no se declarará la etapa como aprobada hasta que esa ejecución quede en verde.
 
-Bloqueos de entorno: drivers SQL Server no instalados, Docker daemon no iniciado, sin datos
-de conexión SQL ni sesión WhatsApp. Milestone 1 **no está certificado de extremo a extremo**.
-Milestone 0 documentado; compatibilidad del proveedor con cuenta real sigue pendiente.
+## Estado
 
-## Documentación
-
-- [Revisión de login y SQL corporativos: IAVE/GPSGestor](docs/milac-integration-review.md)
-
-- [Arquitectura y decisiones](docs/architecture.md)
-- [Modelo SQL Server](docs/sql-server.md)
-- [Análisis del proveedor WhatsApp](docs/whatsapp-provider.md)
-- [Allowlist](docs/monitored-chats.md)
-- [Contrato e ingestión durable](docs/message-ingestion.md)
-- [Storage portable](docs/storage.md)
-- [Pipeline IA](docs/ai-pipeline.md)
-- [Despliegue y operación](docs/deployment.md)
-- [Milestones y aceptación](docs/milestones.md)
-
-Próximo trabajo: adaptar login y autorización al patrón corporativo documentado y preparar
-reutilización de la conexión existente, sin exigir secretos para avanzar con pruebas aisladas.
-Después certificar milestone 1 con SQL/Redis reales y continuar allowlist (2), RAW/outbox (3)
-y gateway (4), antes de multimedia y Gemini.
+El núcleo de captura, lista blanca, evidencia cruda, bandeja de salida y pruebas está en refactor previo al servidor. El número empresarial de WhatsApp todavía no se conecta y no se han ejecutado migraciones productivas.

@@ -1,45 +1,52 @@
 # Objetivo de Mensajero
 
-Convertir conversaciones de WhatsApp de la operación de transporte en evidencia organizada
-y, posteriormente, eventos operativos interpretados por Gemini y verificables por personas.
+Mensajero debe convertir conversaciones de WhatsApp Business relacionadas con la operación de transporte en evidencia organizada y, después, en eventos operativos interpretados por inteligencia artificial sin alterar ni sustituir la fuente original.
 
-El número es compartido con conversaciones ajenas. Solo aproximadamente 5–6 grupos
-seleccionados deben generar almacenamiento y procesamiento. Su selección será administrable
-por ID real del proveedor, nunca por nombres o IDs hardcodeados.
+## Contexto
 
-## Principios
+El número de WhatsApp es compartido y participa en conversaciones ajenas al sistema. Solo aproximadamente 5–6 grupos seleccionados deben producir almacenamiento y procesamiento. Los grupos existentes tienen al menos alrededor de 30 participantes, por lo que la captura se diseñará mediante una puerta de enlace autohospedada por MILAC y desacoplada del núcleo de Laravel.
 
-WhatsApp es la fuente. RAW conserva evidencia. Gemini interpreta. Mensajero presenta.
-El humano verifica. Primero capturar, conservar y trazar; después interpretar y presentar.
+## Principios obligatorios
 
-- Allowlist default deny; ignorar chats no autorizados y stickers antes de persistencia.
-- Conservar tipos desconocidos de chats autorizados para poder normalizarlos después.
-- SQL Server almacena datos, metadata y rutas; archivos viven en storage privado portable.
-- Confirmar recepción después de RAW + outbox durable; procesos reintentables e idempotentes.
-- Mantener las vistas Mensajero IA y Mensajes originales permanentemente.
-- Cada evento IA enlaza exactamente a sus mensajes fuente; nunca modifica la evidencia.
-- Gemini caído no impide captura, multimedia ni consulta de originales.
+- Lista blanca con denegación por defecto.
+- Adhesivos ignorados antes de persistencia y descargas.
+- Tipos desconocidos de conversaciones autorizadas conservan evidencia cruda.
+- SQL Server almacena datos estructurados, metadatos y rutas, nunca archivos binarios operativos.
+- Los archivos viven en almacenamiento privado configurable mediante Flysystem.
+- Evidencia cruda + bandeja de salida se confirman en una misma transacción antes de reconocer recepción durable.
+- Reintentos e idempotencia evitan duplicados.
+- Gemini puede fallar sin impedir captura ni consulta de mensajes originales.
+- Mensajes originales permanecerá disponible incluso cuando exista Mensajero IA.
+- Cada evento de IA deberá señalar exactamente los mensajes que lo sustentan.
+- La nomenclatura propia del sistema se mantiene en español.
 
-## Primer objetivo funcional: captura RAW controlada
+## Primer objetivo funcional
 
-Login corporativo con permisos propios, estado de conexión, descubrimiento y selección de
-grupos, recepción de mensajes, remitentes, fechas UTC, citas y contenido original. Fotografías,
-videos, audio y documentos fuera de SQL. Consulta paginada, búsqueda, filtros, actualizaciones
-en tiempo real y errores visibles. Stickers y chats no monitoreados no generan contenido,
-descargas, procesamiento IA ni eventos.
+Captura cruda controlada con:
 
-## Aceptación operativa
+- conexión WhatsApp;
+- descubrimiento de conversaciones;
+- administración de lista blanca;
+- identificación de conversación y remitente;
+- fechas consistentes;
+- texto y referencias de mensajes citados;
+- multimedia fuera de SQL Server;
+- consulta paginada de mensajes originales;
+- filtros y búsqueda;
+- actualizaciones en tiempo real;
+- errores y salud visibles.
 
-Grupo A y B monitoreados: texto/foto y texto/audio se conservan con identidad, RAW y rutas
-de archivos comprobables. Grupo C ignorado: texto/video no se guardan ni descargan. Sticker
-de A: se descarta. Repetir un evento no duplica el mensaje. Mensajes tardíos se ordenan por
-sent_at; respuestas conservan referencia. Cambiar root de storage no modifica servicios.
+## Aceptación mínima
 
-Después: contexto incremental, salida Gemini estructurada validada, eventos con fuentes N:M
-y corrección humana auditada. Nunca considerar una maqueta como aceptación de captura real.
+- Conversación A monitoreada: texto y fotografía se conservan.
+- Conversación B monitoreada: texto y audio se conservan.
+- Conversación C no monitoreada: no crea evidencia, no descarga archivos y no llega a IA.
+- Adhesivo en una conversación monitoreada: se descarta.
+- Evento repetido: no duplica evidencia ni bandeja de salida.
+- Conversación desactivada: deja de aceptar nuevas capturas y conserva el historial previo.
+- Caída de Redis o Gemini: SQL Server todavía puede conservar evidencia cruda.
+- Cambiar la raíz de almacenamiento no requiere reescribir la lógica empresarial.
 
-## Alcance tecnológico
+## Tecnología
 
-Laravel/PHP 8.4+, SQL Server, Redis, Flysystem, Blade/Livewire/Alpine. Monolito modular con
-gateway WhatsApp Node/TypeScript separado cuando corresponda. Evitar microservicios extra.
-Los detalles y fases están en docs/architecture.md y docs/milestones.md.
+Laravel/PHP 8.4+, Microsoft SQL Server, Redis, Flysystem y Blade/Livewire/Alpine. El núcleo seguirá siendo un monolito modular; la puerta de enlace WhatsApp será el único componente separado que dependa de la librería concreta elegida para la sesión.

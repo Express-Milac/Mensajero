@@ -8,6 +8,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // No shared default passwords. Use mensajero:create-admin.
+        // No se crean contraseñas compartidas. Para pruebas locales use mensajero:crear-administrador.
     }
 }
