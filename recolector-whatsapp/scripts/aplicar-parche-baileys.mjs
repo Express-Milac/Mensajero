@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export function corregirRecepcionBaileys(contenido) {
   const reglas = [
@@ -64,7 +65,10 @@ async function principal() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname.replace(/^\/(.:)/, '$1'))) {
+const ejecutadoDirectamente = process.argv[1]
+  && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (ejecutadoDirectamente) {
   principal().catch((error) => {
     console.error(`[Mensajero] No fue posible aplicar el parche Baileys: ${error.message}`);
     process.exitCode = 1;
