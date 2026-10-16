@@ -9,6 +9,7 @@ import type { Logger } from 'pino';
 import {
   analizarSemanticaMensaje,
   desarrollarContenido,
+  esContenidoInternoWhatsapp,
   fechaIsoDesdeMarca,
 } from '../mensajes.js';
 import type {
@@ -124,6 +125,13 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     socket.ev.on('messages.upsert', (evento) => {
       void this.manejarMensajes(evento.messages, evento.type);
     });
+
+    // Baileys 6.7.24 publica MESSAGE_EDIT ya descifrado en messages.update.
+    // La envoltura secretEncryptedMessage que puede aparecer en messages.upsert
+    // es solo un artefacto interno y se descarta en normalizarMensaje().
+    socket.ev.on('messages.update', (actualizaciones) => {
+      void this.manejarActualizacionesMensajes(actualizaciones);
+    });
   }
 
   private async manejarActualizacionConexion(actualizacion: {
@@ -222,6 +230,51 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     );
   }
 
+  private async manejarActualizacionesMensajes(actualizaciones: unknown[]): Promise<void> {
+    if (this.manejadores === null) {
+      return;
+    }
+
+    if (actualizaciones.length > 0) {
+      await this.confirmarRecepcionActiva('messages_update');
+    }
+
+    let candidatosGrupo = 0;
+    let normalizadosGrupo = 0;
+    let ediciones = 0;
+
+    for (const actualizacion of actualizaciones) {
+      try {
+        if (this.esActualizacionCandidataGrupo(actualizacion)) {
+          candidatosGrupo += 1;
+        }
+
+        const normalizado = this.normalizarActualizacionMensaje(actualizacion);
+
+        if (normalizado !== null) {
+          normalizadosGrupo += 1;
+          if (normalizado.tipoEvento === 'edicion') {
+            ediciones += 1;
+          }
+          await this.manejadores.alMensaje(normalizado);
+        }
+      } catch (error) {
+        this.logger.error({ error }, 'No fue posible normalizar una actualización de mensaje de WhatsApp.');
+      }
+    }
+
+    this.logger.info(
+      {
+        tipo_evento: 'messages.update',
+        recibidos: actualizaciones.length,
+        candidatos_grupo: candidatosGrupo,
+        normalizados_grupo: normalizadosGrupo,
+        ediciones,
+      },
+      'Lote de actualizaciones de mensajes de WhatsApp procesado.',
+    );
+  }
+
   private esCandidatoGrupo(valor: unknown): boolean {
     if (typeof valor !== 'object' || valor === null) {
       return false;
@@ -235,6 +288,22 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     return Boolean(
       mensaje.key?.remoteJid?.endsWith('@g.us')
       && mensaje.message,
+    );
+  }
+
+  private esActualizacionCandidataGrupo(valor: unknown): boolean {
+    if (typeof valor !== 'object' || valor === null) {
+      return false;
+    }
+
+    const actualizacion = valor as {
+      key?: { remoteJid?: string | null };
+      update?: { message?: unknown };
+    };
+
+    return Boolean(
+      actualizacion.key?.remoteJid?.endsWith('@g.us')
+      && actualizacion.update?.message,
     );
   }
 
@@ -256,6 +325,14 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     const chatId = mensaje.key?.remoteJid;
 
     if (!chatId || !chatId.endsWith('@g.us') || !mensaje.message) {
+      return null;
+    }
+
+    if (esContenidoInternoWhatsapp(mensaje.message)) {
+      this.logger.info(
+        { motivo: 'envoltura_interna_whatsapp' },
+        'Evento interno de WhatsApp descartado antes de la normalización de usuario.',
+      );
       return null;
     }
 
@@ -282,6 +359,71 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       contenidoCrudo,
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
       multimedia: this.crearFuenteMultimedia(valor, mensaje.message, semantica.tipoMensaje),
+    };
+  }
+
+  private normalizarActualizacionMensaje(valor: unknown): MensajeProveedor | null {
+    if (typeof valor !== 'object' || valor === null) {
+      return null;
+    }
+
+    const actualizacion = valor as {
+      key?: {
+        remoteJid?: string | null;
+        id?: string | null;
+        participant?: string | null;
+        participantAlt?: string | null;
+      };
+      update?: {
+        message?: unknown;
+        messageTimestamp?: unknown;
+      };
+    };
+    const chatId = actualizacion.key?.remoteJid;
+    const contenido = actualizacion.update?.message;
+
+    if (!chatId || !chatId.endsWith('@g.us') || !contenido) {
+      return null;
+    }
+
+    const semantica = analizarSemanticaMensaje(contenido);
+
+    // messages.update también transporta estados/recibos. Solo promovemos a evento
+    // conversacional las actualizaciones que realmente contienen una edición.
+    if (semantica.tipoEvento !== 'edicion') {
+      return null;
+    }
+
+    const mensajeObjetivoProveedorId = semantica.mensajeObjetivoProveedorId
+      ?? actualizacion.key?.id
+      ?? null;
+    const mensajeCompleto = {
+      key: actualizacion.key,
+      message: contenido,
+      messageTimestamp: actualizacion.update?.messageTimestamp,
+    };
+    const contenidoCrudo = JSON.stringify(mensajeCompleto, BufferJSON.replacer);
+
+    if (contenidoCrudo === undefined) {
+      return null;
+    }
+
+    const remitenteProveedorId = actualizacion.key?.participant
+      ?? actualizacion.key?.participantAlt
+      ?? null;
+
+    return {
+      chatId,
+      tipoEvento: 'edicion',
+      tipoMensaje: semantica.tipoMensaje,
+      eventoExternoId: actualizacion.key?.id ?? null,
+      mensajeProveedorId: actualizacion.key?.id ?? null,
+      remitenteProveedorId,
+      mensajeCitadoProveedorId: semantica.mensajeCitadoProveedorId,
+      mensajeObjetivoProveedorId,
+      contenidoCrudo,
+      recibidoEn: fechaIsoDesdeMarca(actualizacion.update?.messageTimestamp),
+      multimedia: null,
     };
   }
 
