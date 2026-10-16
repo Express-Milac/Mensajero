@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/aplicar-parche-baileys.mjs",
     "desarrollo": "tsx src/principal.ts",
     "verificar": "tsc --noEmit",
     "construir": "tsc",
