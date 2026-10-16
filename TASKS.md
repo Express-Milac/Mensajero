@@ -94,7 +94,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Reforzada la configuración del recolector: al arrancar informa si `RECOLECTOR_RUTA_ALMACENAMIENTO` proviene de un override explícito o del valor predeterminado, sin exponer secretos; `.env.example` recalca que Laravel y recolector deben compartir la misma raíz física y que variables temporales de PowerShell se heredan por sesión.
 - [x] Validación posterior al refuerzo de configuración: `git pull` aplicado sin conflictos; `npm run verificar` aprobado y `npm run pruebas` mantiene 13/13 pruebas, 0 fallos, 0 omitidas y 0 canceladas.
 
-## Incremento semántico de mensajes: código entregado, pendiente de validación local
+## Incremento semántico de mensajes: código entregado y validado automáticamente
 - [x] Separado `tipo_evento` de `tipo_mensaje`: `mensaje`, `edicion`, `eliminacion`, `reaccion` y `otro` describen lo ocurrido; `texto`, `foto`, `ubicacion`, `contacto`, etc. describen el contenido.
 - [x] El recolector extrae y conserva de forma indexable `id_remitente_proveedor`, `id_mensaje_citado_proveedor` e `id_mensaje_objetivo_proveedor`, manteniendo íntegro `contenido_crudo`.
 - [x] Respuestas/citas detectan `contextInfo.stanzaId`; reacciones conservan el ID objetivo; eliminaciones `REVOKE` conservan el ID objetivo; ediciones por `protocolMessage` conservan objetivo y tipo del contenido editado.
@@ -104,8 +104,10 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Nueva migración `2026_10_16_000800_enriquecer_eventos_crudos_whatsapp`: agrega a `mensajero_eventos_crudos_whatsapp` `tipo_mensaje`, remitente, mensaje citado y mensaje objetivo, con índices de consulta. Los eventos históricos quedan `NULL`; no se inventa un backfill.
 - [x] Pruebas TypeScript agregadas para citas, ediciones, eliminaciones, reacciones, ubicaciones, contactos y tipos desconocidos.
 - [x] Prueba SQL Server `SemanticaRecolectorSqlServerTest` agregada: valida mensaje original + dos ediciones con el mismo ID + eliminación + respuesta citada, y que solo la repetición idéntica sea deduplicada.
-- [ ] Validar localmente `npm run verificar` y `npm run pruebas`; se esperan 16 pruebas del recolector.
-- [ ] Aplicar la migración `000800` únicamente sobre `mensajero_test` y ejecutar la suite SQL Server de integración.
+- [x] Validación local del recolector: `npm run verificar` sin errores y `npm run pruebas` 16/16, 0 fallos, incluidas cita, edición, eliminación, reacción, ubicación, contacto y desconocido.
+- [x] Migración `2026_10_16_000800_enriquecer_eventos_crudos_whatsapp` aplicada exclusivamente sobre `mensajero_test`; Pint aprobó 89 archivos y PHPUnit normal aprobó 32/32 pruebas con 78 aserciones.
+- [x] Corregida únicamente la prueba semántica para cumplir el contrato de seguridad de `X-Mensajero-Id` (mínimo 16 caracteres), sin relajar HMAC ni middleware.
+- [x] Integración SQL Server semántica validada: `SemanticaRecolectorSqlServerTest` 1/1 con 26 aserciones; suite completa `phpunit.integracion.xml` 9/9 con 158 aserciones y 0 fallos.
 - [ ] Certificar con mensajes reales del grupo de prueba una respuesta/cita, una edición, una eliminación, una ubicación y un contacto.
 
 ## Bloqueadores restantes antes de grupos reales
