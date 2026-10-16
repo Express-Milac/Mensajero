@@ -6,6 +6,7 @@ export interface ConfiguracionRecolector {
   claveConexion: string;
   rutaDatos: string;
   rutaSesion: string;
+  rutaAlmacenamiento: string;
   intervaloAutorizacionesMs: number;
   intervaloGruposMs: number;
   intervaloColaMs: number;
@@ -48,6 +49,10 @@ export function cargarConfiguracion(): ConfiguracionRecolector {
   }
 
   const rutaDatos = resolve(process.cwd(), process.env.RECOLECTOR_RUTA_DATOS?.trim() || './datos');
+  const rutaAlmacenamiento = resolve(
+    process.cwd(),
+    process.env.RECOLECTOR_RUTA_ALMACENAMIENTO?.trim() || '../storage/app/mensajero',
+  );
 
   return {
     mensajeroUrl: requerido('MENSAJERO_URL').replace(/\/+$/, ''),
@@ -55,6 +60,7 @@ export function cargarConfiguracion(): ConfiguracionRecolector {
     claveConexion: requerido('MENSAJERO_CLAVE_CONEXION'),
     rutaDatos,
     rutaSesion: resolve(rutaDatos, 'sesion'),
+    rutaAlmacenamiento,
     intervaloAutorizacionesMs: enteroPositivo('RECOLECTOR_INTERVALO_AUTORIZACIONES_MS', 15_000),
     intervaloGruposMs: enteroPositivo('RECOLECTOR_INTERVALO_GRUPOS_MS', 300_000),
     intervaloColaMs: enteroPositivo('RECOLECTOR_INTERVALO_COLA_MS', 2_000),
