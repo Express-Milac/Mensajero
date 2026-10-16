@@ -65,7 +65,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Lote normal de 10 mensajes de texto confirmado sin pérdida: SQL pasó de 1 a 11, los 10 fueron clasificados como `texto`, normalizados como grupo y la cola terminó con 0 tareas JSON.
 - [x] Recuperación tras caída de Laravel validada con 5 mensajes: SQL permaneció en 11 mientras Laravel estaba fuera y, tras restaurarlo, subió a 16; la cola final quedó en 0.
 - [x] Cola durable durante caída de Laravel certificada de forma instrumentada con 2 mensajes: con Laravel apagado quedaron exactamente 2 tareas `/api/pasarela/v1/eventos` en disco; al restaurar Laravel se recibieron ambos POST, SQL pasó de 16 a 18 y la cola volvió a 0.
-- [ ] Reiniciar recolector de forma abrupta y verificar periodo de integridad `reinicio_no_confirmado`.
+- [x] Reinicio abrupto del recolector certificado: antes había 0 periodos `reinicio_no_confirmado`; tras matar los procesos Node a la fuerza, esperar 10 s y reiniciar sin nuevo QR, se creó exactamente 1 periodo para la conexión 10014 (`id=5`) con intervalo `2026-10-16 18:49:44.846000` → `2026-10-16 18:50:27.933000`; recepción confirmada y cola final en 0.
+- [ ] Enviar mensajes durante una caída real del proceso recolector y verificar recuperación offline al reiniciar, manteniendo marcado el periodo de integridad.
 
 ## Bloqueador antes de grupos reales
 - [ ] Descargar foto/video/audio/documento en el recolector inmediatamente después de autorizar el grupo.
