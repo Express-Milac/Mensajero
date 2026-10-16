@@ -17,6 +17,9 @@ final readonly class EventoWhatsappEntrante
         public CarbonImmutable $recibidoEn,
         public string $versionContrato = 'v1',
         public ?ArchivoWhatsappEntrante $archivo = null,
+        public ?string $remitenteProveedorId = null,
+        public ?string $mensajeCitadoProveedorId = null,
+        public ?string $mensajeObjetivoProveedorId = null,
     ) {}
 
     public function hashContenidoSha256(): string
@@ -26,16 +29,29 @@ final readonly class EventoWhatsappEntrante
 
     public function claveDeduplicacion(): string
     {
-        if ($this->eventoExternoId !== null && $this->eventoExternoId !== '') {
-            return hash('sha256', 'evento:'.$this->eventoExternoId);
+        if ($this->tipoEvento === 'mensaje') {
+            if ($this->eventoExternoId !== null && $this->eventoExternoId !== '') {
+                return hash('sha256', 'evento:'.$this->eventoExternoId);
+            }
+
+            return hash('sha256', implode('|', [
+                'respaldo',
+                (string) $this->conexionId,
+                $this->chatId,
+                $this->tipoEvento,
+                $this->mensajeProveedorId ?? '',
+                $this->hashContenidoSha256(),
+            ]));
         }
 
         return hash('sha256', implode('|', [
-            'respaldo',
+            'evento_mutable',
             (string) $this->conexionId,
             $this->chatId,
             $this->tipoEvento,
+            $this->eventoExternoId ?? '',
             $this->mensajeProveedorId ?? '',
+            $this->mensajeObjetivoProveedorId ?? '',
             $this->hashContenidoSha256(),
         ]));
     }
