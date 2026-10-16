@@ -36,7 +36,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
 - [x] `npm install`: 99 paquetes auditados y 0 vulnerabilidades reportadas en la validación actual.
 - [x] `npm run verificar`: TypeScript aprobado con el parche de recepción y watchdog corregido.
-- [x] `npm run pruebas`: 8/8 pruebas aprobadas, incluida limpieza de temporales huérfanos.
+- [x] `npm run pruebas`: 8/8 pruebas aprobadas, incluida limpieza de temporales huérfanos, antes de la corrección de clasificación protobuf.
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
@@ -58,7 +58,10 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] `npm run drenar-cola` validado con `pendientesRestantes: 0`; una ejecución posterior confirmó que no había tareas pendientes.
 - [x] Confirmado que los seis archivos residuales observados eran temporales `.tmp`, no tareas JSON; limpieza automática de temporales huérfanos agregada y validada.
 - [x] Logs internos crudos de Baileys silenciados para no exponer JID/nodos cifrados; Mensajero conserva sus logs sanitizados.
-- [x] Primer mensaje real de grupo alcanzó `messages.upsert`: `recibidos=1`, `candidatos_grupo=1`, `normalizados_grupo=1`; fue descartado correctamente por ser `sticker`, por lo que SQL permaneció en 0 según requisito.
+- [x] Primer mensaje real de grupo alcanzó `messages.upsert`: `recibidos=1`, `candidatos_grupo=1`, `normalizados_grupo=1`.
+- [x] Detectado bug de clasificación protobuf: un mensaje de texto real fue marcado como `sticker` porque los campos presentes con valor `null` se evaluaban mediante `in`.
+- [x] Corregida la clasificación para exigir valores no nulos/no indefinidos y agregada prueba de regresión `stickerMessage:null + conversation:texto`.
+- [ ] Reejecutar `npm run verificar` y `npm run pruebas` después de la corrección de clasificación protobuf.
 - [ ] Confirmar un mensaje de texto nuevo del grupo en SQL Server y ausencia de `/eventos` pendientes.
 - [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
