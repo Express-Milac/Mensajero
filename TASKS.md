@@ -35,16 +35,21 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Pruebas TypeScript para firma, clasificación y cola durable agregadas.
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
 - [x] `npm install`: 98 paquetes instalados y 0 vulnerabilidades reportadas.
-- [x] `npm run verificar`: TypeScript aprobado sin errores.
-- [x] `npm run pruebas`: 4/4 pruebas aprobadas.
+- [x] `npm run verificar`: TypeScript aprobado sin errores antes del parche de recepción.
+- [x] `npm run pruebas`: 4/4 pruebas aprobadas antes del parche de recepción.
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
-- [x] Conexión `recolector-pruebas` registrada en `mensajero_test` con ID local 10014 y estado `sin_configurar`.
+- [x] Conexión `recolector-pruebas` registrada en `mensajero_test` con ID local 10014.
 - [x] Secreto HMAC compartido entre Laravel y recolector configurado localmente y verificado sin exponerlo.
-- [ ] Vincular únicamente el número recolector dedicado.
-- [ ] Confirmar descubrimiento del grupo de prueba en `/grupos`.
-- [ ] Autorizar un solo grupo de prueba.
+- [x] Número recolector dedicado vinculado; nunca se vinculó el número principal de MILAC.
+- [x] Grupos reales del número recolector descubiertos en `/grupos`.
+- [x] Grupo de prueba `Mensajero milac Prueba` autorizado como único grupo monitoreado del recolector.
+- [x] Detectado fallo de Baileys 6.7.24: sesión/grupos sanos pero sin `messages.upsert` entregado a la aplicación.
+- [x] Agregado parche local reproducible para tratar `offline="0"` como mensaje en línea; `postinstall` falla cerrado si la dependencia cambia.
+- [x] Agregadas pruebas del parche: aplicación, idempotencia y fallo seguro.
+- [ ] Reejecutar `npm install`, `npm run verificar` y `npm run pruebas` con el parche integrado.
+- [ ] Confirmar `PRUEBA-001` en SQL Server y cola local en cero.
 - [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
