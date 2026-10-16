@@ -48,8 +48,14 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Detectado fallo de Baileys 6.7.24: sesión/grupos sanos pero sin `messages.upsert` entregado a la aplicación.
 - [x] Agregado parche local reproducible para tratar `offline="0"` como mensaje en línea; `postinstall` falla cerrado si la dependencia cambia.
 - [x] Agregadas pruebas del parche: aplicación, idempotencia y fallo seguro.
-- [ ] Reejecutar `npm install`, `npm run verificar` y `npm run pruebas` con el parche integrado.
-- [ ] Confirmar `PRUEBA-001` en SQL Server y cola local en cero.
+- [x] Agregado watchdog de recepción: si el socket abre pero no hay confirmación de buffer ni `messages.upsert` en 30 s, se marca error de integridad.
+- [x] Agregado marcador positivo `Flujo de mensajes de WhatsApp confirmado.` cuando la recepción queda efectivamente habilitada.
+- [x] Agregado `npm run diagnosticar-cola` para probar tareas pendientes contra Laravel sin borrarlas ni mostrar secretos.
+- [x] Confirmado que la tarea pendiente observada no era `/eventos`, sino `/estado-conexion`; por tanto los mensajes de prueba no habían llegado aún al manejador de mensajes.
+- [ ] Reejecutar `npm install`, `npm run verificar` y `npm run pruebas` con el parche integrado y watchdog.
+- [ ] Ejecutar `npm run diagnosticar-cola` y resolver cualquier rechazo de `/estado-conexion`.
+- [ ] Desvincular y volver a vincular el dispositivo recolector para regenerar la sesión server-side atascada.
+- [ ] Confirmar un mensaje nuevo en SQL Server y ausencia de `/eventos` pendientes.
 - [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
