@@ -5,6 +5,7 @@ namespace App\Services\Capture;
 use App\Data\WhatsApp\EventoWhatsappEntrante;
 use App\Data\WhatsApp\ResultadoCaptura;
 use App\Enums\DisposicionEntrada;
+use App\Models\ArchivoWhatsapp;
 use App\Models\ChatMonitoreado;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeBuzonSalida;
@@ -15,6 +16,7 @@ final class CapturarEventoWhatsappEntrante
 {
     public function __construct(
         private readonly FiltroMensajeEntrante $filtro,
+        private readonly VerificarArchivoWhatsappEntrante $verificadorArchivo,
     ) {}
 
     public function ejecutar(EventoWhatsappEntrante $evento): ResultadoCaptura
@@ -44,6 +46,10 @@ final class CapturarEventoWhatsappEntrante
                     return ResultadoCaptura::duplicado((int) $existente->getKey());
                 }
 
+                if ($evento->archivo !== null) {
+                    $this->verificadorArchivo->verificar($evento->archivo);
+                }
+
                 $crudo = EventoCrudoWhatsapp::query()->create([
                     'conexion_id' => $evento->conexionId,
                     'chat_monitoreado_id' => $chat->getKey(),
@@ -58,6 +64,28 @@ final class CapturarEventoWhatsappEntrante
                     'recibido_en' => $evento->recibidoEn,
                 ]);
 
+                $archivoId = null;
+
+                if ($evento->archivo !== null) {
+                    $archivo = ArchivoWhatsapp::query()->create([
+                        'conexion_id' => $evento->conexionId,
+                        'chat_monitoreado_id' => $chat->getKey(),
+                        'evento_crudo_id' => $crudo->getKey(),
+                        'identificador_archivo' => $evento->archivo->identificadorArchivo,
+                        'id_mensaje_proveedor' => $evento->mensajeProveedorId,
+                        'tipo_mensaje' => $evento->tipoMensaje,
+                        'tipo_mime' => $evento->archivo->tipoMime,
+                        'nombre_original' => $evento->archivo->nombreOriginal,
+                        'extension' => $evento->archivo->extension,
+                        'tamano_bytes' => $evento->archivo->tamanoBytes,
+                        'hash_sha256' => $evento->archivo->hashSha256,
+                        'disco' => VerificarArchivoWhatsappEntrante::DISCO,
+                        'ruta_relativa' => $evento->archivo->rutaRelativa,
+                        'estado' => 'verificado',
+                    ]);
+                    $archivoId = (int) $archivo->getKey();
+                }
+
                 MensajeBuzonSalida::query()->create([
                     'tema' => 'whatsapp.crudo.aceptado',
                     'tipo_entidad' => 'evento_crudo_whatsapp',
@@ -67,6 +95,7 @@ final class CapturarEventoWhatsappEntrante
                         'evento_crudo_id' => $crudo->getKey(),
                         'conexion_id' => $evento->conexionId,
                         'chat_monitoreado_id' => $chat->getKey(),
+                        'archivo_whatsapp_id' => $archivoId,
                     ], JSON_THROW_ON_ERROR),
                     'intentos' => 0,
                     'disponible_en' => now('UTC'),
