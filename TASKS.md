@@ -40,8 +40,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
-- [ ] Registrar conexión `recolector-pruebas` en `mensajero_test`.
-- [ ] Configurar secreto HMAC compartido entre Laravel y recolector sin comprometerlo en Git.
+- [x] Conexión `recolector-pruebas` registrada en `mensajero_test` con ID local 10014 y estado `sin_configurar`.
+- [x] Secreto HMAC compartido entre Laravel y recolector configurado localmente y verificado sin exponerlo.
 - [ ] Vincular únicamente el número recolector dedicado.
 - [ ] Confirmar descubrimiento del grupo de prueba en `/grupos`.
 - [ ] Autorizar un solo grupo de prueba.
