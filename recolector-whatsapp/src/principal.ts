@@ -9,6 +9,10 @@ import { ClienteMensajero, ErrorMensajero } from './cliente-mensajero.js';
 import { ColaDurable, type TareaDurable } from './cola/cola-durable.js';
 import { cargarConfiguracion } from './configuracion.js';
 import { MonitorIntegridad } from './monitor-integridad.js';
+import {
+  AlmacenMultimediaDurable,
+  type MultimediaPersistida,
+} from './multimedia/almacen-multimedia-durable.js';
 import type { EstadoConexion, MensajeProveedor } from './tipos.js';
 
 const configuracion = cargarConfiguracion();
@@ -21,8 +25,13 @@ const cliente = new ClienteMensajero(
 const cola = new ColaDurable(configuracion.rutaDatos);
 const monitor = new MonitorIntegridad(configuracion.rutaDatos);
 const adaptador = new AdaptadorBaileys(configuracion.rutaSesion, logger);
+const almacenMultimedia = new AlmacenMultimediaDurable(
+  configuracion.rutaAlmacenamiento,
+  configuracion.claveConexion,
+);
 const rutaAutorizados = join(configuracion.rutaDatos, 'chats-autorizados.json');
 const rutaInicioOperacion = join(configuracion.rutaDatos, 'inicio-operacion.txt');
+const tiposMultimedia = new Set(['foto', 'video', 'audio', 'documento']);
 
 let chatsAutorizados = new Set<string>();
 let cerrando = false;
@@ -124,7 +133,10 @@ function claveMensaje(mensaje: MensajeProveedor): string {
   return createHash('sha256').update(base, 'utf8').digest('hex');
 }
 
-async function encolarMensaje(mensaje: MensajeProveedor): Promise<void> {
+async function encolarMensaje(
+  mensaje: MensajeProveedor,
+  multimedia: MultimediaPersistida | null,
+): Promise<void> {
   await cola.agregar('/api/pasarela/v1/eventos', {
     clave_conexion: configuracion.claveConexion,
     chat_id: mensaje.chatId,
@@ -134,7 +146,16 @@ async function encolarMensaje(mensaje: MensajeProveedor): Promise<void> {
     mensaje_proveedor_id: mensaje.mensajeProveedorId,
     contenido_crudo: mensaje.contenidoCrudo,
     recibido_en: mensaje.recibidoEn,
-    version_contrato: 'v1-recolector',
+    version_contrato: 'v2-recolector',
+    multimedia: multimedia === null ? null : {
+      identificador_archivo: multimedia.identificadorArchivo,
+      ruta_relativa: multimedia.rutaRelativa,
+      hash_sha256: multimedia.hashSha256,
+      tamano_bytes: multimedia.tamanoBytes,
+      tipo_mime: multimedia.tipoMime,
+      nombre_original: multimedia.nombreOriginal,
+      extension: multimedia.extension,
+    },
   }, `mensaje-${claveMensaje(mensaje)}`);
 }
 
@@ -294,9 +315,49 @@ async function iniciar(): Promise<void> {
         return;
       }
 
-      await encolarMensaje(mensaje);
+      let multimediaPersistida: MultimediaPersistida | null = null;
+
+      if (mensaje.multimedia !== null) {
+        try {
+          multimediaPersistida = await almacenMultimedia.guardar(mensaje);
+
+          if (multimediaPersistida !== null) {
+            logger.info(
+              {
+                tipo: mensaje.tipoMensaje,
+                bytes: multimediaPersistida.tamanoBytes,
+              },
+              'Multimedia persistida en almacenamiento privado antes de encolar el evento.',
+            );
+          }
+        } catch (error) {
+          registrarError(error, 'No fue posible persistir la multimedia del mensaje.');
+          await encolarPeriodo(
+            mensaje.recibidoEn,
+            new Date().toISOString(),
+            'fallo_descarga_multimedia',
+            { tipo_mensaje: mensaje.tipoMensaje },
+          );
+        }
+      } else if (tiposMultimedia.has(mensaje.tipoMensaje)) {
+        logger.error(
+          { tipo: mensaje.tipoMensaje, causa: 'fuente_multimedia_ausente' },
+          'WhatsApp entregó un mensaje multimedia sin fuente descargable.',
+        );
+        await encolarPeriodo(
+          mensaje.recibidoEn,
+          new Date().toISOString(),
+          'fuente_multimedia_ausente',
+          { tipo_mensaje: mensaje.tipoMensaje },
+        );
+      }
+
+      await encolarMensaje(mensaje, multimediaPersistida);
       logger.info(
-        { tipo: mensaje.tipoMensaje },
+        {
+          tipo: mensaje.tipoMensaje,
+          multimedia_persistida: multimediaPersistida !== null,
+        },
         'Mensaje persistido primero en la cola local durable.',
       );
     },
