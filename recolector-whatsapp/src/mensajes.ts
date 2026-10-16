@@ -94,6 +94,15 @@ export function desarrollarContenido(valor: unknown): Record<string, unknown> | 
     }
 
     if (siguiente === null) {
+      const protocolo = comoRegistro(actual.protocolMessage);
+      const editado = contenidoEditado(protocolo?.editedMessage);
+
+      if (editado !== null) {
+        siguiente = editado;
+      }
+    }
+
+    if (siguiente === null) {
       return actual;
     }
 
