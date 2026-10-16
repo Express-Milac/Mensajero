@@ -1,0 +1,76 @@
+# Recolector WhatsApp MILAC — POC controlado
+
+Este componente existe para probar la captura automática de **grupos normales existentes** mediante un número corporativo secundario y dedicado. No debe vincularse al número principal de MILAC.
+
+## Alcance del POC
+
+- usa una cuenta/número recolector que participa como un usuario más en los grupos de prueba;
+- vincula una sesión multidispositivo mediante Baileys únicamente en este canal aislado;
+- descubre grupos y los sincroniza con Mensajero;
+- solo entrega mensajes de grupos autorizados en la lista permitida;
+- descarta stickers;
+- conserva texto y cualquier tipo desconocido como evento crudo;
+- persiste cada mensaje autorizado en una **cola local durable en disco antes de intentar enviarlo a Laravel**;
+- reintenta después de caídas de red/Laravel sin borrar tareas pendientes;
+- registra periodos donde la integridad de captura no puede confirmarse;
+- mantiene sesión, cola y cachés bajo `datos/`, fuera de Git.
+
+## Advertencia
+
+Baileys no es una API oficial de Meta. Este POC se autoriza exclusivamente porque el número recolector es un activo secundario y reemplazable de la empresa. No existe garantía de que Meta no limite o suspenda esa cuenta. La integración oficial Cloud API permanece en Mensajero para los flujos compatibles.
+
+La versión `6.7.24` queda fijada porque ya fue validada previamente en el entorno local de este proyecto. Antes de producción deberá reevaluarse la versión, el almacenamiento de credenciales y las incidencias vigentes de la biblioteca.
+
+## Preparación
+
+Desde la raíz del repositorio:
+
+```powershell
+php artisan mensajero:registrar-conexion-recolector recolector-pruebas --nombre="Recolector MILAC pruebas"
+```
+
+Dentro de este directorio:
+
+```powershell
+Copy-Item .env.example .env
+npm install
+npm run verificar
+npm run pruebas
+```
+
+Configurar `.env` sin compartir el secreto:
+
+```text
+MENSAJERO_URL=http://127.0.0.1:8000
+MENSAJERO_CLAVE_CONEXION=recolector-pruebas
+MENSAJERO_PASARELA_SECRETO=<mismo secreto de Laravel>
+RECOLECTOR_RUTA_DATOS=./datos
+```
+
+Laravel debe estar ejecutándose y usar una base `_test` durante el POC.
+
+## Primera vinculación
+
+Ejecutar:
+
+```powershell
+npm run desarrollo
+```
+
+Aparecerá un QR. Escanearlo únicamente desde el **número recolector dedicado** en WhatsApp → Dispositivos vinculados.
+
+Al conectarse, el recolector enviará la lista de grupos a Mensajero. Abrir `/grupos`, autorizar solamente el grupo de prueba y esperar la siguiente actualización de la lista permitida (máximo configurado: 15 segundos).
+
+## Durabilidad
+
+`datos/cola/pendientes/` contiene trabajo que Laravel todavía no ha confirmado. Un archivo se elimina solamente después de recibir respuesta HTTP satisfactoria. Reiniciar Node o perder Internet no elimina esas tareas.
+
+`datos/estado-ejecucion.json` registra el último latido. Si el proceso anterior terminó sin cierre limpio, al reiniciar se genera un periodo de integridad no confirmada.
+
+`datos/sesion/` contiene credenciales criptográficas de WhatsApp. Debe protegerse como un secreto y nunca copiarse a Git.
+
+## Limitación actual del incremento
+
+El evento crudo conserva los metadatos de mensajes de foto, video, audio y documento, pero la descarga durable del binario se implementará y certificará como incremento separado **antes de considerar el recolector apto para grupos operativos reales**.
+
+Este POC no se considera fuente directiva hasta aprobar pruebas de carga, reinicios, desconexión, multimedia y reconciliación.

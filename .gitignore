@@ -17,6 +17,9 @@
 /.zed
 /auth.json
 /node_modules
+/recolector-whatsapp/node_modules/
+/recolector-whatsapp/dist/
+/recolector-whatsapp/datos/
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot

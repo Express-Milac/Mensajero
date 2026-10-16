@@ -1,41 +1,33 @@
 # Estado y traspaso a otra IA
 
-Actualizado: 15/10/2026.
+Actualizado: 16/10/2026.
 
 ## Decisiones confirmadas
-WhatsApp Business; 5–6 grupos seleccionados; grupos existentes de 30+ participantes; captura autohospedada por MILAC; SQL Server corporativo existente; servidor propio; autenticación corporativa pospuesta.
+5–6 grupos seleccionados; grupos normales existentes de 30+ participantes; servidor propio; SQL Server corporativo existente; autenticación corporativa pospuesta. Meta Cloud API continúa implementada para canales oficiales compatibles.
+
+Para resolver los grupos normales existentes se autorizó un POC separado con un **número recolector corporativo secundario**. Ese número es reemplazable y nunca será el número principal de MILAC.
 
 ## Implementado
 - Dominio, migraciones, rutas principales, estados y pruebas con nomenclatura de negocio en español.
-- Tablas de captura: `mensajero_conexiones_whatsapp`, `mensajero_chats_monitoreados`, `mensajero_contactos_whatsapp`, `mensajero_eventos_crudos_whatsapp`, `mensajero_buzon_salida` y `mensajero_mensajes_whatsapp`.
-- Usuarios preparados en `mensajero_usuarios` con columnas propias `nombre`, `rol`, `creado_en` y `actualizado_en`; se conservan solo identificadores técnicos exigidos por Laravel donde corresponde.
 - Lista permitida por defecto denegada y descarte de pegatinas.
 - `CapturarEventoWhatsappEntrante` persiste evento crudo + buzón de salida de forma transaccional e idempotente.
-- Modo temporal sin autenticación para tablero ordinario; diagnóstico administrativo bloqueado en ese modo.
-- Modo corporativo falla cerrado.
 - Almacenamiento privado configurable fuera de SQL Server.
-- Autenticación propia organizada bajo `Autenticacion`/`autenticacion`, sin directorios `Auth` propios.
-- Agentes de arquitectura, creación, revisión, pruebas, seguridad, UI/UX y calidad documentados en `agentes/`.
-- Flujo de validación automática definido en `.github/workflows/validacion.yml`.
+- Webhook oficial Meta Cloud API y cliente Graph API propio.
+- Contrato HMAC interno con protección antirrepetición para operaciones mutables.
+- Administración y auditoría de grupos descubiertos.
+- `recolector-whatsapp/` preparado como componente Node.js/TypeScript aislado.
+- Cola local durable: mensajes autorizados se guardan en disco antes de transmisión y solo se eliminan tras ACK.
+- Caché local de grupos autorizados para sobrevivir indisponibilidad temporal de Laravel.
+- Registro de periodos de integridad para desconexiones y reinicios no limpios.
+- Comando `mensajero:registrar-conexion-recolector`.
 
-## Hallazgos corregidos en la revisión actual
-- El tablero ya no falla cuando no existe usuario autenticado.
-- La creación de administradores valida contra el modelo/tabla correctos.
-- Las pruebas antiguas fueron alineadas con clases, rutas y tablas nuevas.
-- El modo sin autenticación ya no concede acceso al diagnóstico administrativo web.
-- Se completó la traducción de `name` y de la estructura propia `Auth`.
-- No quedaron referencias antiguas ni archivos temporales en el árbol actual.
+## Estado de certificación
+La base Laravel previa al recolector está validada localmente con Pint 78 archivos, PHPUnit 32 pruebas/78 aserciones y SQL Server 6 pruebas/100 aserciones repetidas dos veces.
 
-## Validación real de esta actualización
-- Sintaxis PHP revisada sin errores en el incremento y correcciones posteriores.
-- Arnés aislado de lógica de captura: 9/9 comprobaciones aprobadas.
-- Auditoría de referencias tras renombres: limpia.
-- Estructura YAML del workflow validada de forma independiente.
-- GitHub Actions se intentó por `push` y `pull_request`, pero terminó en `startup_failure` antes de crear jobs. PHPUnit/Pint/rutas/vistas no se consideran ejecutados por CI.
-- El conector disponible no permite consultar la configuración administrativa de permisos de Actions; revisar esa configuración desde GitHub.
-- El contenedor local disponible no incluye `mbstring`; el runtime real debe incluir esa extensión.
+El incremento del recolector todavía debe ser traído al entorno local y ejecutar `npm install`, `npm run verificar`, `npm run pruebas`, Pint, PHPUnit e integración SQL Server antes de escanear el QR del número recolector.
 
-## Siguiente puerta obligatoria
-Antes de integrar al servidor o avanzar la captura real: ejecutar Composer, PHPUnit, Pint, rutas/vistas en un entorno funcional y certificar migraciones/pruebas contra SQL Server desechable `_test`.
+## Limitación obligatoria antes de operación real
+El incremento actual preserva el evento y metadatos de mensajes multimedia, pero todavía no descarga de forma durable el binario. Antes de agregar el número recolector a grupos operativos reales se debe implementar y certificar foto, video, audio y documentos, además de carga/reinicio/desconexión/reconciliación.
 
-Después de esa puerta: descubrimiento y selección de grupos, auditoría de cambios, contrato HMAC interno y pasarela autohospedada de WhatsApp.
+## Criterio directivo
+Mensajero no debe presentar un intervalo como completo si existe un periodo registrado de integridad no confirmada. El objetivo es cero pérdida silenciosa, no una promesa técnicamente imposible de pérdida absoluta.
