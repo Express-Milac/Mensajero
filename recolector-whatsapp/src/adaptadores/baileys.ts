@@ -21,6 +21,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
   private temporizadorIntegridad: NodeJS.Timeout | null = null;
   private secuenciaConexion = 0;
   private errorRecepcionMarcado = false;
+  private recepcionConfirmada = false;
 
   public constructor(
     private readonly rutaSesion: string,
@@ -94,6 +95,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     this.secuenciaConexion += 1;
     const secuencia = this.secuenciaConexion;
     this.errorRecepcionMarcado = false;
+    this.recepcionConfirmada = false;
     this.socket = socket;
     socket.ev.on('creds.update', saveCreds);
 
@@ -246,6 +248,11 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
   private async confirmarRecepcionActiva(origen: string): Promise<void> {
     this.cancelarVigilanciaIntegridad();
+
+    if (!this.recepcionConfirmada) {
+      this.recepcionConfirmada = true;
+      this.logger.info({ origen }, 'Flujo de mensajes de WhatsApp confirmado.');
+    }
 
     if (!this.errorRecepcionMarcado || this.manejadores === null) {
       return;
