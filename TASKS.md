@@ -63,7 +63,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Corregida la clasificación para exigir valores no nulos/no indefinidos y agregada prueba de regresión `stickerMessage:null + conversation:texto`.
 - [x] Primer mensaje de texto real confirmado de extremo a extremo: cola durable → HMAC → Laravel → SQL Server; conteo del grupo pasó de 0 a 1 y la cola quedó en 0 tras ACK.
 - [x] Lote normal de 10 mensajes de texto confirmado sin pérdida: SQL pasó de 1 a 11, los 10 fueron clasificados como `texto`, normalizados como grupo y la cola terminó con 0 tareas JSON.
-- [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
+- [x] Recuperación tras caída de Laravel validada a nivel de resultado: SQL permaneció en 11 mientras Laravel estaba fuera y, tras restaurarlo, subió a 16; la cola final quedó en 0. No se capturó evidencia intermedia del número exacto de `/eventos` pendientes durante la caída, por lo que esa parte queda pendiente de una prueba instrumentada.
+- [ ] Repetir una caída breve de Laravel capturando explícitamente la cola intermedia y confirmar que los mensajes `/eventos` permanecen en disco hasta ACK.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
 
 ## Bloqueador antes de grupos reales
