@@ -1,7 +1,7 @@
 import makeWASocket, {
   BufferJSON,
   DisconnectReason,
-  downloadContentFromMessage,
+  downloadMediaMessage,
   fetchLatestWaWebVersion,
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
@@ -143,8 +143,6 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         });
         await this.sincronizarGrupos();
 
-        // La confirmación del búfer puede llegar antes que connection=open.
-        // No rearmar el watchdog si el flujo ya fue confirmado en esta misma conexión.
         if (!this.recepcionConfirmada && actualizacion.receivedPendingNotifications !== true) {
           this.iniciarVigilanciaIntegridad(secuencia);
         }
@@ -261,33 +259,34 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       mensajeProveedorId: mensaje.key?.id ?? null,
       contenidoCrudo,
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
-      multimedia: this.crearFuenteMultimedia(mensaje.message, tipoMensaje),
+      multimedia: this.crearFuenteMultimedia(valor, mensaje.message, tipoMensaje),
     };
   }
 
   private crearFuenteMultimedia(
-    valor: unknown,
+    mensajeCompleto: unknown,
+    valorContenido: unknown,
     tipoMensaje: string,
   ): FuenteMultimediaProveedor | null {
-    const contenido = desarrollarContenido(valor);
+    const contenido = desarrollarContenido(valorContenido);
 
     if (contenido === null) {
       return null;
     }
 
-    const definiciones: Record<string, { clave: string; tipoDescarga: 'image' | 'video' | 'audio' | 'document' }> = {
-      foto: { clave: 'imageMessage', tipoDescarga: 'image' },
-      video: { clave: 'videoMessage', tipoDescarga: 'video' },
-      audio: { clave: 'audioMessage', tipoDescarga: 'audio' },
-      documento: { clave: 'documentMessage', tipoDescarga: 'document' },
+    const campos: Record<string, string> = {
+      foto: 'imageMessage',
+      video: 'videoMessage',
+      audio: 'audioMessage',
+      documento: 'documentMessage',
     };
-    const definicion = definiciones[tipoMensaje];
+    const campo = campos[tipoMensaje];
 
-    if (definicion === undefined) {
+    if (campo === undefined) {
       return null;
     }
 
-    const valorMultimedia = contenido[definicion.clave];
+    const valorMultimedia = contenido[campo];
 
     if (typeof valorMultimedia !== 'object' || valorMultimedia === null) {
       return null;
@@ -301,9 +300,20 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       tipoMime,
       nombreOriginal,
       abrirFlujo: async () => {
-        const flujo = await downloadContentFromMessage(
-          valorMultimedia as Parameters<typeof downloadContentFromMessage>[0],
-          definicion.tipoDescarga,
+        const socket = this.socket;
+
+        if (socket === null) {
+          throw new Error('La conexión de WhatsApp no está disponible para descargar multimedia.');
+        }
+
+        const flujo = await downloadMediaMessage(
+          mensajeCompleto as Parameters<typeof downloadMediaMessage>[0],
+          'stream',
+          {},
+          {
+            logger: this.logger.child({ componente: 'baileys_multimedia' }, { level: 'silent' }),
+            reuploadRequest: socket.updateMediaMessage,
+          },
         );
 
         return flujo as AsyncIterable<Uint8Array>;
