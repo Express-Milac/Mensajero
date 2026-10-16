@@ -81,7 +81,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Pruebas automatizadas agregadas para almacenamiento durable/reutilización del archivo y para validación SQL Server del contrato multimedia.
 - [x] Validación automática del recolector posterior al incremento: `npm run verificar` aprobado; `npm run pruebas` 11/11, incluidas persistencia multimedia durable y reutilización idempotente; `npm install` reportó 0 vulnerabilidades.
 - [x] Migración `2026_10_16_000700_crear_archivos_whatsapp` aplicada sobre `mensajero_test`; Pint aprobó 87 archivos; PHPUnit normal 32/32 pruebas y 78 aserciones; integración SQL Server 8/8 pruebas y 132 aserciones, incluida `MultimediaRecolectorSqlServerTest`.
-- [ ] Certificar una foto real de extremo a extremo: archivo físico + SHA-256 + metadatos SQL + evento + cola final 0.
+- [x] Foto real certificada de extremo a extremo: eventos SQL 20→21 y archivos SQL 0→1; `foto` `image/jpeg`, 84,355 bytes, SHA-256 registrado, ruta privada `multimedia/whatsapp/recolector-pruebas/...jpg`, estado `verificado`, archivo físico localizable por `mensajero_local=true` y cola final con 0 tareas JSON.
 - [ ] Certificar audio real.
 - [ ] Certificar video real.
 - [ ] Certificar documento real.
