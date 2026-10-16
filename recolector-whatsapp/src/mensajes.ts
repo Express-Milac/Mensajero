@@ -9,6 +9,64 @@ function tieneValor(registro: Record<string, unknown>, clave: string): boolean {
   return valor !== null && valor !== undefined;
 }
 
+function cadenaNoVacia(valor: unknown): string | null {
+  return typeof valor === 'string' && valor.trim() !== '' ? valor : null;
+}
+
+function idDesdeClave(valor: unknown): string | null {
+  return cadenaNoVacia(comoRegistro(valor)?.id);
+}
+
+function tipoProtocoloCoincide(valor: unknown, numero: number, nombre: string): boolean {
+  return valor === numero || valor === nombre;
+}
+
+function contenidoEditado(valor: unknown): Record<string, unknown> | null {
+  const registro = comoRegistro(valor);
+
+  if (registro === null) {
+    return null;
+  }
+
+  return comoRegistro(registro.message) ?? registro;
+}
+
+function extraerMensajeCitado(valor: unknown): string | null {
+  const contenido = desarrollarContenido(valor);
+
+  if (contenido === null) {
+    return null;
+  }
+
+  const contextoDirecto = comoRegistro(contenido.contextInfo);
+  const directo = cadenaNoVacia(contextoDirecto?.stanzaId);
+
+  if (directo !== null) {
+    return directo;
+  }
+
+  for (const parte of Object.values(contenido)) {
+    const registro = comoRegistro(parte);
+    const contexto = comoRegistro(registro?.contextInfo);
+    const stanzaId = cadenaNoVacia(contexto?.stanzaId);
+
+    if (stanzaId !== null) {
+      return stanzaId;
+    }
+  }
+
+  return null;
+}
+
+export type TipoEventoWhatsapp = 'mensaje' | 'edicion' | 'eliminacion' | 'reaccion' | 'otro';
+
+export interface SemanticaMensajeWhatsapp {
+  tipoEvento: TipoEventoWhatsapp;
+  tipoMensaje: string;
+  mensajeCitadoProveedorId: string | null;
+  mensajeObjetivoProveedorId: string | null;
+}
+
 export function desarrollarContenido(valor: unknown): Record<string, unknown> | null {
   let actual = comoRegistro(valor);
 
@@ -91,6 +149,85 @@ export function clasificarTipoMensaje(valor: unknown): string {
   }
 
   return 'otro';
+}
+
+export function analizarSemanticaMensaje(valor: unknown): SemanticaMensajeWhatsapp {
+  const raiz = comoRegistro(valor);
+
+  if (raiz === null) {
+    return {
+      tipoEvento: 'otro',
+      tipoMensaje: 'desconocido',
+      mensajeCitadoProveedorId: null,
+      mensajeObjetivoProveedorId: null,
+    };
+  }
+
+  const protocolo = comoRegistro(raiz.protocolMessage);
+
+  if (protocolo !== null) {
+    const objetivo = idDesdeClave(protocolo.key);
+    const editado = contenidoEditado(protocolo.editedMessage);
+    const esEdicion = editado !== null
+      || tipoProtocoloCoincide(protocolo.type, 14, 'MESSAGE_EDIT');
+
+    if (esEdicion) {
+      return {
+        tipoEvento: 'edicion',
+        tipoMensaje: editado === null ? 'otro' : clasificarTipoMensaje(editado),
+        mensajeCitadoProveedorId: editado === null ? null : extraerMensajeCitado(editado),
+        mensajeObjetivoProveedorId: objetivo,
+      };
+    }
+
+    if (tipoProtocoloCoincide(protocolo.type, 0, 'REVOKE')) {
+      return {
+        tipoEvento: 'eliminacion',
+        tipoMensaje: 'eliminacion',
+        mensajeCitadoProveedorId: null,
+        mensajeObjetivoProveedorId: objetivo,
+      };
+    }
+
+    return {
+      tipoEvento: 'otro',
+      tipoMensaje: 'otro',
+      mensajeCitadoProveedorId: null,
+      mensajeObjetivoProveedorId: objetivo,
+    };
+  }
+
+  const envolturaEditada = comoRegistro(raiz.editedMessage);
+
+  if (envolturaEditada !== null) {
+    const editado = contenidoEditado(envolturaEditada);
+
+    return {
+      tipoEvento: 'edicion',
+      tipoMensaje: editado === null ? 'otro' : clasificarTipoMensaje(editado),
+      mensajeCitadoProveedorId: editado === null ? null : extraerMensajeCitado(editado),
+      mensajeObjetivoProveedorId: idDesdeClave(envolturaEditada.key),
+    };
+  }
+
+  const contenido = desarrollarContenido(valor);
+  const reaccion = comoRegistro(contenido?.reactionMessage);
+
+  if (reaccion !== null) {
+    return {
+      tipoEvento: 'reaccion',
+      tipoMensaje: 'reaccion',
+      mensajeCitadoProveedorId: null,
+      mensajeObjetivoProveedorId: idDesdeClave(reaccion.key),
+    };
+  }
+
+  return {
+    tipoEvento: 'mensaje',
+    tipoMensaje: clasificarTipoMensaje(valor),
+    mensajeCitadoProveedorId: extraerMensajeCitado(valor),
+    mensajeObjetivoProveedorId: null,
+  };
 }
 
 export function fechaIsoDesdeMarca(valor: unknown): string {
