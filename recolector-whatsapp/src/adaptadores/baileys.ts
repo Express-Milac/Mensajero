@@ -1,14 +1,20 @@
 import makeWASocket, {
   BufferJSON,
   DisconnectReason,
+  downloadContentFromMessage,
   fetchLatestWaWebVersion,
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
-import { clasificarTipoMensaje, fechaIsoDesdeMarca } from '../mensajes.js';
+import {
+  clasificarTipoMensaje,
+  desarrollarContenido,
+  fechaIsoDesdeMarca,
+} from '../mensajes.js';
 import type {
   AdaptadorWhatsapp,
   ChatDescubierto,
+  FuenteMultimediaProveedor,
   ManejadoresWhatsapp,
   MensajeProveedor,
 } from '../tipos.js';
@@ -246,13 +252,62 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       return null;
     }
 
+    const tipoMensaje = clasificarTipoMensaje(mensaje.message);
+
     return {
       chatId,
-      tipoMensaje: clasificarTipoMensaje(mensaje.message),
+      tipoMensaje,
       eventoExternoId: mensaje.key?.id ?? null,
       mensajeProveedorId: mensaje.key?.id ?? null,
       contenidoCrudo,
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
+      multimedia: this.crearFuenteMultimedia(mensaje.message, tipoMensaje),
+    };
+  }
+
+  private crearFuenteMultimedia(
+    valor: unknown,
+    tipoMensaje: string,
+  ): FuenteMultimediaProveedor | null {
+    const contenido = desarrollarContenido(valor);
+
+    if (contenido === null) {
+      return null;
+    }
+
+    const definiciones: Record<string, { clave: string; tipoDescarga: 'image' | 'video' | 'audio' | 'document' }> = {
+      foto: { clave: 'imageMessage', tipoDescarga: 'image' },
+      video: { clave: 'videoMessage', tipoDescarga: 'video' },
+      audio: { clave: 'audioMessage', tipoDescarga: 'audio' },
+      documento: { clave: 'documentMessage', tipoDescarga: 'document' },
+    };
+    const definicion = definiciones[tipoMensaje];
+
+    if (definicion === undefined) {
+      return null;
+    }
+
+    const valorMultimedia = contenido[definicion.clave];
+
+    if (typeof valorMultimedia !== 'object' || valorMultimedia === null) {
+      return null;
+    }
+
+    const datos = valorMultimedia as Record<string, unknown>;
+    const tipoMime = typeof datos.mimetype === 'string' ? datos.mimetype : null;
+    const nombreOriginal = typeof datos.fileName === 'string' ? datos.fileName : null;
+
+    return {
+      tipoMime,
+      nombreOriginal,
+      abrirFlujo: async () => {
+        const flujo = await downloadContentFromMessage(
+          valorMultimedia as Parameters<typeof downloadContentFromMessage>[0],
+          definicion.tipoDescarga,
+        );
+
+        return flujo as AsyncIterable<Uint8Array>;
+      },
     };
   }
 
