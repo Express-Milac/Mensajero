@@ -4,6 +4,7 @@ import {
   analizarSemanticaMensaje,
   clasificarTipoMensaje,
   desarrollarContenido,
+  esContenidoInternoWhatsapp,
 } from '../src/mensajes.js';
 
 test('clasifica texto, foto, video, audio, documento y sticker', () => {
@@ -107,4 +108,32 @@ test('clasifica ubicacion, contacto y contenido desconocido sin descartarlos', (
 
   assert.equal(desconocido.tipoEvento, 'mensaje');
   assert.equal(desconocido.tipoMensaje, 'otro');
+});
+
+test('reconoce la forma de edicion emitida por messages.update de Baileys 6.7.24', () => {
+  const semantica = analizarSemanticaMensaje({
+    editedMessage: {
+      message: {
+        conversation: 'texto ya editado',
+      },
+    },
+  });
+
+  assert.equal(semantica.tipoEvento, 'edicion');
+  assert.equal(semantica.tipoMensaje, 'texto');
+  // En messages.update el ID objetivo viene en key.id de la actualización,
+  // no dentro de editedMessage; el adaptador aplica ese fallback.
+  assert.equal(semantica.mensajeObjetivoProveedorId, null);
+});
+
+test('identifica secretEncryptedMessage como envoltura interna y no como mensaje de usuario', () => {
+  assert.equal(esContenidoInternoWhatsapp({
+    secretEncryptedMessage: {
+      targetMessageKey: { id: 'OBJETIVO-INTERNO' },
+      encPayload: { type: 'Buffer', data: [1, 2, 3] },
+      encIv: { type: 'Buffer', data: [4, 5, 6] },
+      secretEncType: 1,
+    },
+  }), true);
+  assert.equal(esContenidoInternoWhatsapp({ conversation: 'mensaje real' }), false);
 });
