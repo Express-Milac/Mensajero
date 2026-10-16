@@ -83,8 +83,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Migración `2026_10_16_000700_crear_archivos_whatsapp` aplicada sobre `mensajero_test`; Pint aprobó 87 archivos; PHPUnit normal 32/32 pruebas y 78 aserciones; integración SQL Server 8/8 pruebas y 132 aserciones, incluida `MultimediaRecolectorSqlServerTest`.
 - [x] Foto real certificada de extremo a extremo: eventos SQL 20→21 y archivos SQL 0→1; `foto` `image/jpeg`, 84,355 bytes, SHA-256 registrado, ruta privada `multimedia/whatsapp/recolector-pruebas/...jpg`, estado `verificado`, archivo físico localizable por `mensajero_local=true` y cola final con 0 tareas JSON.
 - [x] Audio real certificado de extremo a extremo: eventos SQL 21→22 y archivos SQL 1→2; `audio` `audio/ogg; codecs=opus`, 11,474 bytes, extensión `ogg`, ruta privada, estado `verificado`; el archivo físico existe y su SHA-256 recalculado coincide exactamente con `hash_sha256` de SQL; cola final con 0 tareas JSON.
+- [x] Documento real certificado de extremo a extremo: eventos SQL 22→23 y archivos SQL 2→3; `documento` `application/pdf`, nombre original `_1731519625.pdf`, 234,588 bytes, extensión `pdf`, ruta privada, estado `verificado`; el archivo físico existe y su SHA-256 recalculado coincide exactamente con `hash_sha256` de SQL; cola final con 0 tareas JSON.
 - [ ] Certificar video real.
-- [ ] Certificar documento real.
 - [ ] Probar caída de Laravel con multimedia ya persistida y verificar drenaje posterior sin volver a descargar.
 - [ ] Probar reinicio del recolector alrededor de una recepción multimedia.
 - [ ] Reforzar un mecanismo de reintento durable de descarga si una descarga desde WhatsApp falla antes de que el archivo quede persistido.
