@@ -21,6 +21,12 @@ Baileys no es una API oficial de Meta. Este POC se autoriza exclusivamente porqu
 
 La versión `6.7.24` queda fijada porque ya fue validada previamente en el entorno local de este proyecto. Antes de producción deberá reevaluarse la versión, el almacenamiento de credenciales y las incidencias vigentes de la biblioteca.
 
+### Corrección local de recepción
+
+Baileys 6.7.24 contiene un fallo conocido en la interpretación del atributo de protocolo `offline`: el valor de texto `"0"` puede tratarse como verdadero y desviar mensajes en tiempo real hacia la cola de mensajes fuera de línea. El síntoma puede ser una sesión conectada y capaz de consultar grupos, pero sin eventos `messages.upsert` entregados a la aplicación.
+
+Mensajero aplica durante `npm install` una corrección mínima y verificable sobre `node_modules/@whiskeysockets/baileys/lib/Socket/messages-recv.js` mediante `scripts/aplicar-parche-baileys.mjs`. La instalación falla si la dependencia deja de coincidir con los patrones esperados; de esa forma una actualización no puede omitir silenciosamente la corrección. El parche es temporal y deberá retirarse cuando una versión upstream validada incorpore una solución equivalente.
+
 ## Preparación
 
 Desde la raíz del repositorio:
