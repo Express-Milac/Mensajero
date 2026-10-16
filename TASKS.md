@@ -68,10 +68,28 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Reinicio abrupto del recolector certificado: antes había 0 periodos `reinicio_no_confirmado`; tras matar los procesos Node a la fuerza, esperar 10 s y reiniciar sin nuevo QR, se creó exactamente 1 periodo para la conexión 10014 (`id=5`) con intervalo `2026-10-16 18:49:44.846000` → `2026-10-16 18:50:27.933000`; recepción confirmada y cola final en 0.
 - [x] Recuperación offline del recolector certificada con 2 mensajes enviados mientras `principal.ts` estaba totalmente detenido: no quedó ningún proceso Node del recolector, al reiniciar sin nuevo QR ambos mensajes fueron entregados inmediatamente por WhatsApp/Baileys como `notify`, clasificados como `texto`, persistidos en cola durable y entregados a SQL; el conteo pasó de 18 a 20, los periodos `reinicio_no_confirmado` de 1 a 2 y la cola final quedó en 0. El periodo se conserva como no confirmado aunque los mensajes observados hayan sido recuperados, para mantener el criterio de cero pérdida silenciosa.
 
-## Bloqueador antes de grupos reales
-- [ ] Descargar foto/video/audio/documento en el recolector inmediatamente después de autorizar el grupo.
-- [ ] Persistir multimedia durable fuera de SQL Server con hash SHA-256.
-- [ ] Subir/entregar multimedia a Mensajero con ACK y reintentos.
+## Incremento multimedia: código entregado, pendiente de certificación
+- [x] Descarga diferida de foto/video/audio/documento: Baileys expone la fuente y la descarga solo se inicia después de validar que el grupo está autorizado.
+- [x] Descarga mediante `downloadMediaMessage` con `reuploadRequest`, para permitir recuperación de URLs multimedia expiradas cuando WhatsApp lo soporte.
+- [x] Almacenamiento privado configurable en el recolector mediante `RECOLECTOR_RUTA_ALMACENAMIENTO`; por defecto comparte `storage/app/mensajero` con Laravel durante el POC local.
+- [x] Persistencia atómica de multimedia: archivo temporal privado → `fsync` → renombrado final.
+- [x] Cálculo de SHA-256 y tamaño durante la escritura; ruta relativa determinística fuera de SQL Server.
+- [x] Nueva tabla `mensajero_archivos_whatsapp`: SQL conserva ruta, hash, tamaño, MIME y metadatos; nunca el binario.
+- [x] Laravel verifica existencia, ruta privada, tamaño y SHA-256 antes de registrar los metadatos multimedia.
+- [x] Contrato `v2-recolector` entrega por HMAC los metadatos/ruta junto con el evento y conserva el ACK de la cola durable.
+- [x] Si la descarga falla o la fuente multimedia está ausente, se registra un periodo de integridad específico en vez de ocultar la falla.
+- [x] Pruebas automatizadas agregadas para almacenamiento durable/reutilización del archivo y para validación SQL Server del contrato multimedia.
+- [ ] Ejecutar `npm run verificar` y `npm run pruebas` después del incremento multimedia; se esperan 11 pruebas del recolector si todo compila correctamente.
+- [ ] Ejecutar migración y suite SQL Server en `mensajero_test`; la suite integra una nueva prueba de multimedia.
+- [ ] Certificar una foto real de extremo a extremo: archivo físico + SHA-256 + metadatos SQL + evento + cola final 0.
+- [ ] Certificar audio real.
+- [ ] Certificar video real.
+- [ ] Certificar documento real.
+- [ ] Probar caída de Laravel con multimedia ya persistida y verificar drenaje posterior sin volver a descargar.
+- [ ] Probar reinicio del recolector alrededor de una recepción multimedia.
+- [ ] Reforzar un mecanismo de reintento durable de descarga si una descarga desde WhatsApp falla antes de que el archivo quede persistido.
+
+## Bloqueadores restantes antes de grupos reales
 - [ ] Probar citas/respuestas, mensajes editados, eliminados, ubicaciones, contactos y tipos desconocidos.
 - [ ] Prueba de carga >= 1,000 mensajes y varios remitentes/grupos.
 - [ ] Prueba prolongada de estabilidad y reconexión.
