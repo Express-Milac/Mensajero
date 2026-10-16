@@ -7,7 +7,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
 import {
-  clasificarTipoMensaje,
+  analizarSemanticaMensaje,
   desarrollarContenido,
   fechaIsoDesdeMarca,
 } from '../mensajes.js';
@@ -244,7 +244,12 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     }
 
     const mensaje = valor as {
-      key?: { remoteJid?: string | null; id?: string | null };
+      key?: {
+        remoteJid?: string | null;
+        id?: string | null;
+        participant?: string | null;
+        participantAlt?: string | null;
+      };
       message?: unknown;
       messageTimestamp?: unknown;
     };
@@ -260,16 +265,23 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       return null;
     }
 
-    const tipoMensaje = clasificarTipoMensaje(mensaje.message);
+    const semantica = analizarSemanticaMensaje(mensaje.message);
+    const remitenteProveedorId = mensaje.key?.participant
+      ?? mensaje.key?.participantAlt
+      ?? null;
 
     return {
       chatId,
-      tipoMensaje,
+      tipoEvento: semantica.tipoEvento,
+      tipoMensaje: semantica.tipoMensaje,
       eventoExternoId: mensaje.key?.id ?? null,
       mensajeProveedorId: mensaje.key?.id ?? null,
+      remitenteProveedorId,
+      mensajeCitadoProveedorId: semantica.mensajeCitadoProveedorId,
+      mensajeObjetivoProveedorId: semantica.mensajeObjetivoProveedorId,
       contenidoCrudo,
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
-      multimedia: this.crearFuenteMultimedia(valor, mensaje.message, tipoMensaje),
+      multimedia: this.crearFuenteMultimedia(valor, mensaje.message, semantica.tipoMensaje),
     };
   }
 
