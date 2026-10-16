@@ -67,6 +67,18 @@ export interface SemanticaMensajeWhatsapp {
   mensajeObjetivoProveedorId: string | null;
 }
 
+/**
+ * `secretEncryptedMessage` es una envoltura interna de sincronización/protocolo.
+ * Baileys puede emitirla por `messages.upsert`, mientras que la edición ya
+ * descifrada se publica por `messages.update`. No representa por sí misma un
+ * mensaje de usuario que debamos persistir como conversación.
+ */
+export function esContenidoInternoWhatsapp(valor: unknown): boolean {
+  const raiz = comoRegistro(valor);
+
+  return raiz !== null && tieneValor(raiz, 'secretEncryptedMessage');
+}
+
 export function desarrollarContenido(valor: unknown): Record<string, unknown> | null {
   let actual = comoRegistro(valor);
 
