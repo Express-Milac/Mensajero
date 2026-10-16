@@ -5,9 +5,13 @@ import type { MensajeProveedor } from '../tipos.js';
 
 export interface MensajeDescargaMultimediaDurable {
   chatId: string;
+  tipoEvento: MensajeProveedor['tipoEvento'];
   tipoMensaje: string;
   eventoExternoId: string | null;
   mensajeProveedorId: string | null;
+  remitenteProveedorId: string | null;
+  mensajeCitadoProveedorId: string | null;
+  mensajeObjetivoProveedorId: string | null;
   contenidoCrudo: string;
   recibidoEn: string;
 }
@@ -44,9 +48,13 @@ export class ColaDescargaMultimediaDurable {
       creadaEn: new Date().toISOString(),
       mensaje: {
         chatId: mensaje.chatId,
+        tipoEvento: mensaje.tipoEvento,
         tipoMensaje: mensaje.tipoMensaje,
         eventoExternoId: mensaje.eventoExternoId,
         mensajeProveedorId: mensaje.mensajeProveedorId,
+        remitenteProveedorId: mensaje.remitenteProveedorId,
+        mensajeCitadoProveedorId: mensaje.mensajeCitadoProveedorId,
+        mensajeObjetivoProveedorId: mensaje.mensajeObjetivoProveedorId,
         contenidoCrudo: mensaje.contenidoCrudo,
         recibidoEn: mensaje.recibidoEn,
       },
@@ -107,8 +115,24 @@ export class ColaDescargaMultimediaDurable {
       ?? mensaje.eventoExternoId
       ?? createHash('sha256').update(mensaje.contenidoCrudo, 'utf8').digest('hex');
 
+    if (mensaje.tipoEvento === 'mensaje') {
+      return createHash('sha256')
+        .update(`${mensaje.chatId}\n${identidad}\n${mensaje.tipoMensaje}`, 'utf8')
+        .digest('hex');
+    }
+
+    const hashContenido = createHash('sha256')
+      .update(mensaje.contenidoCrudo, 'utf8')
+      .digest('hex');
+
     return createHash('sha256')
-      .update(`${mensaje.chatId}\n${identidad}\n${mensaje.tipoMensaje}`, 'utf8')
+      .update([
+        mensaje.chatId,
+        mensaje.tipoEvento,
+        identidad,
+        mensaje.mensajeObjetivoProveedorId ?? '',
+        hashContenido,
+      ].join('\n'), 'utf8')
       .digest('hex');
   }
 
