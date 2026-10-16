@@ -4,6 +4,11 @@ function comoRegistro(valor: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function tieneValor(registro: Record<string, unknown>, clave: string): boolean {
+  const valor = registro[clave];
+  return valor !== null && valor !== undefined;
+}
+
 export function desarrollarContenido(valor: unknown): Record<string, unknown> | null {
   let actual = comoRegistro(valor);
 
@@ -47,39 +52,41 @@ export function clasificarTipoMensaje(valor: unknown): string {
     return 'desconocido';
   }
 
-  if ('stickerMessage' in contenido) {
+  // Los objetos protobuf de Baileys pueden exponer propiedades presentes con valor null.
+  // No basta con comprobar `clave in objeto`, porque eso puede clasificar texto como sticker.
+  if (tieneValor(contenido, 'stickerMessage')) {
     return 'sticker';
   }
 
-  if ('imageMessage' in contenido) {
+  if (tieneValor(contenido, 'imageMessage')) {
     return 'foto';
   }
 
-  if ('videoMessage' in contenido) {
+  if (tieneValor(contenido, 'videoMessage')) {
     return 'video';
   }
 
-  if ('audioMessage' in contenido) {
+  if (tieneValor(contenido, 'audioMessage')) {
     return 'audio';
   }
 
-  if ('documentMessage' in contenido) {
+  if (tieneValor(contenido, 'documentMessage')) {
     return 'documento';
   }
 
-  if ('conversation' in contenido || 'extendedTextMessage' in contenido) {
+  if (tieneValor(contenido, 'conversation') || tieneValor(contenido, 'extendedTextMessage')) {
     return 'texto';
   }
 
-  if ('locationMessage' in contenido || 'liveLocationMessage' in contenido) {
+  if (tieneValor(contenido, 'locationMessage') || tieneValor(contenido, 'liveLocationMessage')) {
     return 'ubicacion';
   }
 
-  if ('contactMessage' in contenido || 'contactsArrayMessage' in contenido) {
+  if (tieneValor(contenido, 'contactMessage') || tieneValor(contenido, 'contactsArrayMessage')) {
     return 'contacto';
   }
 
-  if ('reactionMessage' in contenido) {
+  if (tieneValor(contenido, 'reactionMessage')) {
     return 'reaccion';
   }
 
