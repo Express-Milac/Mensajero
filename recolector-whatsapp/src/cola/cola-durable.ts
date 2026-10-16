@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, open, readFile, readdir, rename, rm } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export interface TareaDurable {
@@ -12,6 +12,7 @@ export interface TareaDurable {
 
 export class ColaDurable {
   private readonly rutaPendientes: string;
+  private readonly antiguedadTemporalHuerfanoMs = 5 * 60 * 1000;
 
   public constructor(rutaDatos: string) {
     this.rutaPendientes = join(rutaDatos, 'cola', 'pendientes');
@@ -19,6 +20,7 @@ export class ColaDurable {
 
   public async preparar(): Promise<void> {
     await mkdir(this.rutaPendientes, { recursive: true });
+    await this.limpiarTemporalesHuerfanos();
   }
 
   public async agregar(
@@ -88,6 +90,31 @@ export class ColaDurable {
 
   public async cantidad(): Promise<number> {
     return (await this.listar()).length;
+  }
+
+  private async limpiarTemporalesHuerfanos(): Promise<void> {
+    const ahora = Date.now();
+    const nombres = await readdir(this.rutaPendientes);
+
+    for (const nombre of nombres) {
+      if (!nombre.endsWith('.tmp')) {
+        continue;
+      }
+
+      const ruta = join(this.rutaPendientes, nombre);
+
+      try {
+        const informacion = await stat(ruta);
+
+        if (ahora - informacion.mtimeMs >= this.antiguedadTemporalHuerfanoMs) {
+          await rm(ruta, { force: true });
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
+      }
+    }
   }
 
   private async leer(ruta: string): Promise<TareaDurable | null> {
