@@ -20,9 +20,13 @@ export interface FuenteMultimediaProveedor {
 
 export interface MensajeProveedor {
   chatId: string;
+  tipoEvento: 'mensaje' | 'edicion' | 'eliminacion' | 'reaccion' | 'otro';
   tipoMensaje: string;
   eventoExternoId: string | null;
   mensajeProveedorId: string | null;
+  remitenteProveedorId: string | null;
+  mensajeCitadoProveedorId: string | null;
+  mensajeObjetivoProveedorId: string | null;
   contenidoCrudo: string;
   recibidoEn: string;
   multimedia: FuenteMultimediaProveedor | null;
