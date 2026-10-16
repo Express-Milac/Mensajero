@@ -32,11 +32,15 @@ Estado: 16/10/2026. `[x]` significa código entregado y validado en el alcance i
 - [x] Comando `mensajero:registrar-conexion-meta`.
 - [x] Índice SQL Server para resolver conexiones Meta por proveedor + identificador externo.
 - [x] Pruebas unitarias, funcionales e integración SQL Server agregadas para la ruta oficial.
-- [ ] Ejecutar Pint y PHPUnit normal sobre el nuevo incremento.
-- [ ] Ejecutar `phpunit.integracion.xml` dos veces consecutivas.
-- [ ] Confirmar rutas GET/POST `/api/meta/whatsapp/webhook`.
+- [x] Pint aprobado sobre 78 archivos.
+- [x] PHPUnit normal aprobado: 32 pruebas / 78 aserciones.
+- [x] SQL Server aprobado: 6 pruebas / 100 aserciones.
+- [x] Integración SQL Server repetible: 6 pruebas / 100 aserciones aprobadas dos veces consecutivas.
+- [x] Rutas GET/POST `/api/meta/whatsapp/webhook` confirmadas en `route:list`.
 - [ ] Crear/configurar aplicación en Meta Developers con número de prueba oficial.
-- [ ] Verificar webhook real mediante HTTPS y suscribirse al campo `messages`.
+- [ ] Publicar el webhook de Mensajero en una URL HTTPS controlada por MILAC.
+- [ ] Verificar webhook real y suscribirse al WABA/campo `messages`.
+- [ ] Registrar en Mensajero el Phone Number ID del número de prueba oficial.
 - [ ] Probar un evento real oficial antes de registrar el número empresarial.
 
 ## Groups API
