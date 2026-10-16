@@ -86,7 +86,9 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     const socket = makeWASocket({
       auth: state,
       version: versionWeb.version,
-      logger: this.logger.child({ componente: 'baileys' }, { level: 'warn' }),
+      // Los logs internos de Baileys pueden incluir JID, nodos cifrados y metadatos del proveedor.
+      // Mensajero expone únicamente sus propios eventos sanitizados para evitar fuga de información.
+      logger: this.logger.child({ componente: 'baileys' }, { level: 'silent' }),
       markOnlineOnConnect: false,
       syncFullHistory: false,
       generateHighQualityLinkPreview: false,
