@@ -137,7 +137,9 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         });
         await this.sincronizarGrupos();
 
-        if (actualizacion.receivedPendingNotifications !== true) {
+        // La confirmación del búfer puede llegar antes que connection=open.
+        // No rearmar el watchdog si el flujo ya fue confirmado en esta misma conexión.
+        if (!this.recepcionConfirmada && actualizacion.receivedPendingNotifications !== true) {
           this.iniciarVigilanciaIntegridad(secuencia);
         }
       }
@@ -175,17 +177,51 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       await this.confirmarRecepcionActiva('messages_upsert');
     }
 
+    let candidatosGrupo = 0;
+    let normalizadosGrupo = 0;
+
     for (const mensaje of mensajes) {
       try {
+        if (this.esCandidatoGrupo(mensaje)) {
+          candidatosGrupo += 1;
+        }
+
         const normalizado = this.normalizarMensaje(mensaje);
 
         if (normalizado !== null) {
+          normalizadosGrupo += 1;
           await this.manejadores.alMensaje(normalizado);
         }
       } catch (error) {
         this.logger.error({ error }, 'No fue posible normalizar un mensaje de WhatsApp.');
       }
     }
+
+    this.logger.info(
+      {
+        tipo_evento: tipoEvento,
+        recibidos: mensajes.length,
+        candidatos_grupo: candidatosGrupo,
+        normalizados_grupo: normalizadosGrupo,
+      },
+      'Lote de mensajes de WhatsApp procesado.',
+    );
+  }
+
+  private esCandidatoGrupo(valor: unknown): boolean {
+    if (typeof valor !== 'object' || valor === null) {
+      return false;
+    }
+
+    const mensaje = valor as {
+      key?: { remoteJid?: string | null };
+      message?: unknown;
+    };
+
+    return Boolean(
+      mensaje.key?.remoteJid?.endsWith('@g.us')
+      && mensaje.message,
+    );
   }
 
   private normalizarMensaje(valor: unknown): MensajeProveedor | null {
@@ -222,8 +258,18 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
   private iniciarVigilanciaIntegridad(secuencia: number): void {
     this.cancelarVigilanciaIntegridad();
+
+    if (this.recepcionConfirmada) {
+      return;
+    }
+
     this.temporizadorIntegridad = setTimeout(() => {
-      if (this.deteniendo || secuencia !== this.secuenciaConexion || this.manejadores === null) {
+      if (
+        this.deteniendo
+        || secuencia !== this.secuenciaConexion
+        || this.manejadores === null
+        || this.recepcionConfirmada
+      ) {
         return;
       }
 
