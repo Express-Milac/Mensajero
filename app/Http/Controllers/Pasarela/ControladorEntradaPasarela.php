@@ -172,6 +172,9 @@ class ControladorEntradaPasarela extends Controller
             'tipo_mensaje' => ['required', 'string', 'max:64'],
             'evento_externo_id' => ['nullable', 'string', 'max:191'],
             'mensaje_proveedor_id' => ['nullable', 'string', 'max:191'],
+            'id_remitente_proveedor' => ['nullable', 'string', 'max:191'],
+            'id_mensaje_citado_proveedor' => ['nullable', 'string', 'max:191'],
+            'id_mensaje_objetivo_proveedor' => ['nullable', 'string', 'max:191'],
             'contenido_crudo' => ['required', 'string'],
             'recibido_en' => ['required', 'date'],
             'version_contrato' => ['sometimes', 'string', 'max:32'],
@@ -217,6 +220,9 @@ class ControladorEntradaPasarela extends Controller
             recibidoEn: CarbonImmutable::parse((string) $datos['recibido_en']),
             versionContrato: (string) ($datos['version_contrato'] ?? 'v1'),
             archivo: $archivo,
+            remitenteProveedorId: $datos['id_remitente_proveedor'] ?? null,
+            mensajeCitadoProveedorId: $datos['id_mensaje_citado_proveedor'] ?? null,
+            mensajeObjetivoProveedorId: $datos['id_mensaje_objetivo_proveedor'] ?? null,
         ));
 
         return response()->json([
