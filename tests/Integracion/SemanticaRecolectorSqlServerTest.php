@@ -48,7 +48,7 @@ class SemanticaRecolectorSqlServerTest extends TestCase
                 'contenido_crudo' => '{"conversation":"texto original"}',
             ]);
 
-            $this->enviarFirmado('/api/pasarela/v1/eventos', $original, 'original-'.$conexion->id)
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $original, 'semantica-original-'.$conexion->id)
                 ->assertOk()
                 ->assertJsonPath('estado', 'aceptado');
 
@@ -65,18 +65,18 @@ class SemanticaRecolectorSqlServerTest extends TestCase
             $respuestaEdicion = $this->enviarFirmado(
                 '/api/pasarela/v1/eventos',
                 $edicionUno,
-                'edicion-uno-'.$conexion->id,
+                'semantica-edicion-uno-'.$conexion->id,
             );
             $respuestaEdicion->assertOk()->assertJsonPath('estado', 'aceptado');
 
             $edicionDos = $edicionUno;
             $edicionDos['contenido_crudo'] = '{"protocolMessage":{"type":14,"editedMessage":{"conversation":"texto corregido dos"}}}';
 
-            $this->enviarFirmado('/api/pasarela/v1/eventos', $edicionDos, 'edicion-dos-'.$conexion->id)
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $edicionDos, 'semantica-edicion-dos-'.$conexion->id)
                 ->assertOk()
                 ->assertJsonPath('estado', 'aceptado');
 
-            $this->enviarFirmado('/api/pasarela/v1/eventos', $edicionUno, 'edicion-repetida-'.$conexion->id)
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $edicionUno, 'semantica-edicion-repetida-'.$conexion->id)
                 ->assertOk()
                 ->assertJsonPath('estado', 'duplicado');
 
@@ -90,7 +90,7 @@ class SemanticaRecolectorSqlServerTest extends TestCase
                 'contenido_crudo' => '{"protocolMessage":{"type":0}}',
             ]);
 
-            $this->enviarFirmado('/api/pasarela/v1/eventos', $eliminacion, 'eliminacion-'.$conexion->id)
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $eliminacion, 'semantica-eliminacion-'.$conexion->id)
                 ->assertOk()
                 ->assertJsonPath('estado', 'aceptado');
 
@@ -104,7 +104,7 @@ class SemanticaRecolectorSqlServerTest extends TestCase
                 'contenido_crudo' => '{"extendedTextMessage":{"text":"respuesta"}}',
             ]);
 
-            $this->enviarFirmado('/api/pasarela/v1/eventos', $respuesta, 'respuesta-'.$conexion->id)
+            $this->enviarFirmado('/api/pasarela/v1/eventos', $respuesta, 'semantica-respuesta-'.$conexion->id)
                 ->assertOk()
                 ->assertJsonPath('estado', 'aceptado');
 
