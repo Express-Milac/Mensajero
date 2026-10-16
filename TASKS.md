@@ -89,7 +89,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Reinicio abrupto del recolector alrededor de una recepción multimedia certificado: con `principal.ts` completamente detenido se envió una foto al grupo de prueba; al reiniciar sin nuevo QR, WhatsApp/Baileys recuperó el mensaje, Mensajero persistió el archivo multimedia, SQL avanzó exactamente un evento y un archivo, se creó un nuevo periodo `reinicio_no_confirmado`, tamaño/hash físico coincidieron con SQL y la cola de `/api/pasarela/v1/eventos` terminó en 0.
 - [x] Implementado reintento durable previo a la descarga multimedia: antes de acceder al archivo, el mensaje autorizado se persiste en `datos/descargas-multimedia/pendientes`; la tarea conserva `contenido_crudo` serializable y puede reconstruirse con `BufferJSON.reviver`. Solo se confirma después de persistir el archivo y colocar el evento en la cola HMAC; si el proceso cae tras escribir el archivo pero antes de encolar el evento, el reintento reutiliza el archivo determinístico existente sin descargarlo otra vez.
 - [x] Agregadas pruebas automatizadas para persistencia entre instancias y deduplicación de la cola durable de descargas multimedia.
-- [ ] Validar localmente el nuevo reintento durable con `npm run verificar` y `npm run pruebas`; se esperan 13 pruebas del recolector.
+- [x] Validación local del reintento durable aprobada: `npm run verificar` completó sin errores y `npm run pruebas` aprobó 13/13, incluidas persistencia entre instancias y deduplicación de descargas multimedia.
 - [ ] Ejecutar una prueba controlada forzando un fallo de descarga y comprobar que la tarea sobrevive, se reintenta y solo desaparece tras archivo + evento durable.
 
 ## Bloqueadores restantes antes de grupos reales
