@@ -272,23 +272,31 @@ async function iniciar(): Promise<void> {
     },
     alMensaje: async (mensaje) => {
       if (mensaje.tipoMensaje === 'sticker') {
+        logger.info({ motivo: 'sticker' }, 'Mensaje de grupo descartado antes de la cola durable.');
         return;
       }
 
       const marcaMensaje = Date.parse(mensaje.recibidoEn);
 
       if (Number.isFinite(marcaMensaje) && marcaMensaje < inicioOperacionMs) {
+        logger.info(
+          { motivo: 'anterior_inicio_operacion', tipo: mensaje.tipoMensaje },
+          'Mensaje de grupo descartado antes de la cola durable.',
+        );
         return;
       }
 
       if (!chatsAutorizados.has(mensaje.chatId)) {
-        logger.debug({ chatId: mensaje.chatId }, 'Mensaje ignorado: grupo no autorizado.');
+        logger.info(
+          { motivo: 'grupo_no_autorizado', tipo: mensaje.tipoMensaje },
+          'Mensaje de grupo descartado antes de la cola durable.',
+        );
         return;
       }
 
       await encolarMensaje(mensaje);
       logger.info(
-        { chatId: mensaje.chatId, tipo: mensaje.tipoMensaje, evento: mensaje.eventoExternoId },
+        { tipo: mensaje.tipoMensaje },
         'Mensaje persistido primero en la cola local durable.',
       );
     },
