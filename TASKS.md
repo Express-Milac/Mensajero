@@ -34,10 +34,14 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Migración `mensajero_periodos_integridad_whatsapp`.
 - [x] Pruebas TypeScript para firma, clasificación y cola durable agregadas.
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
-- [ ] Ejecutar `npm install`, `npm run verificar` y `npm run pruebas`.
-- [ ] Ejecutar Pint y PHPUnit normal.
-- [ ] Ejecutar `phpunit.integracion.xml` dos veces.
+- [x] `npm install`: 98 paquetes instalados y 0 vulnerabilidades reportadas.
+- [x] `npm run verificar`: TypeScript aprobado sin errores.
+- [x] `npm run pruebas`: 4/4 pruebas aprobadas.
+- [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
+- [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
+- [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
 - [ ] Registrar conexión `recolector-pruebas` en `mensajero_test`.
+- [ ] Configurar secreto HMAC compartido entre Laravel y recolector sin comprometerlo en Git.
 - [ ] Vincular únicamente el número recolector dedicado.
 - [ ] Confirmar descubrimiento del grupo de prueba en `/grupos`.
 - [ ] Autorizar un solo grupo de prueba.
