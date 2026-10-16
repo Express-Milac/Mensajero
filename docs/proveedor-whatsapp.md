@@ -1,9 +1,34 @@
-# Decisión de integración con WhatsApp
+# Proveedor de WhatsApp
 
-El número usa WhatsApp Business, participa en conversaciones ajenas y solo interesan 5–6 grupos existentes que pueden tener 30 o más participantes.
+Mensajero utilizará integración oficial directa con Meta / WhatsApp Business Platform Cloud API.
 
-No se utilizará un servicio administrado de terceros para capturar estos grupos. La decisión de trabajo es una pasarela Node.js/TypeScript autohospedada por MILAC, con una biblioteca de WhatsApp Web reemplazable detrás de un contrato neutral.
+## Permitido
 
-La pasarela deberá proporcionar estado, grupos, metadatos, recepción, normalización mínima, descarga bajo demanda y reconexión. No contendrá reglas de transporte, Gemini ni acceso directo a tablas corporativas.
+- APIs y webhooks oficiales de Meta/WhatsApp.
+- Graph API.
+- código PHP/Laravel desarrollado por MILAC para autenticación, adaptación, almacenamiento, filtros, normalización y procesamiento.
+- infraestructura propia de MILAC para Mensajero, SQL Server, Redis y archivos.
 
-Antes de vincular el número empresarial se probará con una sesión controlada: grupos, texto, citas, foto, audio, video, documento, identificadores, reinicio, desconexión/reconexión, descarte de chats no autorizados y deduplicación. Sesiones y llaves quedan fuera de Git.
+## No permitido
+
+- Baileys.
+- WPPConnect.
+- whatsapp-web.js.
+- automatización de WhatsApp Web o del protocolo privado.
+- BSP/SaaS intermediario cuando la integración pueda realizarse directamente con Meta.
+
+## Flujo
+
+```text
+WhatsApp / Meta Cloud API
+        ↓ webhook oficial firmado
+Mensajero Laravel
+        ↓
+lista permitida
+        ↓
+evento crudo + buzón SQL Server
+        ↓
+normalización / Redis / IA
+```
+
+Los grupos normales existentes en WhatsApp Business App no se consideran automáticamente accesibles desde Cloud API. La funcionalidad de grupos se implementará únicamente donde la Groups API oficial de Meta sea elegible y compatible con el proceso de MILAC.

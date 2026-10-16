@@ -61,7 +61,11 @@ final class SincronizarChatsDescubiertos
                 }
 
                 $registro->tipo_chat = $tipoChat;
-                $registro->nombre_grupo = $nombreGrupo;
+
+                if (array_key_exists('nombre_grupo', $chatDescubierto) && $nombreGrupo !== null) {
+                    $registro->nombre_grupo = $nombreGrupo;
+                }
+
                 $registro->visto_ultima_vez_en = $vistoEn;
 
                 if (array_key_exists('es_activo', $chatDescubierto)) {

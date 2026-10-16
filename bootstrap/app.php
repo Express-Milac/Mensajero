@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\RequerirAccesoMensajero;
+use App\Http\Middleware\VerificarFirmaMeta;
 use App\Http\Middleware\VerificarFirmaPasarela;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'mensajero.acceso' => RequerirAccesoMensajero::class,
+            'mensajero.firma_meta' => VerificarFirmaMeta::class,
             'mensajero.firma_pasarela' => VerificarFirmaPasarela::class,
         ]);
     })
