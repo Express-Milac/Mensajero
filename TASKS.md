@@ -35,8 +35,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Pruebas TypeScript para firma, clasificación y cola durable agregadas.
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
 - [x] `npm install`: 98 paquetes instalados y 0 vulnerabilidades reportadas.
-- [x] `npm run verificar`: TypeScript aprobado sin errores antes del parche de recepción.
-- [x] `npm run pruebas`: 4/4 pruebas aprobadas antes del parche de recepción.
+- [x] `npm run verificar`: TypeScript aprobado con el parche de recepción.
+- [x] `npm run pruebas`: 7/7 pruebas aprobadas con aplicación, idempotencia y fallo seguro del parche.
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
@@ -47,15 +47,15 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Grupo de prueba `Mensajero milac Prueba` autorizado como único grupo monitoreado del recolector.
 - [x] Detectado fallo de Baileys 6.7.24: sesión/grupos sanos pero sin `messages.upsert` entregado a la aplicación.
 - [x] Agregado parche local reproducible para tratar `offline="0"` como mensaje en línea; `postinstall` falla cerrado si la dependencia cambia.
-- [x] Agregadas pruebas del parche: aplicación, idempotencia y fallo seguro.
 - [x] Agregado watchdog de recepción: si el socket abre pero no hay confirmación de buffer ni `messages.upsert` en 30 s, se marca error de integridad.
 - [x] Agregado marcador positivo `Flujo de mensajes de WhatsApp confirmado.` cuando la recepción queda efectivamente habilitada.
 - [x] Agregado `npm run diagnosticar-cola` para probar tareas pendientes contra Laravel sin borrarlas ni mostrar secretos.
-- [x] Confirmado que la tarea pendiente observada no era `/eventos`, sino `/estado-conexion`; por tanto los mensajes de prueba no habían llegado aún al manejador de mensajes.
-- [ ] Reejecutar `npm install`, `npm run verificar` y `npm run pruebas` con el parche integrado y watchdog.
-- [ ] Ejecutar `npm run diagnosticar-cola` y resolver cualquier rechazo de `/estado-conexion`.
-- [ ] Desvincular y volver a vincular el dispositivo recolector para regenerar la sesión server-side atascada.
-- [ ] Confirmar un mensaje nuevo en SQL Server y ausencia de `/eventos` pendientes.
+- [x] Confirmado que `/estado-conexion` es aceptado por Laravel; el diagnóstico no elimina la tarea por diseño.
+- [x] Sesión vinculada regenerada desde cero; el primer `515` se recuperó con reconexión y la nueva sesión confirmó `confirmacion_buffer_inicial`.
+- [x] Agregado `npm run drenar-cola` para transmitir, recibir ACK y retirar explícitamente tareas durables antiguas.
+- [x] Logs internos crudos de Baileys silenciados para no exponer JID/nodos cifrados; Mensajero conserva sus logs sanitizados.
+- [ ] Ejecutar `npm run drenar-cola` y confirmar `pendientesRestantes: 0`.
+- [ ] Confirmar un mensaje nuevo del grupo en SQL Server y ausencia de `/eventos` pendientes.
 - [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
