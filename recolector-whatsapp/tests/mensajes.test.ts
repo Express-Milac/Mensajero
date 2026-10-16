@@ -11,6 +11,20 @@ test('clasifica texto, foto, video, audio, documento y sticker', () => {
   assert.equal(clasificarTipoMensaje({ stickerMessage: {} }), 'sticker');
 });
 
+test('no confunde texto protobuf con sticker cuando otros campos vienen en null', () => {
+  const contenidoProto = {
+    stickerMessage: null,
+    imageMessage: null,
+    videoMessage: null,
+    audioMessage: null,
+    documentMessage: null,
+    conversation: 'CAPTURA-TEXTO-001',
+    extendedTextMessage: null,
+  };
+
+  assert.equal(clasificarTipoMensaje(contenidoProto), 'texto');
+});
+
 test('desenvuelve mensajes efímeros y de vista única', () => {
   const contenido = desarrollarContenido({
     ephemeralMessage: {
