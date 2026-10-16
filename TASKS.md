@@ -35,8 +35,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Pruebas TypeScript para firma, clasificación y cola durable agregadas.
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
 - [x] `npm install`: 99 paquetes auditados y 0 vulnerabilidades reportadas en la validación actual.
-- [x] `npm run verificar`: TypeScript aprobado con el parche de recepción y watchdog corregido.
-- [x] `npm run pruebas`: 8/8 pruebas aprobadas, incluida limpieza de temporales huérfanos, antes de la corrección de clasificación protobuf.
+- [x] `npm run verificar`: TypeScript aprobado con el parche de recepción, watchdog corregido y clasificación protobuf corregida.
+- [x] `npm run pruebas`: 9/9 pruebas aprobadas, incluida limpieza de temporales huérfanos y regresión `stickerMessage:null + conversation:texto`.
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
@@ -61,9 +61,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Primer mensaje real de grupo alcanzó `messages.upsert`: `recibidos=1`, `candidatos_grupo=1`, `normalizados_grupo=1`.
 - [x] Detectado bug de clasificación protobuf: un mensaje de texto real fue marcado como `sticker` porque los campos presentes con valor `null` se evaluaban mediante `in`.
 - [x] Corregida la clasificación para exigir valores no nulos/no indefinidos y agregada prueba de regresión `stickerMessage:null + conversation:texto`.
-- [ ] Reejecutar `npm run verificar` y `npm run pruebas` después de la corrección de clasificación protobuf.
-- [ ] Confirmar un mensaje de texto nuevo del grupo en SQL Server y ausencia de `/eventos` pendientes.
-- [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
+- [x] Primer mensaje de texto real confirmado de extremo a extremo: cola durable → HMAC → Laravel → SQL Server; conteo del grupo pasó de 0 a 1 y la cola quedó en 0 tras ACK.
+- [x] Lote normal de 10 mensajes de texto confirmado sin pérdida: SQL pasó de 1 a 11, los 10 fueron clasificados como `texto`, normalizados como grupo y la cola terminó con 0 tareas JSON.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
 
