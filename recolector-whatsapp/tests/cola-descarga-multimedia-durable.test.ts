@@ -9,13 +9,18 @@ import type { MensajeProveedor } from '../src/tipos.js';
 function mensajePrueba(): MensajeProveedor {
   return {
     chatId: '120363000000000000@g.us',
+    tipoEvento: 'mensaje',
     tipoMensaje: 'foto',
     eventoExternoId: 'EVENTO-MULTIMEDIA-001',
     mensajeProveedorId: 'MENSAJE-MULTIMEDIA-001',
+    remitenteProveedorId: '521000000000@s.whatsapp.net',
+    mensajeCitadoProveedorId: null,
+    mensajeObjetivoProveedorId: null,
     contenidoCrudo: JSON.stringify({
       key: {
         remoteJid: '120363000000000000@g.us',
         id: 'MENSAJE-MULTIMEDIA-001',
+        participant: '521000000000@s.whatsapp.net',
       },
       message: {
         imageMessage: {
