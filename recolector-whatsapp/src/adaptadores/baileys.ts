@@ -1,6 +1,7 @@
 import makeWASocket, {
   BufferJSON,
   DisconnectReason,
+  fetchLatestWaWebVersion,
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
@@ -63,9 +64,24 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     await this.manejadores.alEstado('conectando');
 
     const { state, saveCreds } = await useMultiFileAuthState(this.rutaSesion);
+    const versionWeb = await fetchLatestWaWebVersion({});
+
+    if (!versionWeb.isLatest) {
+      this.logger.warn(
+        { error: versionWeb.error },
+        'No fue posible consultar la versión actual de WhatsApp Web; se usará la versión de respaldo de Baileys.',
+      );
+    }
+
+    this.logger.info(
+      { version: versionWeb.version.join('.'), actual: versionWeb.isLatest },
+      'Versión de WhatsApp Web seleccionada para la conexión.',
+    );
+
     const socket = makeWASocket({
       auth: state,
-      logger: this.logger,
+      version: versionWeb.version,
+      logger: this.logger.child({ componente: 'baileys' }, { level: 'warn' }),
       markOnlineOnConnect: false,
       syncFullHistory: false,
       generateHighQualityLinkPreview: false,
@@ -109,6 +125,11 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       if (actualizacion.connection === 'close') {
         const codigo = this.codigoDesconexion(actualizacion.lastDisconnect?.error);
         const sesionCerrada = codigo === DisconnectReason.loggedOut;
+
+        this.logger.warn(
+          { codigo_desconexion: codigo },
+          'WhatsApp cerró la conexión del recolector.',
+        );
 
         await this.manejadores.alEstado(
           sesionCerrada ? 'requiere_vinculacion' : 'desconectado',
