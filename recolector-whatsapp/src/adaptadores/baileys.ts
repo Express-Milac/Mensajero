@@ -56,6 +56,16 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     await this.manejadores.alGrupos(descubiertos);
   }
 
+  public reconstruirMensaje(contenidoCrudo: string): MensajeProveedor | null {
+    try {
+      const valor = JSON.parse(contenidoCrudo, BufferJSON.reviver) as unknown;
+      return this.normalizarMensaje(valor);
+    } catch (error) {
+      this.logger.error({ error }, 'No fue posible reconstruir un mensaje durable de WhatsApp.');
+      return null;
+    }
+  }
+
   public async detener(): Promise<void> {
     this.deteniendo = true;
     this.cancelarVigilanciaIntegridad();
