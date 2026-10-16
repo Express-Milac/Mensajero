@@ -34,9 +34,9 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Migración `mensajero_periodos_integridad_whatsapp`.
 - [x] Pruebas TypeScript para firma, clasificación y cola durable agregadas.
 - [x] Prueba SQL Server del contrato recolector/integridad agregada.
-- [x] `npm install`: 98 paquetes instalados y 0 vulnerabilidades reportadas.
-- [x] `npm run verificar`: TypeScript aprobado con el parche de recepción.
-- [x] `npm run pruebas`: 7/7 pruebas aprobadas con aplicación, idempotencia y fallo seguro del parche.
+- [x] `npm install`: 99 paquetes auditados y 0 vulnerabilidades reportadas en la validación actual.
+- [x] `npm run verificar`: TypeScript aprobado con el parche de recepción y watchdog corregido.
+- [x] `npm run pruebas`: 8/8 pruebas aprobadas, incluida limpieza de temporales huérfanos.
 - [x] `phpunit.integracion.xml`: 7 pruebas / 119 aserciones aprobadas.
 - [x] Integración SQL Server repetible: 7 pruebas / 119 aserciones aprobadas dos veces consecutivas sobre `mensajero_test`.
 - [x] `route:list`: 15 rutas cargadas, incluidas chats autorizados, estado, eventos e integridad.
@@ -48,14 +48,18 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Detectado fallo de Baileys 6.7.24: sesión/grupos sanos pero sin `messages.upsert` entregado a la aplicación.
 - [x] Agregado parche local reproducible para tratar `offline="0"` como mensaje en línea; `postinstall` falla cerrado si la dependencia cambia.
 - [x] Agregado watchdog de recepción: si el socket abre pero no hay confirmación de buffer ni `messages.upsert` en 30 s, se marca error de integridad.
+- [x] Corregida carrera del watchdog para no rearmarlo después de `confirmacion_buffer_inicial`.
 - [x] Agregado marcador positivo `Flujo de mensajes de WhatsApp confirmado.` cuando la recepción queda efectivamente habilitada.
+- [x] Agregada telemetría sanitizada de lotes `messages.upsert`: recibidos, candidatos de grupo y normalizados, sin JID ni contenido.
 - [x] Agregado `npm run diagnosticar-cola` para probar tareas pendientes contra Laravel sin borrarlas ni mostrar secretos.
 - [x] Confirmado que `/estado-conexion` es aceptado por Laravel; el diagnóstico no elimina la tarea por diseño.
 - [x] Sesión vinculada regenerada desde cero; el primer `515` se recuperó con reconexión y la nueva sesión confirmó `confirmacion_buffer_inicial`.
 - [x] Agregado `npm run drenar-cola` para transmitir, recibir ACK y retirar explícitamente tareas durables antiguas.
+- [x] `npm run drenar-cola` validado con `pendientesRestantes: 0`; una ejecución posterior confirmó que no había tareas pendientes.
+- [x] Confirmado que los seis archivos residuales observados eran temporales `.tmp`, no tareas JSON; limpieza automática de temporales huérfanos agregada y validada.
 - [x] Logs internos crudos de Baileys silenciados para no exponer JID/nodos cifrados; Mensajero conserva sus logs sanitizados.
-- [ ] Ejecutar `npm run drenar-cola` y confirmar `pendientesRestantes: 0`.
-- [ ] Confirmar un mensaje nuevo del grupo en SQL Server y ausencia de `/eventos` pendientes.
+- [x] Primer mensaje real de grupo alcanzó `messages.upsert`: `recibidos=1`, `candidatos_grupo=1`, `normalizados_grupo=1`; fue descartado correctamente por ser `sticker`, por lo que SQL permaneció en 0 según requisito.
+- [ ] Confirmar un mensaje de texto nuevo del grupo en SQL Server y ausencia de `/eventos` pendientes.
 - [ ] Enviar lote de texto y confirmar cero pérdida en condiciones normales.
 - [ ] Cortar Laravel/red, enviar mensajes, restaurar y verificar drenaje completo de cola.
 - [ ] Reiniciar recolector y verificar periodo de integridad.
