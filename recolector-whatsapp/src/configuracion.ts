@@ -49,10 +49,21 @@ export function cargarConfiguracion(): ConfiguracionRecolector {
   }
 
   const rutaDatos = resolve(process.cwd(), process.env.RECOLECTOR_RUTA_DATOS?.trim() || './datos');
+  const rutaAlmacenamientoExplicita = process.env.RECOLECTOR_RUTA_ALMACENAMIENTO?.trim();
   const rutaAlmacenamiento = resolve(
     process.cwd(),
-    process.env.RECOLECTOR_RUTA_ALMACENAMIENTO?.trim() || '../storage/app/mensajero',
+    rutaAlmacenamientoExplicita || '../storage/app/mensajero',
   );
+
+  if (rutaAlmacenamientoExplicita) {
+    console.warn(
+      '[Mensajero] RECOLECTOR_RUTA_ALMACENAMIENTO está definida explícitamente; debe apuntar a la misma raíz privada que Laravel.',
+    );
+  } else {
+    console.info(
+      '[Mensajero] Se usa la raíz multimedia predeterminada compartida con Laravel para el POC local.',
+    );
+  }
 
   return {
     mensajeroUrl: requerido('MENSAJERO_URL').replace(/\/+$/, ''),
