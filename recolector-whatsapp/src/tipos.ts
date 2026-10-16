@@ -12,6 +12,12 @@ export interface ChatDescubierto {
   esActivo: boolean;
 }
 
+export interface FuenteMultimediaProveedor {
+  tipoMime: string | null;
+  nombreOriginal: string | null;
+  abrirFlujo: () => Promise<AsyncIterable<Uint8Array>>;
+}
+
 export interface MensajeProveedor {
   chatId: string;
   tipoMensaje: string;
@@ -19,6 +25,7 @@ export interface MensajeProveedor {
   mensajeProveedorId: string | null;
   contenidoCrudo: string;
   recibidoEn: string;
+  multimedia: FuenteMultimediaProveedor | null;
 }
 
 export interface ManejadoresWhatsapp {
