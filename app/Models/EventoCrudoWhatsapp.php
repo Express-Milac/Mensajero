@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class EventoCrudoWhatsapp extends Model
 {
@@ -31,5 +32,10 @@ class EventoCrudoWhatsapp extends Model
     public function chat(): BelongsTo
     {
         return $this->belongsTo(ChatMonitoreado::class, 'chat_monitoreado_id');
+    }
+
+    public function archivo(): HasOne
+    {
+        return $this->hasOne(ArchivoWhatsapp::class, 'evento_crudo_id');
     }
 }
