@@ -6,6 +6,7 @@
   "scripts": {
     "postinstall": "node scripts/aplicar-parche-baileys.mjs",
     "desarrollo": "tsx src/principal.ts",
+    "diagnosticar-cola": "tsx src/diagnosticar-cola.ts",
     "verificar": "tsc --noEmit",
     "construir": "tsc",
     "pruebas": "tsx --test tests/**/*.test.ts",
