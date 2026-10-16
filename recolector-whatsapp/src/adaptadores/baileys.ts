@@ -18,6 +18,9 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
   private manejadores: ManejadoresWhatsapp | null = null;
   private deteniendo = false;
   private reconexionProgramada = false;
+  private temporizadorIntegridad: NodeJS.Timeout | null = null;
+  private secuenciaConexion = 0;
+  private errorRecepcionMarcado = false;
 
   public constructor(
     private readonly rutaSesion: string,
@@ -48,6 +51,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
   public async detener(): Promise<void> {
     this.deteniendo = true;
+    this.cancelarVigilanciaIntegridad();
 
     if (this.socket !== null) {
       await this.socket.end(new Error('Detención solicitada por Mensajero.'));
@@ -87,11 +91,14 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       generateHighQualityLinkPreview: false,
     });
 
+    this.secuenciaConexion += 1;
+    const secuencia = this.secuenciaConexion;
+    this.errorRecepcionMarcado = false;
     this.socket = socket;
     socket.ev.on('creds.update', saveCreds);
 
     socket.ev.on('connection.update', (actualizacion) => {
-      void this.manejarActualizacionConexion(actualizacion);
+      void this.manejarActualizacionConexion(actualizacion, secuencia);
     });
 
     socket.ev.on('messages.upsert', (evento) => {
@@ -103,8 +110,9 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     connection?: string | null;
     lastDisconnect?: { error?: unknown } | null;
     qr?: string | null;
-  }): Promise<void> {
-    if (this.manejadores === null) {
+    receivedPendingNotifications?: boolean;
+  }, secuencia: number): Promise<void> {
+    if (this.manejadores === null || secuencia !== this.secuenciaConexion) {
       return;
     }
 
@@ -114,15 +122,24 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         await this.manejadores.alEstado('requiere_vinculacion');
       }
 
+      if (actualizacion.receivedPendingNotifications === true) {
+        await this.confirmarRecepcionActiva('confirmacion_buffer_inicial');
+      }
+
       if (actualizacion.connection === 'open') {
         this.reconexionProgramada = false;
         await this.manejadores.alEstado('conectado', {
           id_cuenta_externa: this.socket?.user?.id ?? null,
         });
         await this.sincronizarGrupos();
+
+        if (actualizacion.receivedPendingNotifications !== true) {
+          this.iniciarVigilanciaIntegridad(secuencia);
+        }
       }
 
       if (actualizacion.connection === 'close') {
+        this.cancelarVigilanciaIntegridad();
         const codigo = this.codigoDesconexion(actualizacion.lastDisconnect?.error);
         const sesionCerrada = codigo === DisconnectReason.loggedOut;
 
@@ -148,6 +165,10 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
   private async manejarMensajes(mensajes: unknown[], tipoEvento: string): Promise<void> {
     if (this.manejadores === null || !['notify', 'append'].includes(tipoEvento)) {
       return;
+    }
+
+    if (mensajes.length > 0) {
+      await this.confirmarRecepcionActiva('messages_upsert');
     }
 
     for (const mensaje of mensajes) {
@@ -193,6 +214,48 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       contenidoCrudo,
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
     };
+  }
+
+  private iniciarVigilanciaIntegridad(secuencia: number): void {
+    this.cancelarVigilanciaIntegridad();
+    this.temporizadorIntegridad = setTimeout(() => {
+      if (this.deteniendo || secuencia !== this.secuenciaConexion || this.manejadores === null) {
+        return;
+      }
+
+      this.errorRecepcionMarcado = true;
+      this.logger.error(
+        { causa: 'buffer_inicial_sin_confirmacion' },
+        'WhatsApp mantiene el socket abierto, pero no confirmó el flujo de mensajes; la integridad de captura no puede garantizarse.',
+      );
+      void this.manejadores.alEstado('error', {
+        causa: 'buffer_inicial_sin_confirmacion',
+        impacto: 'integridad_no_confirmada',
+      }).catch((error) => {
+        this.logger.error({ error }, 'No fue posible reportar el error de integridad de recepción.');
+      });
+    }, 30_000);
+  }
+
+  private cancelarVigilanciaIntegridad(): void {
+    if (this.temporizadorIntegridad !== null) {
+      clearTimeout(this.temporizadorIntegridad);
+      this.temporizadorIntegridad = null;
+    }
+  }
+
+  private async confirmarRecepcionActiva(origen: string): Promise<void> {
+    this.cancelarVigilanciaIntegridad();
+
+    if (!this.errorRecepcionMarcado || this.manejadores === null) {
+      return;
+    }
+
+    this.errorRecepcionMarcado = false;
+    this.logger.info({ origen }, 'Se recuperó el flujo de mensajes de WhatsApp.');
+    await this.manejadores.alEstado('conectado', {
+      recuperacion_recepcion: origen,
+    });
   }
 
   private codigoDesconexion(error: unknown): number | null {
