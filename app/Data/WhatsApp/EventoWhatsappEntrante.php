@@ -16,6 +16,7 @@ final readonly class EventoWhatsappEntrante
         public string $contenidoCrudo,
         public CarbonImmutable $recibidoEn,
         public string $versionContrato = 'v1',
+        public ?ArchivoWhatsappEntrante $archivo = null,
     ) {}
 
     public function hashContenidoSha256(): string
