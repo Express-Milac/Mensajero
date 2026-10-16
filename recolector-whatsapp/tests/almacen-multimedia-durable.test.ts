@@ -12,6 +12,21 @@ async function* flujoPrueba(): AsyncGenerator<Uint8Array> {
   yield Buffer.from('multimedia', 'utf8');
 }
 
+function semanticaBase(): Pick<
+  MensajeProveedor,
+  | 'tipoEvento'
+  | 'remitenteProveedorId'
+  | 'mensajeCitadoProveedorId'
+  | 'mensajeObjetivoProveedorId'
+> {
+  return {
+    tipoEvento: 'mensaje',
+    remitenteProveedorId: '521000000000@s.whatsapp.net',
+    mensajeCitadoProveedorId: null,
+    mensajeObjetivoProveedorId: null,
+  };
+}
+
 test('persiste multimedia de forma durable con hash, tamaño y ruta privada', async () => {
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
 
@@ -19,6 +34,7 @@ test('persiste multimedia de forma durable con hash, tamaño y ruta privada', as
     const almacen = new AlmacenMultimediaDurable(ruta, 'recolector-pruebas');
     const mensaje: MensajeProveedor = {
       chatId: 'grupo-prueba@g.us',
+      ...semanticaBase(),
       tipoMensaje: 'documento',
       eventoExternoId: 'evento-001',
       mensajeProveedorId: 'mensaje-001',
@@ -59,6 +75,7 @@ test('reutiliza un archivo durable existente sin volver a descargarlo', async ()
     let descargas = 0;
     const mensaje: MensajeProveedor = {
       chatId: 'grupo-prueba@g.us',
+      ...semanticaBase(),
       tipoMensaje: 'foto',
       eventoExternoId: 'evento-002',
       mensajeProveedorId: 'mensaje-002',
