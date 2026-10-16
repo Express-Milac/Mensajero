@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import makeWASocket, {
   BufferJSON,
   DisconnectReason,
@@ -6,6 +8,13 @@ import makeWASocket, {
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
+import { AlmacenContextoEdicionesDurable } from '../ediciones/almacen-contexto-ediciones-durable.js';
+import {
+  descifrarEdicionCifradaWhatsapp,
+  esEdicionCifradaWhatsapp,
+  extraerContextoEdicionOriginal,
+  extraerMensajeObjetivoEdicionCifrada,
+} from '../ediciones/ediciones-cifradas.js';
 import {
   analizarSemanticaMensaje,
   desarrollarContenido,
@@ -29,15 +38,22 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
   private secuenciaConexion = 0;
   private errorRecepcionMarcado = false;
   private recepcionConfirmada = false;
+  private readonly rutaAutorizados: string;
+  private readonly almacenContextoEdiciones: AlmacenContextoEdicionesDurable;
 
   public constructor(
     private readonly rutaSesion: string,
     private readonly logger: Logger,
-  ) {}
+  ) {
+    const rutaDatos = dirname(rutaSesion);
+    this.rutaAutorizados = join(rutaDatos, 'chats-autorizados.json');
+    this.almacenContextoEdiciones = new AlmacenContextoEdicionesDurable(rutaDatos);
+  }
 
   public async iniciar(manejadores: ManejadoresWhatsapp): Promise<void> {
     this.manejadores = manejadores;
     this.deteniendo = false;
+    await this.almacenContextoEdiciones.preparar();
     await this.conectar();
   }
 
@@ -126,9 +142,8 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       void this.manejarMensajes(evento.messages, evento.type);
     });
 
-    // Baileys 6.7.24 publica MESSAGE_EDIT ya descifrado en messages.update.
-    // La envoltura secretEncryptedMessage que puede aparecer en messages.upsert
-    // es solo un artefacto interno y se descarta en normalizarMensaje().
+    // Las ediciones legadas sí llegan aquí. Las ediciones modernas cifradas se
+    // compatibilizan desde messages.upsert porque Baileys 6.7.24 no las descifra.
     socket.ev.on('messages.update', (actualizaciones) => {
       void this.manejarActualizacionesMensajes(actualizaciones);
     });
@@ -201,6 +216,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
     let candidatosGrupo = 0;
     let normalizadosGrupo = 0;
+    let edicionesCifradas = 0;
 
     for (const mensaje of mensajes) {
       try {
@@ -208,10 +224,24 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
           candidatosGrupo += 1;
         }
 
+        if (this.esMensajeConEdicionCifrada(mensaje)) {
+          const normalizado = await this.normalizarEdicionCifrada(mensaje);
+
+          if (normalizado !== null) {
+            normalizadosGrupo += 1;
+            if (normalizado.tipoEvento === 'edicion') {
+              edicionesCifradas += 1;
+            }
+            await this.manejadores.alMensaje(normalizado);
+          }
+          continue;
+        }
+
         const normalizado = this.normalizarMensaje(mensaje);
 
         if (normalizado !== null) {
           normalizadosGrupo += 1;
+          await this.guardarContextoEdicionSiCorresponde(mensaje, normalizado);
           await this.manejadores.alMensaje(normalizado);
         }
       } catch (error) {
@@ -225,6 +255,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         recibidos: mensajes.length,
         candidatos_grupo: candidatosGrupo,
         normalizados_grupo: normalizadosGrupo,
+        ediciones_cifradas: edicionesCifradas,
       },
       'Lote de mensajes de WhatsApp procesado.',
     );
@@ -288,6 +319,22 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     return Boolean(
       mensaje.key?.remoteJid?.endsWith('@g.us')
       && mensaje.message,
+    );
+  }
+
+  private esMensajeConEdicionCifrada(valor: unknown): boolean {
+    if (typeof valor !== 'object' || valor === null) {
+      return false;
+    }
+
+    const mensaje = valor as {
+      key?: { remoteJid?: string | null };
+      message?: unknown;
+    };
+
+    return Boolean(
+      mensaje.key?.remoteJid?.endsWith('@g.us')
+      && esEdicionCifradaWhatsapp(mensaje.message),
     );
   }
 
@@ -425,6 +472,135 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       recibidoEn: fechaIsoDesdeMarca(actualizacion.update?.messageTimestamp),
       multimedia: null,
     };
+  }
+
+  private async normalizarEdicionCifrada(valor: unknown): Promise<MensajeProveedor | null> {
+    if (typeof valor !== 'object' || valor === null) {
+      return null;
+    }
+
+    const mensaje = valor as {
+      key?: {
+        remoteJid?: string | null;
+        id?: string | null;
+        participant?: string | null;
+        participantAlt?: string | null;
+      };
+      message?: unknown;
+      messageTimestamp?: unknown;
+    };
+    const chatId = mensaje.key?.remoteJid;
+    const objetivo = extraerMensajeObjetivoEdicionCifrada(mensaje.message);
+
+    if (!chatId || !chatId.endsWith('@g.us') || objetivo === null) {
+      return null;
+    }
+
+    if (!await this.chatAutorizado(chatId)) {
+      return null;
+    }
+
+    const contexto = await this.almacenContextoEdiciones.obtener(chatId, objetivo);
+
+    if (contexto !== null) {
+      const usuario = this.socket?.user as { id?: string | null; lid?: string | null } | undefined;
+      const identidadesLocales = [usuario?.id, usuario?.lid]
+        .filter((identidad): identidad is string => typeof identidad === 'string' && identidad !== '');
+      const resultado = descifrarEdicionCifradaWhatsapp(valor, contexto, identidadesLocales);
+
+      if (resultado.actualizacion !== null) {
+        const normalizado = this.normalizarActualizacionMensaje(resultado.actualizacion);
+
+        if (normalizado !== null) {
+          const contenidoCrudo = JSON.stringify({
+            key: resultado.actualizacion.key,
+            message: resultado.actualizacion.update.message,
+            messageTimestamp: resultado.actualizacion.update.messageTimestamp,
+            mensajeroContexto: {
+              origen: 'secretEncryptedMessage',
+              envolturaCifrada: mensaje.message,
+            },
+          }, BufferJSON.replacer);
+
+          if (contenidoCrudo !== undefined) {
+            normalizado.contenidoCrudo = contenidoCrudo;
+          }
+
+          this.logger.info(
+            { tipo: normalizado.tipoMensaje },
+            'Edición cifrada de WhatsApp descifrada y normalizada.',
+          );
+          return normalizado;
+        }
+      }
+
+      this.logger.error(
+        { causa: resultado.causaFallo ?? 'normalizacion_fallida' },
+        'La edición cifrada no pudo descifrarse; se conservará como evento auditable.',
+      );
+    } else {
+      this.logger.error(
+        { causa: 'contexto_original_no_disponible' },
+        'La edición cifrada no pudo descifrarse; se conservará como evento auditable.',
+      );
+    }
+
+    const contenidoCrudo = JSON.stringify(valor, BufferJSON.replacer);
+
+    if (contenidoCrudo === undefined) {
+      return null;
+    }
+
+    return {
+      chatId,
+      tipoEvento: 'otro',
+      tipoMensaje: 'edicion_cifrada_no_descifrada',
+      eventoExternoId: mensaje.key?.id ?? null,
+      mensajeProveedorId: mensaje.key?.id ?? null,
+      remitenteProveedorId: mensaje.key?.participant
+        ?? mensaje.key?.participantAlt
+        ?? null,
+      mensajeCitadoProveedorId: null,
+      mensajeObjetivoProveedorId: objetivo,
+      contenidoCrudo,
+      recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
+      multimedia: null,
+    };
+  }
+
+  private async guardarContextoEdicionSiCorresponde(
+    valor: unknown,
+    normalizado: MensajeProveedor,
+  ): Promise<void> {
+    if (
+      normalizado.tipoEvento !== 'mensaje'
+      || normalizado.mensajeProveedorId === null
+      || !await this.chatAutorizado(normalizado.chatId)
+    ) {
+      return;
+    }
+
+    const contexto = extraerContextoEdicionOriginal(valor);
+
+    if (contexto !== null) {
+      await this.almacenContextoEdiciones.guardar(contexto);
+    }
+  }
+
+  private async chatAutorizado(chatId: string): Promise<boolean> {
+    try {
+      const contenido = await readFile(this.rutaAutorizados, 'utf8');
+      const chats = JSON.parse(contenido) as unknown;
+
+      return Array.isArray(chats)
+        && chats.some((chat) => chat === chatId);
+    } catch (error) {
+      this.logger.warn(
+        { causa: error instanceof Error ? error.name : 'lectura_fallida' },
+        'No fue posible validar localmente el grupo para contexto de edición; se aplica denegación por defecto.',
+      );
+      return false;
+    }
   }
 
   private crearFuenteMultimedia(
