@@ -132,11 +132,31 @@ async function encolarPeriodo(
 }
 
 function claveMensaje(mensaje: MensajeProveedor): string {
-  const base = mensaje.mensajeProveedorId
-    ? `${mensaje.chatId}\n${mensaje.mensajeProveedorId}`
-    : `${mensaje.chatId}\n${mensaje.recibidoEn}\n${mensaje.contenidoCrudo}`;
+  if (mensaje.tipoEvento === 'mensaje') {
+    const base = mensaje.mensajeProveedorId
+      ? `${mensaje.chatId}\n${mensaje.mensajeProveedorId}`
+      : `${mensaje.chatId}\n${mensaje.recibidoEn}\n${mensaje.contenidoCrudo}`;
 
-  return createHash('sha256').update(base, 'utf8').digest('hex');
+    return createHash('sha256').update(base, 'utf8').digest('hex');
+  }
+
+  const identidad = mensaje.mensajeProveedorId
+    ?? mensaje.eventoExternoId
+    ?? mensaje.mensajeObjetivoProveedorId
+    ?? mensaje.recibidoEn;
+  const hashContenido = createHash('sha256')
+    .update(mensaje.contenidoCrudo, 'utf8')
+    .digest('hex');
+
+  return createHash('sha256')
+    .update([
+      mensaje.chatId,
+      mensaje.tipoEvento,
+      identidad,
+      mensaje.mensajeObjetivoProveedorId ?? '',
+      hashContenido,
+    ].join('\n'), 'utf8')
+    .digest('hex');
 }
 
 async function encolarMensaje(
@@ -146,13 +166,16 @@ async function encolarMensaje(
   await cola.agregar('/api/pasarela/v1/eventos', {
     clave_conexion: configuracion.claveConexion,
     chat_id: mensaje.chatId,
-    tipo_evento: 'mensaje',
+    tipo_evento: mensaje.tipoEvento,
     tipo_mensaje: mensaje.tipoMensaje,
     evento_externo_id: mensaje.eventoExternoId,
     mensaje_proveedor_id: mensaje.mensajeProveedorId,
+    id_remitente_proveedor: mensaje.remitenteProveedorId,
+    id_mensaje_citado_proveedor: mensaje.mensajeCitadoProveedorId,
+    id_mensaje_objetivo_proveedor: mensaje.mensajeObjetivoProveedorId,
     contenido_crudo: mensaje.contenidoCrudo,
     recibido_en: mensaje.recibidoEn,
-    version_contrato: 'v2-recolector',
+    version_contrato: 'v3-recolector',
     multimedia: multimedia === null ? null : {
       identificador_archivo: multimedia.identificadorArchivo,
       ruta_relativa: multimedia.rutaRelativa,
@@ -447,7 +470,11 @@ async function iniciar(): Promise<void> {
 
       await encolarMensaje(mensaje, null);
       logger.info(
-        { tipo: mensaje.tipoMensaje, multimedia_persistida: false },
+        {
+          tipo_evento: mensaje.tipoEvento,
+          tipo: mensaje.tipoMensaje,
+          multimedia_persistida: false,
+        },
         'Mensaje persistido primero en la cola local durable.',
       );
     },
