@@ -13,6 +13,10 @@ import {
   AlmacenMultimediaDurable,
   type MultimediaPersistida,
 } from './multimedia/almacen-multimedia-durable.js';
+import {
+  ColaDescargaMultimediaDurable,
+  type TareaDescargaMultimediaDurable,
+} from './multimedia/cola-descarga-multimedia-durable.js';
 import type { EstadoConexion, MensajeProveedor } from './tipos.js';
 
 const configuracion = cargarConfiguracion();
@@ -23,6 +27,7 @@ const cliente = new ClienteMensajero(
   configuracion.claveConexion,
 );
 const cola = new ColaDurable(configuracion.rutaDatos);
+const colaDescargasMultimedia = new ColaDescargaMultimediaDurable(configuracion.rutaDatos);
 const monitor = new MonitorIntegridad(configuracion.rutaDatos);
 const adaptador = new AdaptadorBaileys(configuracion.rutaSesion, logger);
 const almacenMultimedia = new AlmacenMultimediaDurable(
@@ -32,6 +37,7 @@ const almacenMultimedia = new AlmacenMultimediaDurable(
 const rutaAutorizados = join(configuracion.rutaDatos, 'chats-autorizados.json');
 const rutaInicioOperacion = join(configuracion.rutaDatos, 'inicio-operacion.txt');
 const tiposMultimedia = new Set(['foto', 'video', 'audio', 'documento']);
+const descargasMultimediaEnCurso = new Set<string>();
 
 let chatsAutorizados = new Set<string>();
 let cerrando = false;
@@ -159,6 +165,81 @@ async function encolarMensaje(
   }, `mensaje-${claveMensaje(mensaje)}`);
 }
 
+async function procesarDescargaMultimedia(
+  tarea: TareaDescargaMultimediaDurable,
+  mensajeOriginal: MensajeProveedor | null = null,
+  reportarPrimerFallo = false,
+): Promise<boolean> {
+  if (descargasMultimediaEnCurso.has(tarea.clave)) {
+    return false;
+  }
+
+  descargasMultimediaEnCurso.add(tarea.clave);
+  let etapa = 'reconstruccion';
+
+  try {
+    const mensaje = mensajeOriginal
+      ?? adaptador.reconstruirMensaje(tarea.mensaje.contenidoCrudo);
+
+    if (mensaje === null) {
+      throw new Error('No fue posible reconstruir el mensaje multimedia pendiente.');
+    }
+
+    if (!tiposMultimedia.has(mensaje.tipoMensaje) || mensaje.multimedia === null) {
+      throw new Error('La tarea durable no contiene una fuente multimedia descargable.');
+    }
+
+    etapa = 'persistencia_archivo';
+    const multimedia = await almacenMultimedia.guardar(mensaje);
+
+    if (multimedia === null) {
+      throw new Error('La persistencia multimedia terminó sin producir un archivo durable.');
+    }
+
+    etapa = 'encolado_evento';
+    await encolarMensaje(mensaje, multimedia);
+    etapa = 'confirmacion_tarea';
+    await colaDescargasMultimedia.confirmar(tarea);
+
+    logger.info(
+      {
+        tipo: mensaje.tipoMensaje,
+        bytes: multimedia.tamanoBytes,
+        recuperada: mensajeOriginal === null,
+      },
+      'Multimedia persistida y evento colocado en cola durable; tarea de descarga confirmada.',
+    );
+
+    return true;
+  } catch (error) {
+    registrarError(error, 'La descarga multimedia permanece pendiente para reintento durable.');
+
+    if (reportarPrimerFallo) {
+      try {
+        await encolarPeriodo(
+          tarea.mensaje.recibidoEn,
+          new Date().toISOString(),
+          'fallo_descarga_multimedia',
+          {
+            tipo_mensaje: tarea.mensaje.tipoMensaje,
+            etapa,
+            reintento_durable: true,
+          },
+        );
+      } catch (errorIntegridad) {
+        registrarError(
+          errorIntegridad,
+          'No fue posible encolar el periodo de integridad del fallo multimedia.',
+        );
+      }
+    }
+
+    return false;
+  } finally {
+    descargasMultimediaEnCurso.delete(tarea.clave);
+  }
+}
+
 async function enviarTarea(tarea: TareaDurable): Promise<boolean> {
   try {
     await cliente.enviar(tarea.ruta, tarea.cuerpo);
@@ -181,6 +262,27 @@ async function bombearCola(): Promise<void> {
 
     for (const tarea of tareas) {
       if (!await enviarTarea(tarea)) {
+        huboFallo = true;
+      }
+    }
+
+    espera = huboFallo
+      ? Math.min(espera * 2, configuracion.maxReintentoMs)
+      : configuracion.intervaloColaMs;
+
+    await dormir(tareas.length > 0 && !huboFallo ? 100 : espera);
+  }
+}
+
+async function cicloDescargasMultimedia(): Promise<void> {
+  let espera = configuracion.intervaloColaMs;
+
+  while (!cerrando) {
+    const tareas = await colaDescargasMultimedia.listar();
+    let huboFallo = false;
+
+    for (const tarea of tareas) {
+      if (!await procesarDescargaMultimedia(tarea)) {
         huboFallo = true;
       }
     }
@@ -230,6 +332,7 @@ async function cicloLatido(): Promise<void> {
 
 async function iniciar(): Promise<void> {
   await cola.preparar();
+  await colaDescargasMultimedia.preparar();
   await cargarAutorizacionesLocales();
   inicioOperacionMs = await obtenerInicioOperacion();
 
@@ -250,6 +353,7 @@ async function iniciar(): Promise<void> {
   }
 
   void bombearCola();
+  void cicloDescargasMultimedia();
   void cicloAutorizaciones();
   void cicloGrupos();
   void cicloLatido();
@@ -315,49 +419,35 @@ async function iniciar(): Promise<void> {
         return;
       }
 
-      let multimediaPersistida: MultimediaPersistida | null = null;
-
-      if (mensaje.multimedia !== null) {
-        try {
-          multimediaPersistida = await almacenMultimedia.guardar(mensaje);
-
-          if (multimediaPersistida !== null) {
-            logger.info(
-              {
-                tipo: mensaje.tipoMensaje,
-                bytes: multimediaPersistida.tamanoBytes,
-              },
-              'Multimedia persistida en almacenamiento privado antes de encolar el evento.',
-            );
-          }
-        } catch (error) {
-          registrarError(error, 'No fue posible persistir la multimedia del mensaje.');
+      if (tiposMultimedia.has(mensaje.tipoMensaje)) {
+        if (mensaje.multimedia === null) {
+          logger.error(
+            { tipo: mensaje.tipoMensaje, causa: 'fuente_multimedia_ausente' },
+            'WhatsApp entregó un mensaje multimedia sin fuente descargable.',
+          );
           await encolarPeriodo(
             mensaje.recibidoEn,
             new Date().toISOString(),
-            'fallo_descarga_multimedia',
+            'fuente_multimedia_ausente',
             { tipo_mensaje: mensaje.tipoMensaje },
           );
+          await encolarMensaje(mensaje, null);
+          return;
         }
-      } else if (tiposMultimedia.has(mensaje.tipoMensaje)) {
-        logger.error(
-          { tipo: mensaje.tipoMensaje, causa: 'fuente_multimedia_ausente' },
-          'WhatsApp entregó un mensaje multimedia sin fuente descargable.',
+
+        const tareaDescarga = await colaDescargasMultimedia.agregar(mensaje);
+        logger.info(
+          { tipo: mensaje.tipoMensaje },
+          'Mensaje multimedia registrado en cola durable de descarga antes de acceder al archivo.',
         );
-        await encolarPeriodo(
-          mensaje.recibidoEn,
-          new Date().toISOString(),
-          'fuente_multimedia_ausente',
-          { tipo_mensaje: mensaje.tipoMensaje },
-        );
+
+        await procesarDescargaMultimedia(tareaDescarga, mensaje, true);
+        return;
       }
 
-      await encolarMensaje(mensaje, multimediaPersistida);
+      await encolarMensaje(mensaje, null);
       logger.info(
-        {
-          tipo: mensaje.tipoMensaje,
-          multimedia_persistida: multimediaPersistida !== null,
-        },
+        { tipo: mensaje.tipoMensaje, multimedia_persistida: false },
         'Mensaje persistido primero en la cola local durable.',
       );
     },
@@ -374,7 +464,13 @@ async function cerrar(senal: string): Promise<void> {
   await encolarEstado('desconectado', { motivo: `proceso_${senal.toLowerCase()}` });
   await adaptador.detener();
   await monitor.cerrar();
-  logger.info({ pendientes: await cola.cantidad() }, 'Recolector detenido; ninguna tarea pendiente se elimina al apagar.');
+  logger.info(
+    {
+      pendientes: await cola.cantidad(),
+      descargas_multimedia_pendientes: await colaDescargasMultimedia.cantidad(),
+    },
+    'Recolector detenido; ninguna tarea pendiente se elimina al apagar.',
+  );
 }
 
 function dormir(ms: number): Promise<void> {
