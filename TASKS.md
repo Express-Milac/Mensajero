@@ -68,7 +68,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Reinicio abrupto del recolector certificado: antes había 0 periodos `reinicio_no_confirmado`; tras matar los procesos Node a la fuerza, esperar 10 s y reiniciar sin nuevo QR, se creó exactamente 1 periodo para la conexión 10014 (`id=5`) con intervalo `2026-10-16 18:49:44.846000` → `2026-10-16 18:50:27.933000`; recepción confirmada y cola final en 0.
 - [x] Recuperación offline del recolector certificada con 2 mensajes enviados mientras `principal.ts` estaba totalmente detenido: no quedó ningún proceso Node del recolector, al reiniciar sin nuevo QR ambos mensajes fueron entregados inmediatamente por WhatsApp/Baileys como `notify`, clasificados como `texto`, persistidos en cola durable y entregados a SQL; el conteo pasó de 18 a 20, los periodos `reinicio_no_confirmado` de 1 a 2 y la cola final quedó en 0. El periodo se conserva como no confirmado aunque los mensajes observados hayan sido recuperados, para mantener el criterio de cero pérdida silenciosa.
 
-## Incremento multimedia: código entregado, pendiente de certificación real
+## Incremento multimedia: certificación básica real completada
 - [x] Descarga diferida de foto/video/audio/documento: Baileys expone la fuente y la descarga solo se inicia después de validar que el grupo está autorizado.
 - [x] Descarga mediante `downloadMediaMessage` con `reuploadRequest`, para permitir recuperación de URLs multimedia expiradas cuando WhatsApp lo soporte.
 - [x] Almacenamiento privado configurable en el recolector mediante `RECOLECTOR_RUTA_ALMACENAMIENTO`; por defecto comparte `storage/app/mensajero` con Laravel durante el POC local.
@@ -84,7 +84,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Foto real certificada de extremo a extremo: eventos SQL 20→21 y archivos SQL 0→1; `foto` `image/jpeg`, 84,355 bytes, SHA-256 registrado, ruta privada `multimedia/whatsapp/recolector-pruebas/...jpg`, estado `verificado`, archivo físico localizable por `mensajero_local=true` y cola final con 0 tareas JSON.
 - [x] Audio real certificado de extremo a extremo: eventos SQL 21→22 y archivos SQL 1→2; `audio` `audio/ogg; codecs=opus`, 11,474 bytes, extensión `ogg`, ruta privada, estado `verificado`; el archivo físico existe y su SHA-256 recalculado coincide exactamente con `hash_sha256` de SQL; cola final con 0 tareas JSON.
 - [x] Documento real certificado de extremo a extremo: eventos SQL 22→23 y archivos SQL 2→3; `documento` `application/pdf`, nombre original `_1731519625.pdf`, 234,588 bytes, extensión `pdf`, ruta privada, estado `verificado`; el archivo físico existe y su SHA-256 recalculado coincide exactamente con `hash_sha256` de SQL; cola final con 0 tareas JSON.
-- [ ] Certificar video real.
+- [x] Video real certificado de extremo a extremo: eventos SQL 23→24 y archivos SQL 3→4; `video` `video/mp4`, 2,306,688 bytes, extensión `mp4`, ruta privada y estado `verificado`; tamaño SQL y tamaño físico coinciden exactamente, el SHA-256 recalculado del archivo coincide con `hash_sha256` de SQL y la cola final quedó en 0 tareas JSON.
 - [ ] Probar caída de Laravel con multimedia ya persistida y verificar drenaje posterior sin volver a descargar.
 - [ ] Probar reinicio del recolector alrededor de una recepción multimedia.
 - [ ] Reforzar un mecanismo de reintento durable de descarga si una descarga desde WhatsApp falla antes de que el archivo quede persistido.
