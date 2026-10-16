@@ -94,7 +94,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Reforzada la configuración del recolector: al arrancar informa si `RECOLECTOR_RUTA_ALMACENAMIENTO` proviene de un override explícito o del valor predeterminado, sin exponer secretos; `.env.example` recalca que Laravel y recolector deben compartir la misma raíz física y que variables temporales de PowerShell se heredan por sesión.
 - [x] Validación posterior al refuerzo de configuración: `git pull` aplicado sin conflictos; `npm run verificar` aprobado y `npm run pruebas` mantiene 13/13 pruebas, 0 fallos, 0 omitidas y 0 canceladas.
 
-## Incremento semántico de mensajes: código entregado y validado automáticamente
+## Incremento semántico de mensajes: certificación real completada
 - [x] Separado `tipo_evento` de `tipo_mensaje`: `mensaje`, `edicion`, `eliminacion`, `reaccion` y `otro` describen lo ocurrido; `texto`, `foto`, `ubicacion`, `contacto`, etc. describen el contenido.
 - [x] El recolector extrae y conserva de forma indexable `id_remitente_proveedor`, `id_mensaje_citado_proveedor` e `id_mensaje_objetivo_proveedor`, manteniendo íntegro `contenido_crudo`.
 - [x] Respuestas/citas detectan `contextInfo.stanzaId`; reacciones conservan el ID objetivo; eliminaciones `REVOKE` conservan el ID objetivo; ediciones por `protocolMessage` conservan objetivo y tipo del contenido editado.
@@ -108,10 +108,15 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Migración `2026_10_16_000800_enriquecer_eventos_crudos_whatsapp` aplicada exclusivamente sobre `mensajero_test`; Pint aprobó 89 archivos y PHPUnit normal aprobó 32/32 pruebas con 78 aserciones.
 - [x] Corregida únicamente la prueba semántica para cumplir el contrato de seguridad de `X-Mensajero-Id` (mínimo 16 caracteres), sin relajar HMAC ni middleware.
 - [x] Integración SQL Server semántica validada: `SemanticaRecolectorSqlServerTest` 1/1 con 26 aserciones; suite completa `phpunit.integracion.xml` 9/9 con 158 aserciones y 0 fallos.
-- [ ] Certificar con mensajes reales del grupo de prueba una respuesta/cita, una edición, una eliminación, una ubicación y un contacto.
+- [x] Primera ronda real v3 certificó respuesta/cita, eliminación, ubicación y contacto; la cita y la eliminación apuntaron al mismo mensaje original y la cola final quedó en 0. La edición sí llegó, pero Baileys 6.7.24 la expuso inicialmente como `secretEncryptedMessage` y no como edición normalizada.
+- [x] Agregado listener `messages.update` para ediciones legadas y descarte explícito de `secretEncryptedMessage` como mensaje de usuario falso; la segunda prueba real confirmó que la envoltura interna dejó de contaminar SQL, pero Baileys 6.7.24 no emitió `messages.update` para la edición cifrada moderna.
+- [x] Implementado backport propio para `SecretEncryptedMessage{MESSAGE_EDIT}` sin actualizar Baileys: conserva localmente y de forma durable el `messageSecret` de originales autorizados, descifra la edición con AES-GCM y normaliza el resultado como `edicion/<tipo>`. Si el descifrado falla, conserva un evento auditable `edicion_cifrada_no_descifrada` en vez de perderlo silenciosamente.
+- [x] Contexto criptográfico de edición limitado a grupos autorizados, persistido fuera de Git con permisos privados y retención temporal; no duplica el contenido completo del mensaje.
+- [x] Pruebas de regresión agregadas para forma real `editedMessage`, envoltura `secretEncryptedMessage`, almacenamiento durable del contexto y descifrado de ediciones cifradas.
+- [x] Edición cifrada real certificada: evento original `10062` quedó `mensaje/texto`; evento `10063` quedó `edicion/texto`, con remitente y objetivo presentes. El `key.id` del original, `targetMessageKey.id`, `id_evento_externo` del original e `id_mensaje_objetivo_proveedor` de la edición coincidieron exactamente; las seis verificaciones finales de relación devolvieron `true`.
+- [x] Certificación real semántica completada para respuesta/cita, edición cifrada, eliminación, ubicación y contacto en el grupo de prueba, manteniendo trazabilidad hacia el mensaje objetivo y sin tareas pendientes de eventos al final de las rondas observadas.
 
 ## Bloqueadores restantes antes de grupos reales
-- [ ] Completar certificación real del incremento semántico.
 - [ ] Prueba de carga >= 1,000 mensajes y varios remitentes/grupos.
 - [ ] Prueba prolongada de estabilidad y reconexión.
 - [ ] Diseñar reconciliación independiente para intervalos con integridad no confirmada.
