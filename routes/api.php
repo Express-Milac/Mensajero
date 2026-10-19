@@ -24,6 +24,9 @@ Route::prefix('pasarela/v1')->group(function () {
     Route::post('/chats-autorizados', [ControladorEntradaPasarela::class, 'chatsAutorizados'])
         ->middleware(['mensajero.firma_pasarela:no', 'throttle:120,1'])
         ->name('pasarela.v1.chats.autorizados');
+    Route::post('/latido', [ControladorEntradaPasarela::class, 'registrarLatido'])
+        ->middleware(['mensajero.firma_pasarela:no', 'throttle:240,1'])
+        ->name('pasarela.v1.latido.registrar');
     Route::post('/estado-conexion', [ControladorEntradaPasarela::class, 'actualizarEstado'])
         ->middleware(['mensajero.firma_pasarela:no', 'throttle:240,1'])
         ->name('pasarela.v1.estado.actualizar');
