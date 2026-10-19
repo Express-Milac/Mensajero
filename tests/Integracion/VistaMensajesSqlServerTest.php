@@ -125,6 +125,67 @@ class VistaMensajesSqlServerTest extends TestCase
         }
     }
 
+    public function test_separa_visualmente_grupos_por_proveedor_y_filtra_sin_cambiar_autorizaciones(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            $sufijo = bin2hex(random_bytes(5));
+            $conexionRecolector = ConexionWhatsapp::query()->create([
+                'clave_conexion' => 'origen-recolector-'.$sufijo,
+                'proveedor' => 'recolector_whatsapp',
+                'estado' => 'conectado',
+            ]);
+            $conexionPasarela = ConexionWhatsapp::query()->create([
+                'clave_conexion' => 'origen-pasarela-'.$sufijo,
+                'proveedor' => 'pasarela_integracion',
+                'estado' => 'conectado',
+            ]);
+
+            $grupoRecolector = ChatMonitoreado::query()->create([
+                'conexion_id' => $conexionRecolector->id,
+                'id_chat_proveedor' => 'recolector-'.$sufijo.'@g.us',
+                'nombre_grupo' => 'Captura recolector '.$sufijo,
+                'tipo_chat' => 'grupo',
+                'es_monitoreado' => true,
+                'es_activo' => true,
+            ]);
+            $grupoPasarela = ChatMonitoreado::query()->create([
+                'conexion_id' => $conexionPasarela->id,
+                'id_chat_proveedor' => 'pasarela-'.$sufijo.'@g.us',
+                'nombre_grupo' => 'Captura pasarela '.$sufijo,
+                'tipo_chat' => 'grupo',
+                'es_monitoreado' => true,
+                'es_activo' => true,
+            ]);
+
+            $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+                ->get('/mensajes')
+                ->assertOk()
+                ->assertSeeInOrder([
+                    'Grupos de WhatsApp del recolector',
+                    'Captura recolector '.$sufijo,
+                    'Pasarelas y otras conexiones',
+                    'Captura pasarela '.$sufijo,
+                ]);
+
+            $this->get('/grupos?origen=recolector')
+                ->assertOk()
+                ->assertSee('Captura recolector '.$sufijo)
+                ->assertDontSee('Captura pasarela '.$sufijo);
+
+            $this->get('/grupos?origen=otras')
+                ->assertOk()
+                ->assertSee('Captura pasarela '.$sufijo)
+                ->assertDontSee('Captura recolector '.$sufijo);
+
+            $this->assertTrue($grupoRecolector->fresh()->es_monitoreado);
+            $this->assertTrue($grupoPasarela->fresh()->es_monitoreado);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_un_grupo_no_autorizado_no_expone_evidencia_previamente_capturada(): void
     {
         DB::beginTransaction();
