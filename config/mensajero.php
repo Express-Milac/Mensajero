@@ -30,6 +30,9 @@ return [
         'modo' => env('MENSAJERO_MODO_AUTENTICACION', 'deshabilitado'),
     ],
 
+    // Consultas de conversaciones sin iniciar sesión: únicamente POC local explícito.
+    'consulta_local_sin_autenticacion' => (bool) env('MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION', false),
+
     'normalizacion' => [
         // No procesar datos históricos hasta aprobar integración SQL Server.
         'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
