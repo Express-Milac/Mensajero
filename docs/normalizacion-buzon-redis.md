@@ -137,3 +137,58 @@ vendor\bin\phpunit -c phpunit.integracion.xml --filter NormalizacionControladaSq
 No ejecutar `--aplicar` sobre datos reales mientras no estén revisadas estas
 pruebas ni se haya aprobado el mensaje específico. La prueba automatizada usa
 transacciones reversibles en `mensajero_test`.
+
+
+## Normalización controlada de un pequeño lote (aún sin Redis)
+
+Se implementó `mensajero:normalizar-lote` como una extensión manual del POC,
+sin programar un procesamiento periódico y sin modificar el capturador.
+
+**Vista previa sin escritura:**
+
+```powershell
+php artisan mensajero:normalizar-lote 10020 --limite=3
+```
+
+El comando enumera hasta tres eventos pendientes de un único grupo autorizado,
+en orden de identificador ascendente. Muestra exclusivamente IDs y cantidades:
+no imprime remitentes, contenido, identificadores externos ni multimedia. Si
+no hay mensajes elegibles, devuelve una lista vacía sin fallo.
+
+Para **aplicar**, el operador debe escribir explícitamente los IDs previamente
+revisados, por ejemplo:
+
+```powershell
+php artisan mensajero:normalizar-lote 10020 --limite=3 --ids=11068,11069 --aplicar
+```
+
+El ejemplo es únicamente ilustrativo: siempre cotejar los IDs que muestre la
+vista previa. La ejecución sin `--ids` se bloquea, aunque incluya `--aplicar`.
+
+Protecciones:
+- Entorno `local` o `testing`, conexión SQL Server y base terminada en
+  `_test`.
+- Grupo de tipo `grupo`, activo y expresamente autorizado para monitoreo.
+- Máximo 5 eventos por ejecución, sin IDs duplicados.
+- Solo eventos `mensaje`, tipo `texto`, contrato `v3-recolector`. No
+  procesa ediciones, eliminaciones ni multimedia.
+- Todos los IDs deben pertenecer al mismo grupo y estar en estado
+  `capturado` o `normalizado`. Un ID inválido impide comenzar el lote.
+- La normalización de cada evento usa el servicio transaccional idempotente.
+  Repetir IDs ya normalizados no duplica mensajes.
+- Si falla un evento, se detiene la ejecución y **los eventos ya completados
+  pueden permanecer normalizados**. El operador puede volver a consultarlos;
+  no se promete atomicidad entre diferentes eventos del lote.
+
+Las pruebas de integración cubren vista previa sin escrituras, selección exacta,
+idempotencia, rechazo de grupos mezclados, IDs repetidos y base no autorizada.
+Se ejecutan contra `mensajero_test` con transacciones reversibles:
+
+```powershell
+vendor\bin\pint --test app\Console\Commands\NormalizarLoteWhatsapp.php tests\Integracion\NormalizacionLoteSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter NormalizacionLoteSqlServerTest
+```
+
+No utilizar `--aplicar` con mensajes de la cuenta real hasta haber aprobado
+la suite de integración y revisado la vista previa. La ejecución automática
+mediante Redis sigue deshabilitada.
