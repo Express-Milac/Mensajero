@@ -5,6 +5,7 @@ namespace Tests\Integracion;
 use App\Data\WhatsApp\EventoWhatsappEntrante;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
+use App\Models\EventoCrudoWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
@@ -48,6 +49,8 @@ class VistaMensajesSqlServerTest extends TestCase
             ]);
 
             $contenido = '<script>alert(1)</script>';
+            $secretoPrueba = 'mensaje_secreto_'.$sufijo;
+            $identificadorPrivado = 'contacto-'.$sufijo.'@s.whatsapp.net';
             $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
                 conexionId: (int) $conexion->id,
                 chatId: $grupo->id_chat_proveedor,
@@ -56,7 +59,14 @@ class VistaMensajesSqlServerTest extends TestCase
                 eventoExternoId: 'vista-evento-'.$sufijo,
                 mensajeProveedorId: 'vista-evento-'.$sufijo,
                 contenidoCrudo: json_encode([
-                    'message' => ['conversation' => 'Llegó '.$contenido],
+                    'key' => [
+                        'remoteJid' => 'grupo-interno-'.$sufijo.'@g.us',
+                        'participantPn' => $identificadorPrivado,
+                    ],
+                    'message' => [
+                        'conversation' => 'Llegó '.$contenido,
+                        'messageContextInfo' => ['messageSecret' => $secretoPrueba],
+                    ],
                 ], JSON_THROW_ON_ERROR),
                 recibidoEn: CarbonImmutable::now('UTC'),
                 versionContrato: 'v3-recolector',
@@ -92,8 +102,16 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/mensajes/eventos/'.$captura->eventoCrudoId)
                 ->assertOk()
                 ->assertSee('v3-recolector')
-                ->assertSee('Contenido crudo')
+                ->assertSee('Vista protegida del contenido crudo')
+                ->assertSee('OCULTO EN LA VISTA')
+                ->assertDontSee($secretoPrueba, false)
+                ->assertDontSee($identificadorPrivado, false)
+                ->assertDontSee('5219990000000', false)
                 ->assertDontSee($contenido, false);
+
+            $crudoGuardado = EventoCrudoWhatsapp::query()->findOrFail($captura->eventoCrudoId);
+            $this->assertStringContainsString($secretoPrueba, $crudoGuardado->contenido);
+            $this->assertSame(hash('sha256', $crudoGuardado->contenido), $crudoGuardado->hash_contenido_sha256);
 
             $this->assertDatabaseHas('mensajero_eventos_crudos_whatsapp', [
                 'id' => $captura->eventoCrudoId,
