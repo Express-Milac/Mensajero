@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Data\WhatsApp\EventoWhatsappEntrante;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
+use App\Models\MensajeBuzonSalida;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -18,7 +19,8 @@ use RuntimeException;
 final class PrepararEnsayoRedis extends Command
 {
     protected $signature = 'mensajero:preparar-ensayo-redis
-        {--aplicar : Crear un grupo ficticio y un único mensaje sintético en SQL Server _test}';
+        {--aplicar : Crear un grupo ficticio y un único mensaje sintético en SQL Server _test}
+        {--simular-perdida : Marcar solo el aviso ficticio como publicado hace 31 minutos, sin publicar nada en Redis}';
 
     protected $description = 'Prepara una captura ficticia aislada para un ensayo único con Redis';
 
@@ -33,8 +35,13 @@ final class PrepararEnsayoRedis extends Command
             return self::FAILURE;
         }
 
+        $simularPerdida = $this->option('simular-perdida') === true;
+
         if ($this->option('aplicar') !== true) {
             $this->components->info('Vista previa: se creará una conexión de prueba, un grupo ficticio y un único evento de texto.');
+            if ($simularPerdida) {
+                $this->line('Se simulará un aviso perdido con fecha de publicación de hace 31 minutos; no se publicará nada en Redis.');
+            }
             $this->line('Sin --aplicar no se modifican registros ni se utiliza Redis.');
 
             return self::SUCCESS;
@@ -44,7 +51,7 @@ final class PrepararEnsayoRedis extends Command
         $claveConexion = 'ensayo-redis-'.$sufijo;
         $cola = 'mensajero_ensayo_'.$sufijo;
 
-        $resultado = DB::transaction(function () use ($capturador, $claveConexion, $sufijo): array {
+        $resultado = DB::transaction(function () use ($capturador, $claveConexion, $sufijo, $simularPerdida): array {
             $conexion = ConexionWhatsapp::query()->create([
                 'clave_conexion' => $claveConexion,
                 'proveedor' => 'recolector_whatsapp',
@@ -79,6 +86,23 @@ final class PrepararEnsayoRedis extends Command
                 throw new RuntimeException('No se pudo preparar el evento sintético.');
             }
 
+            if ($simularPerdida) {
+                // Únicamente el aviso del evento sintético recién creado.
+                // Simulamos el estado "publicado sin consumo" sin conectarnos
+                // a Redis ni borrar colas existentes.
+                $aviso = MensajeBuzonSalida::query()
+                    ->where('tema', 'whatsapp.crudo.aceptado')
+                    ->where('tipo_entidad', 'evento_crudo_whatsapp')
+                    ->where('entidad_id', $captura->eventoCrudoId)
+                    ->whereNull('enviado_en')
+                    ->lockForUpdate()
+                    ->sole();
+
+                $aviso->enviado_en = now('UTC')->subMinutes(31);
+                $aviso->intentos = 1;
+                $aviso->save();
+            }
+
             return ['evento_id' => $captura->eventoCrudoId, 'grupo_id' => (int) $grupo->id];
         }, 3);
 
@@ -86,7 +110,12 @@ final class PrepararEnsayoRedis extends Command
         $this->line('Evento sintético: #'.$resultado['evento_id']);
         $this->line('Grupo ficticio: #'.$resultado['grupo_id']);
         $this->line('Cola exclusiva: '.$cola);
-        $this->line('No se publicó ningún trabajo. Utilice el ID y la cola exactos en el ensayo posterior.');
+        if ($simularPerdida) {
+            $this->line('Simulación: aviso marcado como enviado hace 31 minutos SOLO en SQL Server _test.');
+            $this->line('No se publicó nada en Redis. Compruebe primero mensajero:recuperar-publicacion en vista previa.');
+        } else {
+            $this->line('No se publicó ningún trabajo. Utilice el ID y la cola exactos en el ensayo posterior.');
+        }
 
         return self::SUCCESS;
     }
