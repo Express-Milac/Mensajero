@@ -118,8 +118,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 
 ## Bloqueadores restantes antes de grupos reales
 - [x] Prueba sintética de pasarela/SQL Server: 1,000 eventos únicos, 4 grupos, 25 remitentes, 50 reintentos deduplicados, 2,121 aserciones, 0 fallos y 47.82 eventos/s; Pint aprobado. La transacción se revirtió al finalizar.
-- [ ] Reconciliar prueba real de 25 mensajes: el operador informó secuencia completa y cola vacía, pero la consulta posterior de `mensajero_test` / grupo 10020 mostró solo 10 eventos v3 y un único ID posterior a la ronda semántica (`11064`). No afirmar pérdida ni certificación hasta contrastar grupo, base y secuencias.
-- [ ] Prueba prolongada de estabilidad y reconexión. Validar primero la corrección UTC y latido remoto HMAC; después completar las dos horas y corte de conexión sin asumir entrega de mensajes aún no observada.
+- [ ] Prueba real de 25 mensajes cancelada: el operador confirmó el 19/10/2026 que nunca envió las marcas `RAFAGA-REAL-A-001` a `025`. Su ausencia en SQL es esperada y NO demuestra pérdida. Sustituir por comprobación breve de 3 mensajes independientes sin desconectar Internet; ejecutar aún pendiente.
+- [ ] Prueba prolongada de estabilidad y reconexión: UTC y latido HMAC ya validados; se pospone la prueba de dos horas y corte físico de Internet para la etapa previa a producción. La comprobación breve del POC no sustituye resiliencia prolongada.
 - [ ] Diseñar reconciliación independiente para intervalos con integridad no confirmada.
 
 ## Corrección de diagnósticos de conectividad (19/10/2026): validar localmente
@@ -132,7 +132,7 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Corrección de caché: `FechaUtc` declara `withoutObjectCaching=true` para releer siempre el atributo normalizado a UTC. Validación en Windows: `FechasUtcMensajeroTest` aprobó 3/3 pruebas, 9 aserciones, 0 fallos. Pint de los 8 archivos había aprobado en la ronda anterior.
 - [x] Latido remoto real validado el 19/10/2026: Baileys confirmó `confirmacion_buffer_inicial`, conexión marcada `conectado`; `ultimo_latido_en` se leyó como `2026-10-19T17:35:49Z` frente a `now('UTC')=2026-10-19T17:36:08Z` (19.09 s de antigüedad), sin desfase futuro. Esto valida un latido reciente, no todavía la estabilidad de dos horas.
 - [x] Regresión `FechasUtcMensajeroTest` aprobada: 3 pruebas / 9 aserciones. Control de latidos en UTC y actualización remota comprobados con un latido 19.09 s anterior a `now('UTC')`.
-- [ ] Ráfaga real sin conciliar: consulta por `RAFAGA-REAL-A-` en **todos los grupos** de SQL Server devolvió `[]` el 19/10/2026. Confirmar primero si se enviaron literalmente 25 textos independientes; si se enviaron, diagnosticar logs `messages.upsert`, filtro de grupo y cola durable. No certificar ni declarar pérdida sin evidencia.
+- [x] Aclarada ausencia de ráfaga real: los 25 mensajes no se enviaron; la consulta `RAFAGA-REAL-A-` devolvió `[]` porque la prueba no se ejecutó. La carga sintética de 1,000 eventos permanece aprobada; recepción real rápida aún por validar.
 
 ## Después de certificar captura
 - [ ] Normalizador idempotente y buzón → Redis.
