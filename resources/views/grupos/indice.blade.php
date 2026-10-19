@@ -53,6 +53,9 @@
                 </div>
 
                 <div class="group-action">
+                    @if($grupo->es_monitoreado && $grupo->es_activo && (config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true))))
+                        <p><a class="action-link" href="{{ route('mensajes.grupo', $grupo->id) }}">Ver mensajes →</a></p>
+                    @endif
                     @can('administrar')
                         <form method="post" action="{{ route('grupos.monitoreo.actualizar', $grupo->id) }}">
                             @csrf
