@@ -5,6 +5,7 @@ namespace Tests\Integracion;
 use App\Data\WhatsApp\EventoWhatsappEntrante;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
+use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,14 @@ class VistaMensajesSqlServerTest extends TestCase
 
             $this->assertSame('aceptado', $captura->estado);
 
+            PeriodoIntegridadWhatsapp::query()->create([
+                'conexion_id' => $conexion->id,
+                'identificador_periodo' => hash('sha256', 'intervalo-vista-'.$sufijo),
+                'inicio_en' => CarbonImmutable::parse('2026-10-19T11:00:00Z'),
+                'fin_en' => CarbonImmutable::parse('2026-10-19T11:00:05Z'),
+                'causa' => 'desconexion_whatsapp',
+            ]);
+
             $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
                 ->get('/mensajes')
                 ->assertOk()
@@ -73,7 +82,12 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertOk()
                 ->assertSee('Llegó '.$contenido)
                 ->assertDontSee($contenido, false)
-                ->assertSee('Ver evidencia');
+                ->assertSee('Ver evidencia')
+                ->assertSee('Registro de conectividad')
+                ->assertSee('1 intervalo registrado')
+                ->assertSee('Desconexión de WhatsApp')
+                ->assertSee('Estado «Capturado»')
+                ->assertDontSee('Integridad pendiente de conciliación');
 
             $this->get('/mensajes/eventos/'.$captura->eventoCrudoId)
                 ->assertOk()
