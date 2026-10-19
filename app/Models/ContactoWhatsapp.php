@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,8 +20,8 @@ class ContactoWhatsapp extends Model
     {
         return [
             'metadatos' => 'array',
-            'visto_primera_vez_en' => 'immutable_datetime',
-            'visto_ultima_vez_en' => 'immutable_datetime',
+            'visto_primera_vez_en' => FechaUtc::class,
+            'visto_ultima_vez_en' => FechaUtc::class,
         ];
     }
 
