@@ -242,3 +242,81 @@ Para permitir una prueba con Redis físico, primero deberá verificarse **localm
 - El ensayo de publicación futuro utilizará un único evento sintético elegido por ID explícito y un trabajador de ejecución acotada; no `mensajero:despachar-buzon --limite=100` sin filtro.
 
 **PENDIENTE:** recibir el diagnóstico local, documentar la separación de Redis y ejecutar la comprobación punta a punta con recuperación ante fallos. La aprobación de la normalización manual no certifica Redis ni el procesamiento automático.
+
+## Decisión de arquitectura para producción: Redis con SQL Server como evidencia
+
+**Decisión confirmada (19/10/2026):** conservar Redis como intermediario de trabajos
+para Mensajero MILAC. No sustituye SQL Server ni se considera fuente primaria de
+mensajes. La recepción guarda primero el evento y su aviso en la misma transacción
+SQL Server; el fallo de Redis no debe impedir conservar una captura ya aceptada.
+
+No existe garantía de cero fallos: la seguridad operativa depende de recuperación,
+copias de seguridad, supervisión y pruebas de fallos, además del propio Redis.
+
+### Riesgo detectado: aviso publicado, trabajo no consumido
+
+La columna `enviado_en` del buzón indica que se publicó el trabajo en Redis,
+**no** que se procesó. Una cola perdida, un fallo del trabajador o un reinicio sin
+persistencia suficiente pueden dejar avisos marcados como enviados aunque el
+evento siga `capturado`.
+
+Para estudiar este caso en el POC se añadió un comando conservador de recuperación
+**manual**, restringido a `sqlsrv`, base terminada en `_test`, entorno
+`local/testing`, un evento y grupo autorizado:
+
+```powershell
+# Vista previa: no escribe, no usa Redis.
+php artisan mensajero:recuperar-publicacion 12345 --minutos=30
+
+# Solo tras revisar el evento exacto en la BD de pruebas.
+php artisan mensajero:recuperar-publicacion 12345 --minutos=30 --aplicar
+```
+
+El comando únicamente restablece `enviado_en`, `reservado_hasta` y
+`disponible_en` del aviso de salida. Exige una publicación de antigüedad
+mínima de 30 minutos y un evento aún `capturado`; rechaza grupos suspendidos,
+mensajes normalizados y bases no `_test`. No accede a WhatsApp, Redis ni modifica
+el evento crudo. Una republicación posterior aún requiere despacho explícito,
+cola real y trabajador aislado. La entrega podría repetirse: depende de que la
+normalización siga siendo idempotente.
+
+**Pendiente para producción:** crear conciliación automática paginada, acotada
+y observable de avisos publicados cuyo evento no haya completado; cubrir
+trabajos fallidos, colas perdidas, apagados abruptos, reintentos y alertas.
+El comando manual anterior no cumple por sí solo ese objetivo.
+
+### Protección adicional del despachador
+
+Mientras `MENSAJERO_NORMALIZACION_HABILITADA=false`, el comando
+`mensajero:despachar-buzon` **rechaza el despacho global**. El único ensayo
+admisible exige `--evento-id` y `--limite=1`, un evento en estado
+`capturado` de un grupo aún autorizado, entorno local/de pruebas y SQL Server
+`_test`. Cuando se habilite el modo automático en un despliegue validado,
+la orden programada podrá despachar lotes; **no activar ese indicador todavía**.
+
+Pruebas SQL Server añadidas, aún pendientes de ejecución local:
+
+```powershell
+php -l app\Console\Commands\DespacharBuzonWhatsapp.php
+php -l app\Console\Commands\RecuperarPublicacionWhatsapp.php
+vendor\bin\pint --test app\Console\Commands\DespacharBuzonWhatsapp.php app\Console\Commands\RecuperarPublicacionWhatsapp.php tests\Integracion\ProteccionDespachoSqlServerTest.php tests\Integracion\RecuperacionPublicacionSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter "ProteccionDespachoSqlServerTest|RecuperacionPublicacionSqlServerTest"
+```
+
+### Requisitos de liberación a producción (no certificados todavía)
+
+- Redis aislado de otros sistemas, protegido de acceso público; configurar ACL,
+  autenticación y persistencia AOF/RDB según política de recuperación aprobada.
+- Servicio Redis y trabajadores reiniciables y supervisados; definir redundancia
+  si el negocio exige disponibilidad durante el fallo de un nodo.
+- Aislar prefijos, base Redis y nombre de cola entre pruebas y producción.
+- Alinear tiempo de ejecución, `retry_after` y tiempo de espera del trabajador
+  para evitar reintentos simultáneos; ensayar cortes de red y reinicios.
+- Vigilar retraso y tamaño del buzón SQL, edad máxima de mensajes capturados
+  sin normalizar, cola Redis, trabajos fallidos, almacenamiento e integridad por grupo.
+- Ensayar recuperación sin duplicar proyecciones, incluyendo avisos publicados
+  que desaparecieron de Redis, y demostrar reanudación tras caída.
+- Respaldar SQL Server y archivos multimedia privados; los datos de Redis
+  no reemplazan dichas copias.
+- No activar grupos operativos o el número corporativo principal antes de pasar
+  pruebas de carga, estabilidad y seguridad.
