@@ -8,6 +8,7 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
+use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use JsonException;
@@ -94,6 +95,7 @@ final class ControladorMensajes extends Controller
     public function evento(
         int $evento,
         ExtraerContenidoWhatsapp $extraer,
+        PrepararContenidoEvidencia $preparador,
     ): View {
         $registro = EventoCrudoWhatsapp::query()
             ->with(['chat', 'mensaje.remitente', 'archivo'])
@@ -105,23 +107,17 @@ final class ControladorMensajes extends Controller
             ->findOrFail($evento);
 
         $resumen = $this->resumen($registro, $extraer);
-        $contenido = $registro->contenido;
-        $truncado = mb_strlen($contenido) > 100_000;
+        $vista = $preparador->ejecutar($registro->contenido);
+        $contenido = $vista['contenido'];
+        $truncado = $vista['truncado'];
 
-        if ($truncado) {
-            $contenido = mb_substr($contenido, 0, 100_000);
-        }
+        // La identificación íntegra del remitente no se muestra en la vista POC.
+        $idRemitente = $registro->id_remitente_proveedor;
+        $remitente = is_string($idRemitente) && $idRemitente !== ''
+            ? 'Remitente '.strtoupper(substr(hash('sha256', $idRemitente), 0, 8))
+            : 'No identificado';
 
-        // Solo presentación: el contenido íntegro permanece en SQL Server.
-        $json = json_decode($contenido, true);
-        if (! $truncado && json_last_error() === JSON_ERROR_NONE) {
-            $contenido = json_encode(
-                $json,
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-            ) ?: $contenido;
-        }
-
-        return view('mensajes.evento', compact('registro', 'resumen', 'contenido', 'truncado'));
+        return view('mensajes.evento', compact('registro', 'resumen', 'contenido', 'truncado', 'remitente'));
     }
 
     private function resumen(EventoCrudoWhatsapp $evento, ExtraerContenidoWhatsapp $extraer): string
