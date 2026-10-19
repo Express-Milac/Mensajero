@@ -128,7 +128,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Implementado App/Casts/FechaUtc en conexión, evento crudo y periodo de integridad: interpreta valores datetime sin zona de SQL Server como UTC y persiste entradas en UTC, sin modificar registros ni zona horaria global.
 - [x] Agregado POST /api/pasarela/v1/latido protegido por HMAC; solo actualiza ultimo_latido_en para conexiones actualmente conectadas, sin modificar estado.
 - [x] Recolector envía latido remoto cada intervalo solo si Baileys reporta conectado, además del latido local; fallos de red no crean tareas en la cola durable.
-- [x] Agregadas pruebas FechasUtcMensajeroTest y LatidoRecolectorSqlServerTest; ejecución local y Pint pendientes.
+- [x] Validación local inicial: Pint 8/8, integración LatidoRecolectorSqlServerTest 1 prueba / 14 aserciones, TypeScript sin errores y recolector 21/21. La suite FechasUtcMensajeroTest detectó 1 fallo (2/3): Eloquent devolvía el objeto Carbon asignado originalmente con zona -06:00 desde su caché de casts, aunque el atributo SQL ya estaba convertido a UTC.
+- [x] Corrección de caché: `FechaUtc` declara `withoutObjectCaching=true` para releer siempre el atributo normalizado a UTC. Pendiente volver a ejecutar Pint y FechasUtcMensajeroTest en Windows; no se afirma aún aprobado.
 - [ ] Confirmar que el último latido deje de aparecer en el futuro y avance aproximadamente cada 30 s. Revisar el grupo correcto y el marcador RAFAGA-REAL-A: consulta reciente devolvió 0 eventos en grupo 10020.
 
 ## Después de certificar captura
