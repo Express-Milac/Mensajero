@@ -289,9 +289,10 @@ El comando manual anterior no cumple por sí solo ese objetivo.
 
 Mientras `MENSAJERO_NORMALIZACION_HABILITADA=false`, el comando
 `mensajero:despachar-buzon` **rechaza el despacho global**. El único ensayo
-admisible exige `--evento-id` y `--limite=1`, un evento en estado
-`capturado` de un grupo aún autorizado, entorno local/de pruebas y SQL Server
-`_test`. Cuando se habilite el modo automático en un despliegue validado,
+admisible exige `--evento-id`, `--limite=1` y `--cola-ensayo` con
+una cola única vinculada a una conexión **sintética** creada por
+`mensajero:preparar-ensayo-redis`, además de evento `capturado`, grupo
+autorizado, entorno local/de pruebas y SQL Server `_test`. Cuando se habilite el modo automático en un despliegue validado,
 la orden programada podrá despachar lotes; **no activar ese indicador todavía**.
 
 Pruebas SQL Server añadidas, aún pendientes de ejecución local:
