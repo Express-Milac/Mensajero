@@ -38,33 +38,38 @@
 
     <section class="section-heading">
         <div>
-            <p class="eyebrow">NAVEGACIÓN POR GRUPO</p>
-            <h2>Grupos con monitoreo activo</h2>
+            <p class="eyebrow">CONEXIONES DEL RECOLECTOR</p>
+            <h2>Grupos de WhatsApp del recolector</h2>
+            <p class="fine">Incluye grupos de prueba y cualquier grupo autorizado de esta conexión; no indica que sean operativos.</p>
         </div>
-        <a class="text-link" href="{{ route('grupos.indice') }}">Administración de grupos →</a>
+        <a class="text-link" href="{{ route('grupos.indice', ['origen' => 'recolector']) }}">Administrar grupos →</a>
     </section>
 
     <div class="group-list">
-        @forelse($grupos as $grupo)
-            <article class="card group-card">
-                <div class="group-main">
-                    <p class="eyebrow" style="margin:0 0 8px">GRUPO #{{ $grupo->id }}</p>
-                    <h2>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h2>
-                    <div class="metadata-row">
-                        <span>Eventos: {{ number_format($grupo->eventos_crudos_count) }}</span>
-                        <span>Conexión: {{ $grupo->conexion?->nombre_visible ?: ($grupo->conexion?->clave_conexion ?: 'No identificada') }}</span>
-                    </div>
-                </div>
-                <div class="group-action">
-                    <a class="action-link" href="{{ route('mensajes.grupo', $grupo->id) }}">Ver mensajes →</a>
-                </div>
-            </article>
+        @forelse($gruposRecolector as $grupo)
+            @include('mensajes.partes.tarjeta-grupo', ['grupo' => $grupo])
         @empty
             <section class="card empty-state">
-                <span class="badge neutral">Sin grupos autorizados</span>
-                <h2>Todavía no hay grupos monitoreados.</h2>
-                <p class="muted">Autoriza un grupo de prueba desde la administración para consultar sus eventos capturados.</p>
+                <h2>No hay grupos del recolector con monitoreo activo.</h2>
+                <p class="muted">La lista de grupos autorizados se configura desde la administración.</p>
             </section>
         @endforelse
     </div>
+
+    @if($gruposOtrasConexiones->isNotEmpty())
+        <section class="section-heading secondary-heading">
+            <div>
+                <p class="eyebrow">CONEXIONES DISTINTAS DEL RECOLECTOR</p>
+                <h2>Pasarelas y otras conexiones</h2>
+                <p class="fine">Estos registros se muestran por separado para no mezclarlos con la captura del recolector. Su origen no determina por sí mismo si pertenecen a una prueba.</p>
+            </div>
+            <a class="text-link" href="{{ route('grupos.indice', ['origen' => 'otras']) }}">Administrar conexiones →</a>
+        </section>
+
+        <div class="group-list">
+            @foreach($gruposOtrasConexiones as $grupo)
+                @include('mensajes.partes.tarjeta-grupo', ['grupo' => $grupo])
+            @endforeach
+        </div>
+    @endif
 </x-layout>
