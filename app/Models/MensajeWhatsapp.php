@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,9 +19,9 @@ class MensajeWhatsapp extends Model
     protected function casts(): array
     {
         return [
-            'enviado_en' => 'immutable_datetime',
-            'recibido_en' => 'immutable_datetime',
-            'procesado_en' => 'immutable_datetime',
+            'enviado_en' => FechaUtc::class,
+            'recibido_en' => FechaUtc::class,
+            'procesado_en' => FechaUtc::class,
         ];
     }
 
