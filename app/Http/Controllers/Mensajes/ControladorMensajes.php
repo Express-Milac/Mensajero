@@ -27,11 +27,21 @@ final class ControladorMensajes extends Controller
             ->orderBy('id')
             ->get();
 
+        // Se clasifica por proveedor técnico, nunca por nombre o estado operativo.
+        $gruposRecolector = $grupos->filter(
+            fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
+        );
+        $gruposOtrasConexiones = $grupos->reject(
+            fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
+        );
+
         $identificadores = $grupos->pluck('id');
         $conexiones = $grupos->pluck('conexion_id')->unique();
 
         return view('mensajes.indice', [
             'grupos' => $grupos,
+            'gruposRecolector' => $gruposRecolector,
+            'gruposOtrasConexiones' => $gruposOtrasConexiones,
             'cantidadEventos' => (int) $grupos->sum('eventos_crudos_count'),
             'cantidadNormalizados' => $identificadores->isEmpty()
                 ? 0
