@@ -99,3 +99,41 @@ aprobar la integración, porque procesaría eventos históricos pendientes.
 - Diseñar seguimiento de trabajos fallidos de Redis y alertas.
 - Construir vista por grupo y estado de integridad por periodo.
 - Reconciliar intervalos no confirmados con origen externo.
+
+
+## Ensayo controlado de un único evento
+
+Antes de activar Redis o el procesamiento automático, se agregó un comando con
+vista previa sin escrituras:
+
+```powershell
+php artisan mensajero:normalizar-evento 11070
+```
+
+Muestra únicamente el identificador, el grupo, el tipo y el estado. No imprime
+el texto, el remitente ni el JSON original. No escribe en SQL Server sin la
+opción explícita `--aplicar`.
+
+Tras aprobar la nueva prueba de integración SQL Server, y únicamente con
+autorización del operador, puede ensayarse ese evento concreto:
+
+```powershell
+php artisan mensajero:normalizar-evento 11070 --aplicar
+```
+
+Restricciones comprobadas antes de procesar: entorno `local` o `testing`,
+conexión activa `sqlsrv`, nombre de BD terminado en `_test`, evento existente
+de tipo `mensaje` y grupo que permanezca activo y monitoreado. La aplicación
+es idempotente y solo alcanza el ID solicitado. No ejecuta colas, no consume
+automáticamente el histórico y no utiliza WhatsApp.
+
+**Pruebas nuevas:**
+
+```powershell
+vendor\bin\pint --test app\Console\Commands\NormalizarEventoEspecificoWhatsapp.php tests\Integracion\NormalizacionControladaSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter NormalizacionControladaSqlServerTest
+```
+
+No ejecutar `--aplicar` sobre datos reales mientras no estén revisadas estas
+pruebas ni se haya aprobado el mensaje específico. La prueba automatizada usa
+transacciones reversibles en `mensajero_test`.
