@@ -4,7 +4,7 @@ use Illuminate\Support\Str;
 
 return [
     // Las claves de este archivo son parte del contrato de Laravel.
-    'driver' => env('SESSION_DRIVER', 'redis'),
+    'driver' => env('SESSION_DRIVER', 'database'),
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
     'encrypt' => env('SESSION_ENCRYPT', true),
