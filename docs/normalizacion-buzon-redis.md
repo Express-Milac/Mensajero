@@ -441,3 +441,35 @@ La aprobación de este ensayo **no equivale** a certificación de producción:
 continúan pendientes la conciliación automática de entregas perdidas,
 reintentos supervisados, pruebas de reinicio y carga, autorización corporativa
 y puesta en servicio en la infraestructura MILAC.
+
+
+## Control adicional al consumir tareas Redis
+
+Después del primer ensayo físico exitoso (evento sintético `#11117`,
+grupo ficticio `#10089`, **DONE en 172.69 ms** y auditoría de solo
+lectura **1/1 correctos**), se identificó una condición de carrera de
+autorización: entre aceptar o publicar un evento y ejecutar el trabajador,
+un grupo podría perder el permiso de monitoreo.
+
+`NormalizarEventoWhatsapp` ahora vuelve a comprobar, dentro de la
+transacción de normalización y con bloqueo SQL, que el grupo siga activo,
+autorizado y asociado a la misma conexión; los grupos revocados o
+inactivos se rechazan sin generar proyecciones nuevas ni borrar la
+captura original. El trabajador deja que el error se maneje mediante
+el sistema de reintentos/fallidos de Laravel. **Esta protección todavía
+necesita validación local tras el cambio.**
+
+Ejecutar desde PowerShell (solo integración SQL Server `_test`):
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+php -l app\Services\Normalizacion\NormalizarEventoWhatsapp.php
+php -l tests\Integracion\NormalizacionWhatsappSqlServerTest.php
+vendor\bin\pint --test app\Services\Normalizacion\NormalizarEventoWhatsapp.php tests\Integracion\NormalizacionWhatsappSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter NormalizacionWhatsappSqlServerTest
+```
+
+No crear eventos nuevos, no republicar `#11117`, no iniciar
+`schedule:work` ni trabajadores continuos durante esta validación.
+Pendiente completar conciliación automática de trabajos publicados
+pero no normalizados y alertas de reintento/fallo.
