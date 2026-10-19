@@ -158,11 +158,63 @@ class VigilanciaBuzonSqlServerTest extends TestCase
         }
     }
 
+    public function test_clasificacion_por_tipo_contrato_y_grupo_es_solo_lectura_y_filtra_etiquetas(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            Queue::fake();
+            [$grupo, $evento, $aviso] = $this->crearEnsayo();
+            $huella = $evento->hash_contenido_sha256;
+
+            $clasificacion = app(MedirEstadoBuzonWhatsapp::class)
+                ->clasificarPendientes((int) $grupo->id);
+
+            $this->assertFalse($clasificacion['truncado']);
+            $this->assertSame([[
+                'tipo_evento' => 'mensaje',
+                'tipo_mensaje' => 'texto',
+                'version_contrato' => 'v3-recolector',
+                'cantidad' => 1,
+            ]], $clasificacion['categorias']);
+
+            $this->assertSame(0, Artisan::call('mensajero:vigilar-buzon', [
+                '--grupo' => $grupo->id,
+                '--clasificar' => true,
+            ]));
+
+            // Las etiquetas no reconocidas jamás deben imprimirse en bruto.
+            $evento->tipo_evento = 'categoria_privada_no_publicable';
+            $evento->tipo_mensaje = 'dato_privado_no_publicable';
+            $evento->version_contrato = 'version_privada_no_publicable';
+            $evento->save();
+
+            $clasificacion = app(MedirEstadoBuzonWhatsapp::class)
+                ->clasificarPendientes((int) $grupo->id);
+
+            $this->assertSame([[
+                'tipo_evento' => 'otro_no_clasificado',
+                'tipo_mensaje' => 'otro_no_clasificado',
+                'version_contrato' => 'otra_version',
+                'cantidad' => 1,
+            ]], $clasificacion['categorias']);
+
+            $this->assertNotNull($aviso->fresh());
+            $this->assertNull($aviso->fresh()->enviado_en);
+            $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
+            $this->assertSame($huella, $evento->fresh()->hash_contenido_sha256);
+            Queue::assertNothingPushed();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_parametros_incorrectos_y_produccion_fallan_antes_de_leer_metricas(): void
     {
         $this->assertSame(1, Artisan::call('mensajero:vigilar-buzon', ['--minutos' => 4]));
         $this->assertSame(1, Artisan::call('mensajero:vigilar-buzon', ['--minutos' => 1441]));
         $this->assertSame(1, Artisan::call('mensajero:vigilar-buzon', ['--grupo' => -1]));
+        $this->assertSame(1, Artisan::call('mensajero:vigilar-buzon', ['--clasificar' => true]));
 
         $nombre = config('database.connections.sqlsrv.database');
 
