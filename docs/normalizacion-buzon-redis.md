@@ -632,3 +632,44 @@ ejecutar `--alertar` hasta revisar el primer informe, ni activar
 `schedule:work` o un trabajador continuo. Antes de producción se necesita
 observación de cola Redis y trabajos fallidos, métricas agregadas con
 umbrales aprobados, procedimientos para alertas y pruebas de carga y caída.
+
+
+## Investigación del atraso detectado el 19/10/2026
+
+La primera ejecución local de `php artisan mensajero:vigilar-buzon
+--minutos=30` informó **40 avisos sin publicar, todos atrasados**,
+**0 publicados sin normalizar** y **0 reservas vencidas**. Pasaron
+**3 pruebas, 28 aserciones**, sintaxis PHP (3/3) y Pint (3/3).
+Esta medición incluye eventos `capturado` en grupos activos y
+monitoreados de SQL Server `_test`; no permite determinar todavía
+si son pruebas históricas o registros que necesiten procesamiento.
+
+Se incorporó `--desglose` para mostrar la distribución exclusivamente
+por **identificador interno de grupo y conexión**, sin datos personales,
+nombres de grupos, texto, multimedia ni ID externo. Cuenta pendientes
+totales, mayores al umbral indicado, mayores a 24 horas y 7 días.
+Muestra a lo sumo 50 grupos, e indica si el resultado fue truncado.
+El indicador de prefijo de ensayo es orientativo, no demuestra que
+todos los datos de la conexión sean ficticios.
+
+Para verificar este cambio antes de consultar de nuevo el atraso:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+php -l app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php
+php -l app\Console\Commands\VigilarBuzonWhatsapp.php
+php -l tests\Integracion\VigilanciaBuzonSqlServerTest.php
+vendor\bin\pint --test app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php app\Console\Commands\VigilarBuzonWhatsapp.php tests\Integracion\VigilanciaBuzonSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VigilanciaBuzonSqlServerTest
+
+# Solo lectura, consultar agrupación sin mostrar contenido:
+php artisan mensajero:vigilar-buzon --minutos=30 --desglose
+```
+
+**No ejecutar** `mensajero:despachar-buzon` sin ID ficticio exacto,
+`mensajero:conciliar-publicaciones --aplicar`, `queue:work`
+genérico ni tareas programadas por estos 40 avisos. Primero revisar
+la procedencia y autorización de los grupos. Para producción
+seguirá faltando la supervisión propia de Redis, fallos de
+trabajadores, historial de reintentos, alertas y un tratamiento
+diferenciado de grupos revocados.
