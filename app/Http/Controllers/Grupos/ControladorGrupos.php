@@ -18,10 +18,9 @@ class ControladorGrupos extends Controller
 
         $origen = $request->query('origen', 'todos');
 
-        if (! in_array($origen, ['todos', 'recolector', 'otras'], true)) {
+        if (in_array($origen, ['todos', 'recolector', 'otras'], true) === false) {
             $origen = 'todos';
         }
-
 
         $consulta = ChatMonitoreado::query()
             ->with('conexion')
