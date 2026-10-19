@@ -673,3 +673,57 @@ la procedencia y autorización de los grupos. Para producción
 seguirá faltando la supervisión propia de Redis, fallos de
 trabajadores, historial de reintentos, alertas y un tratamiento
 diferenciado de grupos revocados.
+
+
+## Distribución de los 40 avisos y clasificación privada (19/10/2026)
+
+La lectura de `mensajero:vigilar-buzon --minutos=30 --desglose`
+se ejecutó correctamente en `mensajero_test`, con
+**4 pruebas de integración y 52 aserciones aprobadas**:
+
+| Grupo interno | Conexión interna | Pendientes | Mayores a 24 h | Mayores a 7 días |
+|---|---|---:|---:|---:|
+| 10020 | 10014 | 38 | 32 | 0 |
+| 16 | 16 | 1 | 1 | 0 |
+| 20 | 20 | 1 | 1 | 0 |
+
+Todos los pendientes superan 30 minutos, los 40 siguen sin publicar,
+no hay avisos publicados sin normalizar ni reservas vencidas. Ninguno
+de estos tres grupos tiene el prefijo `ensayo-redis-`, pero esto
+**no demuestra que los registros sean reales o ficticios**. El grupo
+10020 fue utilizado también para pruebas manuales anteriores. Su
+historial debe preservarse hasta determinar si requiere procesamiento.
+
+Se añadió al diagnóstico la opción **`--clasificar`**, obligatoriamente
+acompañada de un grupo interno autorizado. Cuenta los pendientes
+por `tipo_evento`, `tipo_mensaje` y `version_contrato`, y expone
+solo etiquetas permitidas o valores neutros. Limita a 50 combinaciones,
+sin textos, nombres, remitentes, números telefónicos, identificadores
+externos, multimedia ni fechas exactas. **Es solo lectura**.
+
+Validar primero la nueva implementación:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+
+php -l app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php
+php -l app\Console\Commands\VigilarBuzonWhatsapp.php
+php -l tests\Integracion\VigilanciaBuzonSqlServerTest.php
+
+vendor\bin\pint --test app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php app\Console\Commands\VigilarBuzonWhatsapp.php tests\Integracion\VigilanciaBuzonSqlServerTest.php
+
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VigilanciaBuzonSqlServerTest
+```
+
+Después, **solo si pasan las pruebas**, consultar por separado:
+
+```powershell
+php artisan mensajero:vigilar-buzon --grupo=10020 --minutos=30 --clasificar
+php artisan mensajero:vigilar-buzon --grupo=16 --minutos=30 --clasificar
+php artisan mensajero:vigilar-buzon --grupo=20 --minutos=30 --clasificar
+```
+
+No usar `--aplicar`, no modificar estados, no publicar trabajos Redis,
+no reiniciar colas ni activar procesamiento general por este hallazgo.
+La clasificación tampoco valida por sí sola que sea seguro normalizar
+todo el historial.
