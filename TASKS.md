@@ -129,9 +129,10 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Agregado POST /api/pasarela/v1/latido protegido por HMAC; solo actualiza ultimo_latido_en para conexiones actualmente conectadas, sin modificar estado.
 - [x] Recolector envía latido remoto cada intervalo solo si Baileys reporta conectado, además del latido local; fallos de red no crean tareas en la cola durable.
 - [x] Validación local inicial: Pint 8/8, integración LatidoRecolectorSqlServerTest 1 prueba / 14 aserciones, TypeScript sin errores y recolector 21/21. La suite FechasUtcMensajeroTest detectó 1 fallo (2/3): Eloquent devolvía el objeto Carbon asignado originalmente con zona -06:00 desde su caché de casts, aunque el atributo SQL ya estaba convertido a UTC.
-- [x] Corrección de caché: `FechaUtc` declara `withoutObjectCaching=true` para releer siempre el atributo normalizado a UTC. Pendiente volver a ejecutar Pint y FechasUtcMensajeroTest en Windows; no se afirma aún aprobado.
+- [x] Corrección de caché: `FechaUtc` declara `withoutObjectCaching=true` para releer siempre el atributo normalizado a UTC. Validación en Windows: `FechasUtcMensajeroTest` aprobó 3/3 pruebas, 9 aserciones, 0 fallos. Pint de los 8 archivos había aprobado en la ronda anterior.
 - [x] Latido remoto real validado el 19/10/2026: Baileys confirmó `confirmacion_buffer_inicial`, conexión marcada `conectado`; `ultimo_latido_en` se leyó como `2026-10-19T17:35:49Z` frente a `now('UTC')=2026-10-19T17:36:08Z` (19.09 s de antigüedad), sin desfase futuro. Esto valida un latido reciente, no todavía la estabilidad de dos horas.
-- [ ] Confirmar regresión `FechasUtcMensajeroTest` después de `withoutObjectCaching=true`; todavía no se aportó su resultado. Reconciliar por separado grupo 10020 y marcador `RAFAGA-REAL-A-`, previamente ausentes de SQL.
+- [x] Regresión `FechasUtcMensajeroTest` aprobada: 3 pruebas / 9 aserciones. Control de latidos en UTC y actualización remota comprobados con un latido 19.09 s anterior a `now('UTC')`.
+- [ ] Ráfaga real sin conciliar: consulta por `RAFAGA-REAL-A-` en **todos los grupos** de SQL Server devolvió `[]` el 19/10/2026. Confirmar primero si se enviaron literalmente 25 textos independientes; si se enviaron, diagnosticar logs `messages.upsert`, filtro de grupo y cola durable. No certificar ni declarar pérdida sin evidencia.
 
 ## Después de certificar captura
 - [ ] Normalizador idempotente y buzón → Redis.
