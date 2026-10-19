@@ -135,7 +135,10 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Aclarada ausencia de ráfaga real: los 25 mensajes no se enviaron; `RAFAGA-REAL-A-` devolvió `[]` como era esperable. Validación breve de tres mensajes reales aprobada para alcance de recepción: `z91=1`, `z92=1`, `z93=2` coincidencias totales, con un `z93` histórico y uno de la prueba actual. No equivale a estabilidad prolongada o carga real de 25 mensajes.
 
 ## Después de certificar captura
-- [ ] Normalizador idempotente y buzón → Redis.
+- [x] Incremento de normalización y buzón → Redis **implementado**, pendiente de validación local: `ExtraerContenidoWhatsapp`, `NormalizarEventoWhatsapp`, `NormalizarEventoWhatsappTrabajo`, `DespacharBuzonWhatsapp`, comando `mensajero:despachar-buzon`. Reutiliza tablas `mensajero_*` existentes, transacciones SQL, deduplicación, contacto, cita tardía y tiempos UTC. Eventos mutables quedan como `pendiente_semantica`, sin falsos mensajes originales.
+- [x] Publicación del buzón con reserva recuperable, reintento exponencial y salida sin secretos; Redis desactivado por defecto para el POC hasta certificar el entorno, con programación por minuto opcional vía `MENSAJERO_NORMALIZACION_HABILITADA`.
+- [x] Agregadas pruebas `ExtraerContenidoWhatsappTest` (unidad) y `NormalizacionWhatsappSqlServerTest` (citas fuera de orden, idempotencia, trabajos de Redis simulados y fallo de publicación). Documentación en `docs/normalizacion-buzon-redis.md`.
+- [ ] **Validación pendiente:** Pint, pruebas unitarias y SQL Server sobre `mensajero_test`; ninguna publicación real a Redis, migración nueva ni procesamiento histórico efectuados. Después verificar Redis y trabajador sobre entorno seguro antes de activar ejecución automática.
 - [ ] Vista de mensajes originales y estado de integridad por grupo/periodo.
 - [ ] Integración al servidor MILAC.
 - [ ] Fase 2: Gemini con trazabilidad exacta hacia mensajes fuente.
