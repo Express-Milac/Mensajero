@@ -13,6 +13,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class FechaUtc implements CastsAttributes
 {
+    /**
+     * Impide que Eloquent devuelva el objeto Carbon original tras set().
+     * Siempre se debe leer el valor normalizado desde los atributos UTC.
+     */
+    public bool $withoutObjectCaching = true;
+
     public function get(Model $model, string $key, mixed $value, array $attributes): ?CarbonImmutable
     {
         if ($value === null || $value === '') {
