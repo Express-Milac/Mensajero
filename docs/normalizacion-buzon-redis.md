@@ -532,3 +532,52 @@ requiere comprobación antes de proceder. Mantener
 `schedule:work`, `queue:work` general, `FLUSHDB` o `DEL` contra Redis.
 Esta simulación no sustituye pruebas posteriores de fallo real de red,
 reinicio, concurrencia, recuperación automática y supervisión.
+
+
+## Conciliación de avisos enviados sin normalizar: fase de pruebas
+
+El 19/10/2026 se **completó el ensayo manual extremo a extremo** del
+aviso sintético `#11135`: trabajo Redis **DONE en 106.72 ms**, evento
+`#11135` auditado **1/1 correcto**, sin escrituras durante auditoría.
+
+Se añadió un comando de **conciliación por lote** para el siguiente paso:
+
+```powershell
+# Vista previa sin escritura y sin publicar Redis:
+php artisan mensajero:conciliar-publicaciones --minutos=30 --limite=10
+
+# Solo tras verificar la lista exacta, volver a dejar pendientes los avisos:
+# php artisan mensajero:conciliar-publicaciones --minutos=30 --limite=10 --aplicar
+```
+
+Restricciones del prototipo: `APP_ENV=local/testing`, SQL Server con
+nombre terminado en `_test`, normalización automática desactivada,
+máximo **20 avisos por ejecución** y antigüedad mínima **30 minutos**.
+Además, solo contempla conexiones, chats y eventos **ficticios**
+generados por el ensayo Redis, con clave `ensayo-redis-<16 hex>`.
+Excluye registros ya normalizados, grupos inactivos o no autorizados,
+avisos recientes o reservados. Verifica de nuevo cada candidato bajo
+bloqueo SQL antes de escribir.
+
+El comando **no publica mensajes en Redis**, no inicia trabajadores ni
+activa tareas programadas. `--aplicar` solo restablece avisos SQL, que
+podrían ser publicados posteriormente mediante un despacho separado.
+No cuenta como conciliación automática desplegable en producción.
+
+### Validación pendiente en la máquina Windows / SQL Server `_test`
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+php -l app\Console\Commands\ConciliarPublicacionesWhatsapp.php
+php -l tests\Integracion\ConciliacionPublicacionesSqlServerTest.php
+vendor\bin\pint --test app\Console\Commands\ConciliarPublicacionesWhatsapp.php tests\Integracion\ConciliacionPublicacionesSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter ConciliacionPublicacionesSqlServerTest
+php artisan mensajero:conciliar-publicaciones --minutos=30 --limite=10
+```
+
+La última orden es solo vista previa. **No ejecutar `--aplicar`
+hasta revisar resultados de las pruebas y los IDs mostrados**. Para
+producción faltan alertas, criterios para autorización a escala,
+reconciliación programada, métricas, concurrencia y pruebas de fallos
+reales. Nunca ejecutar `schedule:work` ni activar
+`MENSAJERO_NORMALIZACION_HABILITADA` durante estos ensayos.
