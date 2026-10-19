@@ -25,14 +25,15 @@ final class DespacharBuzonWhatsapp
         for ($indice = 0; $indice < $limite; $indice++) {
             $tarea = DB::transaction(function () use ($eventoCrudoId): ?MensajeBuzonSalida {
                 $ahora = now('UTC');
+                $ahoraSql = $ahora->format('Y-m-d H:i:s.u');
                 $consulta = MensajeBuzonSalida::query()
                     ->where('tema', 'whatsapp.crudo.aceptado')
                     ->where('tipo_entidad', 'evento_crudo_whatsapp')
                     ->whereNotNull('entidad_id')
                     ->whereNull('enviado_en')
-                    ->where('disponible_en', '<=', $ahora)
-                    ->where(function ($q) use ($ahora) {
-                        $q->whereNull('reservado_hasta')->orWhere('reservado_hasta', '<=', $ahora);
+                    ->where('disponible_en', '<=', $ahoraSql)
+                    ->where(function ($q) use ($ahoraSql) {
+                        $q->whereNull('reservado_hasta')->orWhere('reservado_hasta', '<=', $ahoraSql);
                     });
 
                 if ($eventoCrudoId !== null) {
