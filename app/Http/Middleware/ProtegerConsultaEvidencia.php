@@ -16,7 +16,8 @@ final class ProtegerConsultaEvidencia
     {
         if (config('mensajero.autenticacion.modo') === 'deshabilitado') {
             abort_unless(
-                config('mensajero.consulta_local_sin_autenticacion', false)
+                app()->environment(['local', 'testing'])
+                    && config('mensajero.consulta_local_sin_autenticacion', false)
                     && in_array($request->ip(), ['127.0.0.1', '::1'], true),
                 403,
                 'La consulta de mensajes requiere autenticación o una autorización local explícita.',
