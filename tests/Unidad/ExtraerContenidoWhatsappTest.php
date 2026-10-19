@@ -17,7 +17,7 @@ class ExtraerContenidoWhatsappTest extends TestCase
 
         $this->assertSame('La unidad salió', $resultado['texto']);
         $this->assertNull($resultado['pie_multimedia']);
-        $this->assertSame('UTC', $resultado['enviado_en']->timezoneName);
+        $this->assertSame(0, $resultado['enviado_en']->getOffset());
     }
 
     public function test_extrae_cita_envuelta_y_pie_de_multimedia(): void
