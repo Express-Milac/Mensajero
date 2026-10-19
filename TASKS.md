@@ -139,9 +139,12 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Publicación del buzón con reserva recuperable, reintento exponencial y salida sin secretos; Redis desactivado por defecto para el POC hasta certificar el entorno, con programación por minuto opcional vía `MENSAJERO_NORMALIZACION_HABILITADA`.
 - [x] Agregadas pruebas `ExtraerContenidoWhatsappTest` (unidad) y `NormalizacionWhatsappSqlServerTest` (citas fuera de orden, idempotencia, trabajos de Redis simulados y fallo de publicación). Documentación en `docs/normalizacion-buzon-redis.md`.
 - [x] Primera validación local recibida: Pint 7/7 archivos; integración `NormalizacionWhatsappSqlServerTest` 4/4 pruebas, 51 aserciones; pruebas unitarias 3/4 y 11 aserciones antes de ajuste. El único fallo se debió a que Carbon representó UTC como `+00:00`, no como cadena `UTC`.
-- [x] Ajustada prueba `ExtraerContenidoWhatsappTest` para verificar `getOffset() === 0` en lugar de nombre de zona. **Pendiente ejecutar de nuevo las 4 pruebas unitarias** antes de marcar la suite como aprobada.
+- [x] Regresión de unidad certificada el 19/10/2026: `ExtraerContenidoWhatsappTest` aprobado 4/4 pruebas, **11 aserciones** y cero fallos (no 12). Integración SQL Server del mismo incremento ya había aprobado 4/4 pruebas, 51 aserciones; Pint 7/7.
 - [ ] **Validación de operación pendiente:** Redis real, trabajador y recuperación tras caída; ningún procesamiento histórico efectuado. No activar la programación automática hasta certificar Redis y la secuencia completa.
-- [ ] Vista de mensajes originales y estado de integridad por grupo/periodo.
+- [x] **Vista de mensajes originales y resumen de integridad por conexión implementada, pendiente de pruebas locales:** `/mensajes` (grupos), `/mensajes/grupos/{chat}` (eventos paginados, filtros), `/mensajes/eventos/{evento}` (detalle de fuente cruda y multimedia solo en metadatos). Texto visible se extrae en lectura de registros crudos aun con Redis desactivado; sin alterar los datos ni atribuir mensajes falsos a ediciones/eliminaciones.
+- [x] Seguridad de la consulta: middleware `ProtegerConsultaEvidencia`. Sin login todas las vistas privadas responden 403 salvo opción local explícita `MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION=true` desde IP de bucle y `APP_ENV=local`; no está habilitada por defecto. Modo corporativo no integrado continúa cerrado.
+- [x] Pruebas creadas: `ConsultaEvidenciaAccesoTest` y `VistaMensajesSqlServerTest` (HTML escapado, 30 por página, lectura sin modificaciones y grupos no autorizados ocultos). Documentación `docs/consulta-mensajes.md`. **Ejecución local pendiente.**
+- [ ] Vista enriquecida de periodos con reconciliación independiente y multimedia descargable/reproducible mediante autorización estricta: no implementada aún; el resumen de periodos actual es por conexión, no por grupo verificado.
 - [ ] Integración al servidor MILAC.
 - [ ] Fase 2: Gemini con trazabilidad exacta hacia mensajes fuente.
 
