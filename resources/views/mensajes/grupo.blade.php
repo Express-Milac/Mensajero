@@ -32,22 +32,41 @@
         </form>
     </section>
 
-    @if($periodos->isNotEmpty())
-        <section class="notice integrity-warning">
-            <strong>Integridad pendiente de conciliación</strong>
-            <p>La conexión asociada al grupo tiene {{ $periodos->count() }} periodos recientes registrados. Estos intervalos corresponden a la conexión, no necesariamente a cada mensaje de este grupo.</p>
-            <details>
-                <summary>Consultar periodos de la conexión</summary>
+    <section class="connection-summary" aria-label="Registro de conectividad">
+        <div class="connection-summary-heading">
+            <div>
+                <strong>Registro de conectividad</strong>
+                @if($totalPeriodos > 0)
+                    <span class="connection-summary-count">{{ $totalPeriodos }} {{ $totalPeriodos === 1 ? 'intervalo registrado' : 'intervalos registrados' }}</span>
+                @else
+                    <span class="connection-summary-count">Sin intervalos registrados</span>
+                @endif
+            </div>
+            <span class="badge neutral">Información de la conexión</span>
+        </div>
+        <p>Estos registros corresponden a la conexión del recolector, no son un conteo de mensajes faltantes del grupo. Su existencia o ausencia no demuestra por sí sola una captura completa.</p>
+        @if($periodos->isNotEmpty())
+            <details class="connection-summary-details">
+                <summary>Consultar {{ $periodos->count() === $totalPeriodos ? 'los intervalos' : 'los últimos '.$periodos->count().' intervalos' }}</summary>
                 <ul>
                     @foreach($periodos as $periodo)
-                        <li>{{ $periodo->causa }} · {{ $periodo->inicio_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }} — {{ $periodo->fin_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }}</li>
+                        @php($nombreCausa = match ($periodo->causa) {
+                            'reinicio_no_confirmado' => 'Reinicio sin confirmación',
+                            'desconexion_whatsapp' => 'Desconexión de WhatsApp',
+                            'fuente_multimedia_ausente' => 'Archivo multimedia no disponible',
+                            default => ucfirst(str_replace('_', ' ', $periodo->causa)),
+                        })
+                        <li>
+                            <strong>{{ $nombreCausa }}</strong>
+                            <span>{{ $periodo->inicio_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }} — {{ $periodo->fin_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }}</span>
+                        </li>
                     @endforeach
                 </ul>
             </details>
-        </section>
-    @else
-        <p class="fine integrity-note">No hay periodos de integridad registrados para esta conexión. Esto no garantiza ausencia de mensajes faltantes.</p>
-    @endif
+        @endif
+    </section>
+
+    <p class="fine processing-help">Estado «Capturado»: evidencia original almacenada en SQL Server; la normalización automática sigue desactivada. No impide consultar el texto y su evidencia.</p>
 
     <section class="event-list" aria-label="Eventos del grupo">
         @forelse($eventos as $fila)
@@ -57,7 +76,12 @@
                     <div class="event-badges">
                         <span class="badge {{ $registro->tipo_evento === 'mensaje' ? '' : 'neutral' }}">{{ ucfirst($registro->tipo_evento) }}</span>
                         <span class="badge neutral">{{ $registro->tipo_mensaje ?: 'Tipo histórico sin clasificar' }}</span>
-                        <span class="badge {{ $registro->estado_procesamiento === 'normalizado' ? '' : 'neutral' }}">{{ str_replace('_', ' ', $registro->estado_procesamiento) }}</span>
+                        <span class="badge {{ $registro->estado_procesamiento === 'normalizado' ? '' : 'neutral' }}">{{ match ($registro->estado_procesamiento) {
+                            'capturado' => 'Capturado',
+                            'normalizado' => 'Normalizado',
+                            'pendiente_semantica' => 'Pendiente de interpretación',
+                            default => ucfirst(str_replace('_', ' ', $registro->estado_procesamiento)),
+                        } }}</span>
                     </div>
                     <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Fecha desconocida' }}</time>
                 </div>
