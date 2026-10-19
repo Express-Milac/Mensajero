@@ -46,3 +46,21 @@
 @media(max-width:1150px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){.metric-grid{grid-template-columns:1fr 1fr}.metric{padding:16px}.metric strong{font-size:28px}.section-heading,.evidence-banner,.event-header{display:block}.event-header time{display:block;margin-top:12px}.evidence-metadata{grid-template-columns:1fr}.event-card{padding:18px}.event-footer a{margin-left:0}.filter-row{display:block}.filter-row select,.filter-row button{width:100%;margin-top:10px}}
 @media(max-width:440px){.metric-grid{grid-template-columns:1fr}}
+
+
+/* Conectividad: informativa, no alarma de pérdida no comprobada. */
+.connection-summary{border:1px solid #dbe6df;background:#f7faf7;border-radius:14px;padding:15px 19px;margin:15px 0 12px;color:#36534b}
+.connection-summary-heading{display:flex;gap:14px;justify-content:space-between;align-items:center}
+.connection-summary-heading>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 13px}
+.connection-summary-heading strong{font-size:13px}
+.connection-summary-count{font-size:12px;color:#637d73}
+.connection-summary p{font-size:12px;line-height:1.55;color:#5c746c;margin:7px 0 0}
+.connection-summary-details{margin-top:8px}
+.connection-summary-details summary{font-size:12px;display:inline-block;cursor:pointer;color:#245f4d;font-weight:650;padding:6px 0}
+.connection-summary-details summary:hover{text-decoration:underline}
+.connection-summary-details ul{margin:9px 0 1px;padding-left:18px}
+.connection-summary-details li{font-size:12px;line-height:1.55;margin:8px 0}
+.connection-summary-details li strong{display:inline-block;margin-right:7px}
+.connection-summary-details li span{color:#698078}
+.processing-help{margin:0 0 16px;padding:0 3px}
+@media(max-width:800px){.connection-summary-heading{align-items:flex-start;flex-direction:column;gap:5px}.connection-summary{padding:14px}}
