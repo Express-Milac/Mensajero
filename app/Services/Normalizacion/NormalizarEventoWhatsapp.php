@@ -3,6 +3,7 @@
 namespace App\Services\Normalizacion;
 
 use App\Models\ArchivoWhatsapp;
+use App\Models\ChatMonitoreado;
 use App\Models\ContactoWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
@@ -27,6 +28,23 @@ final class NormalizarEventoWhatsapp
 
             if (in_array($evento->estado_procesamiento, ['normalizado', 'pendiente_semantica'], true)) {
                 return 'duplicado';
+            }
+
+            // El grupo pudo ser desautorizado mientras la tarea esperaba en Redis.
+            // Verificar en la misma transacción que realiza la proyección y
+            // bloquear el grupo durante su ejecución. La evidencia original
+            // permanece intacta si la autorización fue retirada.
+            $grupo = ChatMonitoreado::query()
+                ->whereKey($evento->chat_monitoreado_id)
+                ->where('conexion_id', $evento->conexion_id)
+                ->where('tipo_chat', 'grupo')
+                ->where('es_monitoreado', true)
+                ->where('es_activo', true)
+                ->lockForUpdate()
+                ->first();
+
+            if ($grupo === null) {
+                throw new RuntimeException('Grupo no autorizado para normalización: revisar antes de reintentar.');
             }
 
             if ($evento->tipo_evento !== 'mensaje') {
