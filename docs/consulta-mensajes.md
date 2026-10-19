@@ -33,6 +33,10 @@ Los periodos de integridad registrados son de la **conexión**, no afirmaciones
 de pérdida en un grupo específico. La ausencia de incidencias no equivale a una
 garantía de integridad.
 
+## Vista previa protegida
+
+La página de detalle prepara una representación depurada de los datos técnicos de WhatsApp, y muestra un alias de remitente. La evidencia original y su SHA-256 no cambian en SQL Server. Si el contenido es excesivo o no es JSON válido, la vista no publica fragmentos sin filtrar. La revisión de protección se comprueba con las pruebas unitarias PrepararContenidoEvidenciaTest y la integración VistaMensajesSqlServerTest.
+
 ## Seguridad mientras no exista inicio de sesión
 
 En modo `MENSAJERO_MODO_AUTENTICACION=deshabilitado`, las tres rutas nuevas
