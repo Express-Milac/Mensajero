@@ -300,7 +300,10 @@ Pruebas SQL Server añadidas, aún pendientes de ejecución local:
 php -l app\Console\Commands\DespacharBuzonWhatsapp.php
 php -l app\Console\Commands\RecuperarPublicacionWhatsapp.php
 vendor\bin\pint --test app\Console\Commands\DespacharBuzonWhatsapp.php app\Console\Commands\RecuperarPublicacionWhatsapp.php tests\Integracion\ProteccionDespachoSqlServerTest.php tests\Integracion\RecuperacionPublicacionSqlServerTest.php
-vendor\bin\phpunit -c phpunit.integracion.xml --filter "ProteccionDespachoSqlServerTest|RecuperacionPublicacionSqlServerTest"
+# En PowerShell, ejecutar cada clase por separado: el filtro con | puede
+# ser interpretado como tubería al atravesar el iniciador de Windows.
+vendor\bin\phpunit -c phpunit.integracion.xml --filter ProteccionDespachoSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter RecuperacionPublicacionSqlServerTest
 ```
 
 ### Requisitos de liberación a producción (no certificados todavía)
