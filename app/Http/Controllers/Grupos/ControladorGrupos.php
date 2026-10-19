@@ -16,9 +16,26 @@ class ControladorGrupos extends Controller
     {
         $buscar = trim((string) $request->query('buscar', ''));
 
+        $origen = $request->query('origen', 'todos');
+
+        if (! in_array($origen, ['todos', 'recolector', 'otras'], true)) {
+            $origen = 'todos';
+        }
+
+
         $consulta = ChatMonitoreado::query()
             ->with('conexion')
             ->where('tipo_chat', 'grupo');
+
+        if ($origen !== 'todos') {
+            $consulta->whereHas('conexion', function ($subconsulta) use ($origen) {
+                if ($origen === 'recolector') {
+                    $subconsulta->where('proveedor', 'recolector_whatsapp');
+                } else {
+                    $subconsulta->where('proveedor', '!=', 'recolector_whatsapp');
+                }
+            });
+        }
 
         if ($buscar !== '') {
             $consulta->where(function ($subconsulta) use ($buscar) {
@@ -36,7 +53,7 @@ class ControladorGrupos extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return view('grupos.indice', compact('grupos', 'buscar'));
+        return view('grupos.indice', compact('grupos', 'buscar', 'origen'));
     }
 
     public function actualizarMonitoreo(
