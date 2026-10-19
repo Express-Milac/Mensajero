@@ -581,3 +581,54 @@ producción faltan alertas, criterios para autorización a escala,
 reconciliación programada, métricas, concurrencia y pruebas de fallos
 reales. Nunca ejecutar `schedule:work` ni activar
 `MENSAJERO_NORMALIZACION_HABILITADA` durante estos ensayos.
+
+
+## Supervisión de atrasos de la cola SQL (solo lectura)
+
+La conciliación de avisos antiguos pasó en Windows **3 pruebas, 42 aserciones**
+con cero fallos. La vista previa real devolvió **0 examinados / 0 elegibles /
+0 restablecidos**. Ningún aviso histórico fue reabierto.
+
+Para detectar atrasos sin aplicar recuperaciones, se añadió
+`mensajero:vigilar-buzon`, respaldado por un medidor reutilizable. Informa
+conteos agregados de eventos aún `capturado` en grupos **activos y
+monitoreados**, con el mismo origen SQL Server:
+
+- Pendientes por publicar.
+- Pendientes por publicar con antigüedad mayor al umbral (`creado_en`).
+- Publicados a Redis, pero aún sin normalizar.
+- Publicados antiguos sin normalizar (`enviado_en`).
+- Reservas vencidas que todavía no se publican.
+
+**Un aviso antiguo no demuestra pérdida en Redis**: podría seguir en cola,
+estar esperando un reintento o tener un trabajador detenido. La comprobación
+contra Redis y el análisis de trabajadores fallidos son pasos independientes.
+La herramienta excluye grupos revocados e inactivos de su alcance principal;
+estos requieren también vigilancia diferenciada antes de producción.
+
+En esta versión solo se ejecuta en entorno local/testing con SQL Server
+`_test`, no escribe ni usa Redis ni envía alertas. La opción `--alertar`
+devuelve código no cero si detecta avisos atrasados, útil para conectar
+futuros supervisores una vez aprobados. No hay programación automática.
+
+### Validaciones pendientes de ejecutar en Windows
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+
+php -l app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php
+php -l app\Console\Commands\VigilarBuzonWhatsapp.php
+php -l tests\Integracion\VigilanciaBuzonSqlServerTest.php
+
+vendor\bin\pint --test app\Services\Normalizacion\MedirEstadoBuzonWhatsapp.php app\Console\Commands\VigilarBuzonWhatsapp.php tests\Integracion\VigilanciaBuzonSqlServerTest.php
+
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VigilanciaBuzonSqlServerTest
+
+php artisan mensajero:vigilar-buzon --minutos=30
+```
+
+La última orden es **solo lectura**, incluso si hay avisos atrasados. No
+ejecutar `--alertar` hasta revisar el primer informe, ni activar
+`schedule:work` o un trabajador continuo. Antes de producción se necesita
+observación de cola Redis y trabajos fallidos, métricas agregadas con
+umbrales aprobados, procedimientos para alertas y pruebas de carga y caída.
