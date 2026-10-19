@@ -26,6 +26,13 @@
     </div>
     <section class="card evidence">
         <div><p class="eyebrow">DOS VISTAS PERMANENTES</p><h2>La fuente siempre estará disponible.</h2><p class="muted">Cada interpretación deberá conducir a sus mensajes originales.</p></div>
-        <div class="tabs"><span>Mensajero IA · pendiente</span><span>Mensajes originales · pendiente</span></div>
+        <div class="tabs">
+            <span>Mensajero IA · pendiente</span>
+            @if(config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
+                <a href="{{ route('mensajes.indice') }}">Mensajes originales · consultar →</a>
+            @else
+                <span>Mensajes originales · acceso protegido</span>
+            @endif
+        </div>
     </section>
 </x-layout>
