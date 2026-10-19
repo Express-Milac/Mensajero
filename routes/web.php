@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
+use App\Http\Controllers\Mensajes\ControladorMensajes;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,17 @@ Route::middleware('mensajero.acceso')->group(function () {
     Route::post('/salir', [ControladorSesion::class, 'salir'])->name('salir');
     Route::view('/tablero', 'tablero')->name('tablero');
     Route::get('/grupos', [ControladorGrupos::class, 'indice'])->name('grupos.indice');
+
+    Route::middleware('mensajero.consulta_evidencia')->group(function () {
+        Route::get('/mensajes', [ControladorMensajes::class, 'indice'])
+            ->name('mensajes.indice');
+        Route::get('/mensajes/grupos/{chat}', [ControladorMensajes::class, 'grupo'])
+            ->whereNumber('chat')
+            ->name('mensajes.grupo');
+        Route::get('/mensajes/eventos/{evento}', [ControladorMensajes::class, 'evento'])
+            ->whereNumber('evento')
+            ->name('mensajes.evento');
+    });
 
     Route::patch('/grupos/{chat}/monitoreo', [ControladorGrupos::class, 'actualizarMonitoreo'])
         ->whereNumber('chat')
