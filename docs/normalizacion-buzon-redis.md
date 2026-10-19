@@ -379,3 +379,64 @@ esta guía para una operación ininterrumpida 24/7.
 Mientras tanto, mantener `MENSAJERO_NORMALIZACION_HABILITADA=false`; no
 iniciar `queue:work`, `schedule:work` ni `despachar-buzon`. No compartir
 `.env`, contraseñas ni identificadores privados en capturas de consola.
+
+
+## Ensayo aislado punta a punta con Redis local
+
+Desde el 19/10/2026, Redis en Debian WSL2 respondió `PONG`,
+Windows conectó a `127.0.0.1:6379` y `mensajero:diagnostico` informó
+`redis=correcto`, `sql_server=correcto` y `almacenamiento=correcto`.
+Esto solo acredita conectividad, **no** entrega y procesamiento de trabajos.
+
+### Primero: validar los comandos de ensayo (sin publicar Redis)
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+
+php -l app\Console\Commands\PrepararEnsayoRedis.php
+php -l app\Console\Commands\DespacharBuzonWhatsapp.php
+vendor\bin\pint --test app\Console\Commands\PrepararEnsayoRedis.php app\Console\Commands\DespacharBuzonWhatsapp.php tests\Integracion\PrepararEnsayoRedisSqlServerTest.php tests\Integracion\ProteccionDespachoSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter PrepararEnsayoRedisSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter ProteccionDespachoSqlServerTest
+```
+
+Con `MENSAJERO_NORMALIZACION_HABILITADA=false`, el comando del ensayo
+sintético solo escribe en SQL Server `_test`, nunca a WhatsApp ni a Redis:
+
+```powershell
+php artisan mensajero:preparar-ensayo-redis
+# Solo cuando las pruebas sean correctas y con autorización del operador:
+php artisan mensajero:preparar-ensayo-redis --aplicar
+```
+
+La segunda orden crea **una conexión ficticia, un grupo ficticio y un evento
+de texto sintético**, insertando también su aviso en el buzón transaccional.
+Imprime `Evento sintético`, `Grupo ficticio` y una cola irrepetible con
+nombre `mensajero_ensayo_<16 hex>`. No usa número de WhatsApp real.
+
+### Después, únicamente cuando el operador apruebe el ID sintético exacto
+
+```powershell
+# SUSTITUIR ID y COLA por los impresos por el comando anterior.
+php artisan mensajero:despachar-buzon --evento-id=ID --limite=1 --cola-ensayo=COLA
+php artisan queue:work redis --queue=COLA --once --tries=1 --timeout=60
+php artisan mensajero:verificar-lote GRUPO --ids=ID
+```
+
+La protección del despachador exige que, en modo manual, la cola y el evento
+se correspondan por el sufijo aleatorio de la conexión ficticia, que el grupo
+esté activo y autorizado y que el evento siga `capturado`. Solo se permite
+`--limite=1` en SQL Server `_test` y entorno local/de pruebas. Los ejemplos
+`ID`, `COLA` y `GRUPO` no son literales ejecutables: deben reemplazarse
+con la salida verificada. **No ejecutar trabajadores genéricos ni el
+programador automático.**
+
+La orden `--once` limita el trabajador a un único trabajo de la cola
+exclusiva. La auditoría posterior debe informar `1/1 eventos correctos`.
+Si falla, no repetir publicaciones a ciegas: conservar salida, investigar
+estado SQL/buzón/cola y, cuando corresponda, usar recuperación controlada.
+
+La aprobación de este ensayo **no equivale** a certificación de producción:
+continúan pendientes la conciliación automática de entregas perdidas,
+reintentos supervisados, pruebas de reinicio y carga, autorización corporativa
+y puesta en servicio en la infraestructura MILAC.
