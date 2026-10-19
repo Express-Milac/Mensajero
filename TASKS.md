@@ -130,7 +130,8 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Recolector envía latido remoto cada intervalo solo si Baileys reporta conectado, además del latido local; fallos de red no crean tareas en la cola durable.
 - [x] Validación local inicial: Pint 8/8, integración LatidoRecolectorSqlServerTest 1 prueba / 14 aserciones, TypeScript sin errores y recolector 21/21. La suite FechasUtcMensajeroTest detectó 1 fallo (2/3): Eloquent devolvía el objeto Carbon asignado originalmente con zona -06:00 desde su caché de casts, aunque el atributo SQL ya estaba convertido a UTC.
 - [x] Corrección de caché: `FechaUtc` declara `withoutObjectCaching=true` para releer siempre el atributo normalizado a UTC. Pendiente volver a ejecutar Pint y FechasUtcMensajeroTest en Windows; no se afirma aún aprobado.
-- [ ] Confirmar que el último latido deje de aparecer en el futuro y avance aproximadamente cada 30 s. Revisar el grupo correcto y el marcador RAFAGA-REAL-A: consulta reciente devolvió 0 eventos en grupo 10020.
+- [x] Latido remoto real validado el 19/10/2026: Baileys confirmó `confirmacion_buffer_inicial`, conexión marcada `conectado`; `ultimo_latido_en` se leyó como `2026-10-19T17:35:49Z` frente a `now('UTC')=2026-10-19T17:36:08Z` (19.09 s de antigüedad), sin desfase futuro. Esto valida un latido reciente, no todavía la estabilidad de dos horas.
+- [ ] Confirmar regresión `FechasUtcMensajeroTest` después de `withoutObjectCaching=true`; todavía no se aportó su resultado. Reconciliar por separado grupo 10020 y marcador `RAFAGA-REAL-A-`, previamente ausentes de SQL.
 
 ## Después de certificar captura
 - [ ] Normalizador idempotente y buzón → Redis.
