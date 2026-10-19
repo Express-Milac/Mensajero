@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,9 +19,9 @@ class ConexionWhatsapp extends Model
     protected function casts(): array
     {
         return [
-            'conectado_en' => 'immutable_datetime',
-            'ultimo_latido_en' => 'immutable_datetime',
-            'ultima_desconexion_en' => 'immutable_datetime',
+            'conectado_en' => FechaUtc::class,
+            'ultimo_latido_en' => FechaUtc::class,
+            'ultima_desconexion_en' => FechaUtc::class,
             'metadatos' => 'array',
         ];
     }
