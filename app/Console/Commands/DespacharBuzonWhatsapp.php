@@ -10,7 +10,8 @@ final class DespacharBuzonWhatsapp extends Command
 {
     protected $signature = 'mensajero:despachar-buzon
         {--limite=100 : Máximo de elementos por ejecución (1 a 500)}
-        {--evento-id= : Procesar únicamente un evento crudo, útil para diagnóstico}';
+        {--evento-id= : Procesar únicamente un evento crudo, útil para diagnóstico}
+        {--cola-ensayo= : Cola única de un ensayo sintético; obligatoria si la normalización automática está apagada}';
 
     protected $description = 'Publica eventos crudos pendientes de SQL Server a la cola Redis de normalización';
 
@@ -27,20 +28,24 @@ final class DespacharBuzonWhatsapp extends Command
             return self::FAILURE;
         }
 
-        // Sin activación automática, impedir publicar el histórico completo
-        // por accidente; permitir solo ensayos con un evento específico.
+        $colaEnsayo = trim((string) $this->option('cola-ensayo'));
+
+        // Sin activación automática, impedir publicar el histórico o mensajes
+        // reales, aunque el operador proporcione un ID válido.
         if (config('mensajero.normalizacion.habilitada', false) !== true) {
             if (! app()->environment(['local', 'testing'])
                 || config('database.default') !== 'sqlsrv'
                 || ! str_ends_with((string) config('database.connections.sqlsrv.database'), '_test')
                 || $idEvento === null
-                || $limite !== 1) {
-                $this->error('Publicación bloqueada: con normalización automática inactiva solo se admite un evento explícito, --limite=1 y SQL Server _test en entorno local/de pruebas.');
+                || $limite !== 1
+                || preg_match('/^mensajero_ensayo_[0-9a-f]{16}$/D', $colaEnsayo) !== 1) {
+                $this->error('Publicación bloqueada: requiere SQL Server _test, --limite=1, --evento-id y una --cola-ensayo exclusiva.');
 
                 return self::FAILURE;
             }
 
-            $autorizado = EventoCrudoWhatsapp::query()
+            $seleccionado = EventoCrudoWhatsapp::query()
+                ->with('conexion')
                 ->whereKey($idEvento)
                 ->where('estado_procesamiento', 'capturado')
                 ->whereHas('chat', function ($consulta) {
@@ -48,13 +53,26 @@ final class DespacharBuzonWhatsapp extends Command
                         ->where('es_monitoreado', true)
                         ->where('es_activo', true);
                 })
-                ->exists();
+                ->first();
 
-            if (! $autorizado) {
-                $this->error('El evento de prueba no está capturado o su grupo no está activo y autorizado.');
+            $claveConexion = $seleccionado?->conexion?->clave_conexion;
+            $sufijo = is_string($claveConexion)
+                && preg_match('/^ensayo-redis-([0-9a-f]{16})$/D', $claveConexion, $coincidencias) === 1
+                    ? $coincidencias[1]
+                    : null;
+
+            if ($sufijo === null || ! hash_equals('mensajero_ensayo_'.$sufijo, $colaEnsayo)) {
+                $this->error('Solo se permite el evento ficticio del ensayo y su cola exclusiva correspondiente.');
 
                 return self::FAILURE;
             }
+
+            // Se modifica únicamente la configuración de ESTA ejecución, no .env.
+            config(['mensajero.normalizacion.cola' => $colaEnsayo]);
+        } elseif ($colaEnsayo !== '') {
+            $this->error('La opción --cola-ensayo no está disponible en modo automático.');
+
+            return self::FAILURE;
         }
 
         $resultado = $despachador->ejecutar($limite, $idEvento);
