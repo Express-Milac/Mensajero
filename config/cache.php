@@ -4,7 +4,7 @@ use Illuminate\Support\Str;
 
 return [
     // Nombres de controladores/almacenes son contratos de Laravel; las tablas propias son españolas.
-    'default' => env('CACHE_STORE', 'redis'),
+    'default' => env('CACHE_STORE', 'database'),
     'stores' => [
         'array' => ['driver' => 'array', 'serialize' => false],
         'database' => [
