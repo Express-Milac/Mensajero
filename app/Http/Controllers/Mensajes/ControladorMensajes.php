@@ -78,13 +78,17 @@ final class ControladorMensajes extends Controller
             'remitente' => $this->etiquetaRemitente($evento),
         ]);
 
-        $periodos = PeriodoIntegridadWhatsapp::query()
-            ->where('conexion_id', $grupo->conexion_id)
+        $periodosConexion = PeriodoIntegridadWhatsapp::query()
+            ->where('conexion_id', $grupo->conexion_id);
+
+        $totalPeriodos = (clone $periodosConexion)->count();
+        $periodos = $periodosConexion
+            ->orderByDesc('inicio_en')
             ->orderByDesc('id')
             ->limit(5)
             ->get();
 
-        return view('mensajes.grupo', compact('grupo', 'eventos', 'periodos', 'tipo'));
+        return view('mensajes.grupo', compact('grupo', 'eventos', 'periodos', 'totalPeriodos', 'tipo'));
     }
 
     public function evento(
