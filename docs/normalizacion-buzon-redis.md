@@ -192,3 +192,33 @@ vendor\bin\phpunit -c phpunit.integracion.xml --filter NormalizacionLoteSqlServe
 No utilizar `--aplicar` con mensajes de la cuenta real hasta haber aprobado
 la suite de integración y revisado la vista previa. La ejecución automática
 mediante Redis sigue deshabilitada.
+
+## Auditoría de solo lectura posterior a la normalización por lotes
+
+Cuando el operador haya ejecutado explícitamente un lote, **no basta con ver dos mensajes `normalizado`**. Es preciso comprobar la persistencia y las relaciones.
+
+El comando independiente de verificación no realiza escritura ni inicia Redis:
+
+```powershell
+php artisan mensajero:verificar-lote 10020 --ids=10055,10056
+```
+
+Condiciones de seguridad: `APP_ENV=local` o `testing`, conexión `sqlsrv`, nombre de base terminado en `_test`, grupo activo y autorizado. Acepta entre uno y cinco IDs explícitos, sin repetidos.
+
+Comprueba para cada ID que:
+- Exista en el grupo, sea original `mensaje/texto/v3-recolector` y esté `normalizado`.
+- Exista **exactamente una** proyección en `mensajero_mensajes_whatsapp`.
+- Coincidan la conexión, el grupo, el evento original, la identidad de proveedor, el tipo y la referencia citada.
+- El SHA-256 del contenido crudo **actual** coincida con el hash registrado. Esto no demuestra por sí solo que sea idéntico a una captura anterior si no se dispone de un hash previo independiente.
+- Para las citas cuyo mensaje original esté entre los IDs seleccionados, `mensaje_citado_id` apunte a la proyección esperada. Las citas fuera del lote se cuentan como no verificadas, nunca como aprobadas.
+
+La salida únicamente expone IDs internos, cantidades y motivos genéricos de fallo. No muestra texto, identificadores de WhatsApp ni material criptográfico.
+
+Pruebas previstas, **aún sin resultado ejecutado** en el entorno Windows/SQL Server del operador:
+
+```powershell
+vendor\bin\pint --test app\Console\Commands\VerificarLoteWhatsapp.php tests\Integracion\VerificacionLoteSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VerificacionLoteSqlServerTest
+```
+
+Una verificación fallida no debe corregirse alterando el contenido crudo original. Investigar la discrepancia antes de continuar.
