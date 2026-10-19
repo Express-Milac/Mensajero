@@ -14,6 +14,9 @@
             <nav class="navigation">
                 <a class="nav {{ request()->routeIs('tablero') ? 'active' : '' }}" href="{{ route('tablero') }}">Inicio</a>
                 <a class="nav {{ request()->routeIs('grupos.*') ? 'active' : '' }}" href="{{ route('grupos.indice') }}">Grupos</a>
+                @if(config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
+                    <a class="nav {{ request()->routeIs('mensajes.*') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}">Mensajes originales</a>
+                @endif
             </nav>
             <div class="aside-note">Capturar. Conservar.<br>Verificar.</div>
         </aside>
