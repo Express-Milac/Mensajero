@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 
 class MensajeBuzonSalida extends Model
@@ -15,10 +16,10 @@ class MensajeBuzonSalida extends Model
     protected function casts(): array
     {
         return [
-            'disponible_en' => 'immutable_datetime',
-            'reservado_hasta' => 'immutable_datetime',
-            'enviado_en' => 'immutable_datetime',
-            'creado_en' => 'immutable_datetime',
+            'disponible_en' => FechaUtc::class,
+            'reservado_hasta' => FechaUtc::class,
+            'enviado_en' => FechaUtc::class,
+            'creado_en' => FechaUtc::class,
         ];
     }
 }
