@@ -64,3 +64,12 @@
 .connection-summary-details li span{color:#698078}
 .processing-help{margin:0 0 16px;padding:0 3px}
 @media(max-width:800px){.connection-summary-heading{align-items:flex-start;flex-direction:column;gap:5px}.connection-summary{padding:14px}}
+
+
+/* Origen técnico de los grupos: clasificación informativa, no autorización. */
+.filter-origin-label{margin:14px 0 8px}
+.filter-origin{width:100%;max-width:330px;padding:12px;border-radius:9px;border:1px solid #ccd8d1;background:#fcfdfb;font:inherit}
+.secondary-heading{margin-top:34px;padding-top:18px;border-top:1px solid #dce5df}
+.section-heading .fine{margin:8px 0 0;max-width:720px;line-height:1.55}
+.group-badges .neutral{white-space:normal}
+@media(max-width:800px){.filter-origin{max-width:none}}
