@@ -320,3 +320,18 @@ vendor\bin\phpunit -c phpunit.integracion.xml --filter "ProteccionDespachoSqlSer
   no reemplazan dichas copias.
 - No activar grupos operativos o el número corporativo principal antes de pasar
   pruebas de carga, estabilidad y seguridad.
+
+### Aislamiento de sesiones y caché
+
+Como protección contra la caída de Redis, las configuraciones predeterminadas
+`SESSION_DRIVER` y `CACHE_STORE` se han cambiado a `database`, utilizando
+las tablas de Mensajero existentes. La cola asíncrona permanece en
+`QUEUE_CONNECTION=redis`. Esto evita que el procesamiento de sesiones y
+las limitaciones de solicitudes tengan que depender del mismo Redis que el
+trabajador, aunque aumenta algunas consultas SQL y requiere pruebas de carga.
+
+**Importante:** el `.env` real del operador no ha sido modificado; si todavía
+contiene `SESSION_DRIVER=redis` o `CACHE_STORE=redis`, esos valores se
+imponen a los nuevos predeterminados. Verificar solo los valores efectivos de
+configuración, sin publicar el archivo `.env` ni contraseñas. Revalidar caché
+y sesiones en SQL Server de pruebas antes de desplegar.
