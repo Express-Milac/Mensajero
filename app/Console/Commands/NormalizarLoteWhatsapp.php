@@ -93,10 +93,21 @@ final class NormalizarLoteWhatsapp extends Command
             return self::FAILURE;
         }
 
-        $ids = array_map(static fn (string $id): int => (int) $id, explode(',', $idsTexto));
+        $ids = [];
 
-        if (count($ids) > $limite || count($ids) !== count(array_unique($ids))
-            || in_array(0, $ids, true)) {
+        foreach (explode(',', $idsTexto) as $idTexto) {
+            $idValidado = filter_var($idTexto, FILTER_VALIDATE_INT);
+
+            if ($idValidado === false || $idValidado < 1) {
+                $this->error('Un identificador supera el rango admitido o es inválido.');
+
+                return self::FAILURE;
+            }
+
+            $ids[] = $idValidado;
+        }
+
+        if (count($ids) > $limite || count($ids) !== count(array_unique($ids))) {
             $this->error('El lote contiene demasiados IDs, valores repetidos o identificadores inválidos.');
 
             return self::FAILURE;
