@@ -145,7 +145,7 @@ final class VerificarLoteWhatsapp extends Command
             }
 
             if ($errores !== []) {
-                $this->error('Evento #'.$id.': FALLÓ (' . implode('; ', $errores).').');
+                $this->error('Evento #'.$id.': FALLÓ ('.implode('; ', $errores).').');
             } else {
                 $aprobados++;
                 $this->line('Evento #'.$id.': correcto.');
