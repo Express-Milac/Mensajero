@@ -10,8 +10,8 @@ Rutas:
 - `GET /mensajes/grupos/{chat}`: historial cronológico paginado (30 por página)
   con filtros por tipo de evento.
 - `GET /mensajes/eventos/{evento}`: evidencia de origen, identificadores de
-  proveedor, integridad SHA-256 y contenido crudo escapado en HTML. Para evitar
-  cargas excesivas, el navegador muestra como máximo 100,000 caracteres; SQL
+  proveedor, integridad SHA-256 y vista previa depurada en HTML. Para evitar
+  cargas excesivas, el navegador omite vistas previas extensas o no estructuradas; SQL
   Server conserva el original completo.
 
 Los datos primarios salen de `mensajero_eventos_crudos_whatsapp`; si existe una
