@@ -30,6 +30,12 @@ return [
         'modo' => env('MENSAJERO_MODO_AUTENTICACION', 'deshabilitado'),
     ],
 
+    'normalizacion' => [
+        // No procesar datos históricos hasta aprobar integración SQL Server.
+        'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
+        'cola' => env('MENSAJERO_COLA_NORMALIZACION', 'mensajero_normalizacion'),
+    ],
+
     'base_datos' => [
         'prefijo_tablas' => 'mensajero_',
     ],
