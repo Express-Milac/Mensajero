@@ -473,3 +473,62 @@ No crear eventos nuevos, no republicar `#11117`, no iniciar
 `schedule:work` ni trabajadores continuos durante esta validación.
 Pendiente completar conciliación automática de trabajos publicados
 pero no normalizados y alertas de reintento/fallo.
+
+
+## Ensayo de recuperación simulada sin detener Redis (POC)
+
+**Paso previo completado, 19/10/2026:** `NormalizacionWhatsappSqlServerTest`
+aprobó **6 pruebas / 68 aserciones**, sin errores, después de añadir la
+revalidación de autorización en el momento de consumir.
+
+Para probar el caso `aviso enviado a Redis pero no procesado` sin tocar
+servidores compartidos, el comando `mensajero:preparar-ensayo-redis` ahora
+acepta `--simular-perdida`. Al combinarlo con `--aplicar`, crea
+**otro** mensaje ficticio nuevo (no reutiliza el #11117) en SQL Server
+`_test`. En la misma transacción SQL marca solamente su aviso como
+`enviado_en = ahora - 31 minutos`, conservando estado `capturado`.
+**Nunca envía un trabajo a Redis ni borra otros trabajos**. Este estado
+representa una simulación, no una caída real de Redis.
+
+Antes de crear datos, ejecutar **solo las pruebas automatizadas**:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+
+php -l app\Console\Commands\PrepararEnsayoRedis.php
+php -l tests\Integracion\PrepararEnsayoRedisSqlServerTest.php
+vendor\bin\pint --test app\Console\Commands\PrepararEnsayoRedis.php tests\Integracion\PrepararEnsayoRedisSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter PrepararEnsayoRedisSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter RecuperacionPublicacionSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter ProteccionDespachoSqlServerTest
+```
+
+La prueba nueva simula el aviso publicado hace 31 minutos, verifica que
+`mensajero:recuperar-publicacion` no modifica datos en la vista previa,
+permite reabrir el aviso por ID con `--aplicar`, y preserva el hash y
+el evento crudo. También confirma que no se publica nada a Redis.
+
+**Únicamente después de aprobar las pruebas**, con un evento ficticio y
+su ID generado durante el ensayo, se podrán ejecutar por etapas:
+
+```powershell
+# Vista previa sin escrituras:
+php artisan mensajero:preparar-ensayo-redis --simular-perdida
+
+# Paso posterior, con autorización para crear un evento ficticio:
+# php artisan mensajero:preparar-ensayo-redis --simular-perdida --aplicar
+
+# Reemplazar ID por el NUEVO ID ficticio mostrado por el comando:
+# php artisan mensajero:recuperar-publicacion ID --minutos=30
+# php artisan mensajero:recuperar-publicacion ID --minutos=30 --aplicar
+# php artisan mensajero:despachar-buzon --evento-id=ID --limite=1 --cola-ensayo=COLA
+# php artisan queue:work redis --queue=COLA --once --tries=1 --timeout=60
+# php artisan mensajero:verificar-lote GRUPO --ids=ID
+```
+
+Las órdenes comentadas **no deben ejecutarse en bloque**: cada salida
+requiere comprobación antes de proceder. Mantener
+`MENSAJERO_NORMALIZACION_HABILITADA=false`; no ejecutar
+`schedule:work`, `queue:work` general, `FLUSHDB` o `DEL` contra Redis.
+Esta simulación no sustituye pruebas posteriores de fallo real de red,
+reinicio, concurrencia, recuperación automática y supervisión.
