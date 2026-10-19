@@ -33,6 +33,27 @@ Los periodos de integridad registrados son de la **conexión**, no afirmaciones
 de pérdida en un grupo específico. La ausencia de incidencias no equivale a una
 garantía de integridad.
 
+## Separación visual de grupos por origen
+
+El tablero `/mensajes` distingue dos apartados según el campo
+`mensajero_conexiones_whatsapp.proveedor`:
+
+- **Grupos de WhatsApp del recolector**: conexiones con el proveedor técnico
+  `recolector_whatsapp`.
+- **Pasarelas y otras conexiones**: cualquier otro valor del proveedor, incluidas
+  conexiones de integración o pruebas.
+
+La distinción **no determina** si un grupo se utiliza realmente en operaciones:
+el grupo del recolector también puede ser de pruebas. No se usan coincidencias
+de nombres para declarar que una conversación es sintética.
+
+La página de administración `/grupos` permite filtrar los mismos orígenes
+con `?origen=recolector` o `?origen=otras`; el filtro se conserva al paginar
+y no modifica `es_monitoreado`, `es_activo` ni las autorizaciones registradas.
+
+Las pruebas de integración comprueban tanto la separación del tablero como
+los filtros de administración; no requieren nuevos mensajes WhatsApp ni Redis.
+
 ## Vista previa protegida
 
 La página de detalle prepara una representación depurada de los datos técnicos de WhatsApp, y muestra un alias de remitente. La evidencia original y su SHA-256 no cambian en SQL Server. Si el contenido es excesivo o no es JSON válido, la vista no publica fragmentos sin filtrar. La revisión de protección se comprueba con las pruebas unitarias PrepararContenidoEvidenciaTest y la integración VistaMensajesSqlServerTest.
