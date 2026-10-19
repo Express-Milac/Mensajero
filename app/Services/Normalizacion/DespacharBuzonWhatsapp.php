@@ -46,7 +46,7 @@ final class DespacharBuzonWhatsapp
                 }
 
                 $tarea->reservado_hasta = $ahora->addMinutes(2);
-                $tarea->intentos = min(65535, (int) $tarea->intentos + 1);
+                $tarea->intentos = min(32767, (int) $tarea->intentos + 1);
                 $tarea->save();
 
                 return $tarea;
@@ -58,7 +58,7 @@ final class DespacharBuzonWhatsapp
 
             try {
                 Queue::connection('redis')->pushOn(
-                    'mensajero_normalizacion',
+                    config('mensajero.normalizacion.cola', 'mensajero_normalizacion'),
                     new NormalizarEventoWhatsappTrabajo((int) $tarea->entidad_id),
                 );
 
