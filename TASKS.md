@@ -117,8 +117,9 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 - [x] Certificación real semántica completada para respuesta/cita, edición cifrada, eliminación, ubicación y contacto en el grupo de prueba, manteniendo trazabilidad hacia el mensaje objetivo y sin tareas pendientes de eventos al final de las rondas observadas.
 
 ## Bloqueadores restantes antes de grupos reales
-- [ ] Prueba de carga >= 1,000 mensajes y varios remitentes/grupos.
-- [ ] Prueba prolongada de estabilidad y reconexión.
+- [x] Prueba sintética de pasarela/SQL Server: 1,000 eventos únicos, 4 grupos, 25 remitentes, 50 reintentos deduplicados, 2,121 aserciones, 0 fallos y 47.82 eventos/s; Pint aprobado. La transacción se revirtió al finalizar.
+- [ ] Reconciliar prueba real de 25 mensajes: el operador informó secuencia completa y cola vacía, pero la consulta posterior de `mensajero_test` / grupo 10020 mostró solo 10 eventos v3 y un único ID posterior a la ronda semántica (`11064`). No afirmar pérdida ni certificación hasta contrastar grupo, base y secuencias.
+- [ ] Prueba prolongada de estabilidad y reconexión. Diagnóstico previo: `estado=conectado` no basta; el cast de `ultimo_latido_en` parece desplazar fechas UTC por `America/Mexico_City`. Confirmar mediante valores SQL crudos y corregir la interpretación horaria antes de evaluar vigencia del latido.
 - [ ] Diseñar reconciliación independiente para intervalos con integridad no confirmada.
 
 ## Después de certificar captura
