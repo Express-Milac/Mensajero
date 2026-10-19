@@ -9,6 +9,7 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -33,12 +34,18 @@ class NormalizacionLoteSqlServerTest extends TestCase
             $segundo = $this->crearEvento($grupo);
             $tercero = $this->crearEvento($grupo);
 
-            $this->artisan('mensajero:normalizar-lote', [
+            $codigo = Artisan::call('mensajero:normalizar-lote', [
                 'grupo' => $grupo->id,
                 '--limite' => 2,
-            ])->expectsOutputToContain((string) $primero->id)
-                ->expectsOutputToContain((string) $segundo->id)
-                ->assertSuccessful();
+            ]);
+            $salida = Artisan::output();
+
+            $this->assertSame(0, $codigo, 'Vista previa fallida: '.$salida);
+            $this->assertStringContainsString(
+                'IDs: '.$primero->id.','.$segundo->id,
+                $salida,
+                'La vista previa debe listar exactamente los dos primeros eventos elegibles. Salida: '.$salida,
+            );
 
             $this->assertSame(0, MensajeWhatsapp::query()
                 ->whereIn('evento_crudo_id', [$primero->id, $segundo->id, $tercero->id])
