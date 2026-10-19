@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,8 +19,8 @@ class PeriodoIntegridadWhatsapp extends Model
     protected function casts(): array
     {
         return [
-            'inicio_en' => 'immutable_datetime',
-            'fin_en' => 'immutable_datetime',
+            'inicio_en' => FechaUtc::class,
+            'fin_en' => FechaUtc::class,
             'detalles' => 'array',
         ];
     }
