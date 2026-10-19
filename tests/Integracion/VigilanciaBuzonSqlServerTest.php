@@ -109,6 +109,55 @@ class VigilanciaBuzonSqlServerTest extends TestCase
         }
     }
 
+    public function test_desglose_identifica_grupo_y_antiguedad_sin_alterar_aviso(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            Queue::fake();
+            [$grupoAntiguo, $eventoAntiguo, $avisoAntiguo] = $this->crearEnsayo();
+            [$grupoReciente, $eventoReciente, $avisoReciente] = $this->crearEnsayo();
+
+            $avisoAntiguo->creado_en = now('UTC')->subDays(8);
+            $avisoAntiguo->save();
+            $avisoReciente->creado_en = now('UTC')->subHours(2);
+            $avisoReciente->save();
+
+            $medidor = app(MedirEstadoBuzonWhatsapp::class);
+            $antiguo = $medidor->desglosarPendientes(30, (int) $grupoAntiguo->id);
+            $reciente = $medidor->desglosarPendientes(30, (int) $grupoReciente->id);
+
+            $this->assertFalse($antiguo['truncado']);
+            $this->assertCount(1, $antiguo['grupos']);
+            $this->assertSame((int) $grupoAntiguo->id, $antiguo['grupos'][0]['grupo_id']);
+            $this->assertSame(1, $antiguo['grupos'][0]['pendientes']);
+            $this->assertSame(1, $antiguo['grupos'][0]['atrasados']);
+            $this->assertSame(1, $antiguo['grupos'][0]['mayores_24h']);
+            $this->assertSame(1, $antiguo['grupos'][0]['mayores_7d']);
+            $this->assertTrue($antiguo['grupos'][0]['prefijo_ensayo']);
+
+            $this->assertCount(1, $reciente['grupos']);
+            $this->assertSame(1, $reciente['grupos'][0]['pendientes']);
+            $this->assertSame(1, $reciente['grupos'][0]['atrasados']);
+            $this->assertSame(0, $reciente['grupos'][0]['mayores_24h']);
+            $this->assertSame(0, $reciente['grupos'][0]['mayores_7d']);
+
+            $this->assertSame(0, Artisan::call('mensajero:vigilar-buzon', [
+                '--grupo' => $grupoAntiguo->id,
+                '--minutos' => 30,
+                '--desglose' => true,
+            ]));
+
+            $this->assertNull($avisoAntiguo->fresh()->enviado_en);
+            $this->assertNull($avisoReciente->fresh()->enviado_en);
+            $this->assertSame('capturado', $eventoAntiguo->fresh()->estado_procesamiento);
+            $this->assertSame('capturado', $eventoReciente->fresh()->estado_procesamiento);
+            Queue::assertNothingPushed();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_parametros_incorrectos_y_produccion_fallan_antes_de_leer_metricas(): void
     {
         $this->assertSame(1, Artisan::call('mensajero:vigilar-buzon', ['--minutos' => 4]));
