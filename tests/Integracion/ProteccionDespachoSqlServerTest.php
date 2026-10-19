@@ -146,7 +146,7 @@ class ProteccionDespachoSqlServerTest extends TestCase
 
     private function crearGrupo(): ChatMonitoreado
     {
-        $sufijo = bin2hex(random_bytes(7));
+        $sufijo = bin2hex(random_bytes(8));
 
         $conexion = ConexionWhatsapp::query()->create([
             'clave_conexion' => 'ensayo-redis-'.$sufijo,
