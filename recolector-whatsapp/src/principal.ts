@@ -42,6 +42,7 @@ const descargasMultimediaEnCurso = new Set<string>();
 let chatsAutorizados = new Set<string>();
 let cerrando = false;
 let conectadoAlgunaVez = false;
+let estadoActual: EstadoConexion = 'desconectado';
 let desconexionDesde: string | null = null;
 let inicioOperacionMs = 0;
 
@@ -349,6 +350,25 @@ async function cicloGrupos(): Promise<void> {
 async function cicloLatido(): Promise<void> {
   while (!cerrando) {
     await monitor.latido();
+
+    // El latido local siempre se conserva para detectar un cierre abrupto.
+    // El remoto es efímero: nunca se acumula en la cola durante cortes de red.
+    if (estadoActual === 'conectado') {
+      try {
+        await cliente.enviar('/api/pasarela/v1/latido', {
+          clave_conexion: configuracion.claveConexion,
+        });
+      } catch (error) {
+        logger.warn(
+          {
+            etapa: 'latido_remoto',
+            estado_http: error instanceof ErrorMensajero ? error.estadoHttp : null,
+          },
+          'No se pudo actualizar el latido remoto; se reintentará en el próximo intervalo.',
+        );
+      }
+    }
+
     await dormir(configuracion.intervaloLatidoMs);
   }
 }
@@ -388,6 +408,7 @@ async function iniciar(): Promise<void> {
       console.log('\nNo uses el número principal de MILAC. La sesión queda fuera de Git.\n');
     },
     alEstado: async (estado, detalles = {}) => {
+      estadoActual = estado;
       const ahora = new Date().toISOString();
 
       if (estado === 'conectado') {
