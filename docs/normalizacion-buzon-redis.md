@@ -343,39 +343,39 @@ y sesiones en SQL Server de pruebas antes de desplegar.
 ## Instalación local de Redis en Debian WSL2 (POC Windows)
 
 El 19/10/2026 se confirmó que Debian corre en WSL2 y que no se encontraron
-ejecutables \`redis-server\` ni \`redis-cli\`. Se aprobaron **7 pruebas de
+ejecutables `redis-server` ni `redis-cli`. Se aprobaron **7 pruebas de
 protección/recuperación SQL Server con 57 aserciones**, sin utilizar Redis físico.
 
 Para preparar Redis **solo en el equipo de desarrollo** (no en producción):
 
-\`\`\`powershell
+```powershell
 & "$env:WINDIR\System32\wsl.exe" -d Debian -- bash -lc "sudo apt-get update && sudo apt-get install -y redis-server"
-\`\`\`
+```
 
 Antes de iniciar el servicio, confirmar configuración de Redis dentro de Debian:
 
-\`\`\`powershell
+```powershell
 & "$env:WINDIR\System32\wsl.exe" -d Debian -- bash -lc "grep -E '^[[:space:]]*(bind|protected-mode|port)[[:space:]]+' /etc/redis/redis.conf"
-\`\`\`
+```
 
-Debe estar limitado a las interfaces de bucle local \`127.0.0.1\` / \`::1\`,
-con \`protected-mode yes\` y puerto previsto \`6379\`; si muestra una interfaz
+Debe estar limitado a las interfaces de bucle local `127.0.0.1` / `::1`,
+con `protected-mode yes` y puerto previsto `6379`; si muestra una interfaz
 externa, no iniciar y revisar seguridad. No abrir reglas de firewall ni reenviar
 6379 al exterior.
 
 Solo después, iniciar y comprobar:
 
-\`\`\`powershell
+```powershell
 & "$env:WINDIR\System32\wsl.exe" -d Debian -- bash -lc "sudo service redis-server start && redis-cli ping"
 Test-NetConnection 127.0.0.1 -Port 6379 | Select-Object ComputerName, RemotePort, TcpTestSucceeded
 php artisan mensajero:diagnostico
-\`\`\`
+```
 
-Se espera \`PONG\` del servidor Linux y \`redis=correcto\` en el diagnóstico de
-Laravel, si el puente localhost de WSL2 funciona y \`.env\` apunta al mismo
+Se espera `PONG` del servidor Linux y `redis=correcto` en el diagnóstico de
+Laravel, si el puente localhost de WSL2 funciona y `.env` apunta al mismo
 servidor. Redis de WSL2 **no es el Redis de producción** y no está diseñado en
 esta guía para una operación ininterrumpida 24/7.
 
-Mientras tanto, mantener \`MENSAJERO_NORMALIZACION_HABILITADA=false\`; no
-iniciar \`queue:work\`, \`schedule:work\` ni \`despachar-buzon\`. No compartir
-\`.env\`, contraseñas ni identificadores privados en capturas de consola.
+Mientras tanto, mantener `MENSAJERO_NORMALIZACION_HABILITADA=false`; no
+iniciar `queue:work`, `schedule:work` ni `despachar-buzon`. No compartir
+`.env`, contraseñas ni identificadores privados en capturas de consola.
