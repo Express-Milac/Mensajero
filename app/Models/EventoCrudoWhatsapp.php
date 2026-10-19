@@ -35,6 +35,11 @@ class EventoCrudoWhatsapp extends Model
         return $this->belongsTo(ChatMonitoreado::class, 'chat_monitoreado_id');
     }
 
+    public function mensaje(): HasOne
+    {
+        return $this->hasOne(MensajeWhatsapp::class, 'evento_crudo_id');
+    }
+
     public function archivo(): HasOne
     {
         return $this->hasOne(ArchivoWhatsapp::class, 'evento_crudo_id');
