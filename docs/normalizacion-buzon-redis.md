@@ -214,7 +214,7 @@ Comprueba para cada ID que:
 
 La salida únicamente expone IDs internos, cantidades y motivos genéricos de fallo. No muestra texto, identificadores de WhatsApp ni material criptográfico.
 
-Pruebas previstas, **aún sin resultado ejecutado** en el entorno Windows/SQL Server del operador:
+Pruebas de regresión **aprobadas el 19/10/2026 en Windows/PHP 8.4.7 con SQL Server de pruebas** (después de sustituir la aserción frágil de salida Artisan por comprobaciones de retorno y comparación de registros): PHP `-l` sin errores, Pint 1/1, PHPUnit `VerificacionLoteSqlServerTest` 3/3 pruebas, 28 aserciones, 0 fallos:
 
 ```powershell
 vendor\bin\pint --test app\Console\Commands\VerificarLoteWhatsapp.php tests\Integracion\VerificacionLoteSqlServerTest.php
@@ -222,3 +222,23 @@ vendor\bin\phpunit -c phpunit.integracion.xml --filter VerificacionLoteSqlServer
 ```
 
 Una verificación fallida no debe corregirse alterando el contenido crudo original. Investigar la discrepancia antes de continuar.
+
+## Próxima etapa: comprobación de Redis real sin procesar datos
+
+Antes de iniciar un trabajador o publicar trabajos reales, verificar conexión y configuración local, manteniendo `MENSAJERO_NORMALIZACION_HABILITADA=false` y sin mostrar secretos del `.env`:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+php artisan mensajero:diagnostico
+```
+
+`mensajero:diagnostico` comprueba conectividad SQL Server, conectividad Redis y almacenamiento (con un archivo temporal borrado al finalizar). **No despacha el buzón, no normaliza mensajes y no inicia trabajadores**. En el estado actual puede informar `whatsapp: no_implementado`, campo genérico que no certifica ni invalida la captura ya probada del recolector.
+
+Para permitir una prueba con Redis físico, primero deberá verificarse **localmente**:
+
+- `DB_CONNECTION=sqlsrv` y `DB_DATABASE` terminado en `_test` (nunca la base operativa).
+- `MENSAJERO_NORMALIZACION_HABILITADA=false` hasta completar la certificación; no arrancar `schedule:work`.
+- El servidor Redis, prefijo y nombre de cola utilizados son **exclusivos del POC**, diferentes de cualquier proceso de MILAC en producción. No reutilizar colas compartidas para `queue:work`.
+- El ensayo de publicación futuro utilizará un único evento sintético elegido por ID explícito y un trabajador de ejecución acotada; no `mensajero:despachar-buzon --limite=100` sin filtro.
+
+**PENDIENTE:** recibir el diagnóstico local, documentar la separación de Redis y ejecutar la comprobación punta a punta con recuperación ante fallos. La aprobación de la normalización manual no certifica Redis ni el procesamiento automático.
