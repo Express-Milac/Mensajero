@@ -119,8 +119,17 @@ Estado: 16/10/2026. `[x]` significa código entregado; `[x]` con resultados expl
 ## Bloqueadores restantes antes de grupos reales
 - [x] Prueba sintética de pasarela/SQL Server: 1,000 eventos únicos, 4 grupos, 25 remitentes, 50 reintentos deduplicados, 2,121 aserciones, 0 fallos y 47.82 eventos/s; Pint aprobado. La transacción se revirtió al finalizar.
 - [ ] Reconciliar prueba real de 25 mensajes: el operador informó secuencia completa y cola vacía, pero la consulta posterior de `mensajero_test` / grupo 10020 mostró solo 10 eventos v3 y un único ID posterior a la ronda semántica (`11064`). No afirmar pérdida ni certificación hasta contrastar grupo, base y secuencias.
-- [ ] Prueba prolongada de estabilidad y reconexión. Diagnóstico previo: `estado=conectado` no basta; el cast de `ultimo_latido_en` parece desplazar fechas UTC por `America/Mexico_City`. Confirmar mediante valores SQL crudos y corregir la interpretación horaria antes de evaluar vigencia del latido.
+- [ ] Prueba prolongada de estabilidad y reconexión. Validar primero la corrección UTC y latido remoto HMAC; después completar las dos horas y corte de conexión sin asumir entrega de mensajes aún no observada.
 - [ ] Diseñar reconciliación independiente para intervalos con integridad no confirmada.
+
+## Corrección de diagnósticos de conectividad (19/10/2026): validar localmente
+- [x] Identificada doble interpretación horaria: PHP UTC y SQL UTC coincidieron en 17:19:32; ultimo_latido_en crudo fue 15:32:10, mientras el cast Eloquent devolvió 21:32:10Z al interpretar primero America/Mexico_City. Antigüedad real al medir: 1 h 47 min 22 s.
+- [x] Diagnóstico: MonitorIntegridad.latido() solo actualizaba datos/estado-ejecucion.json local; Laravel actualizaba ultimo_latido_en únicamente con estado=conectado.
+- [x] Implementado App/Casts/FechaUtc en conexión, evento crudo y periodo de integridad: interpreta valores datetime sin zona de SQL Server como UTC y persiste entradas en UTC, sin modificar registros ni zona horaria global.
+- [x] Agregado POST /api/pasarela/v1/latido protegido por HMAC; solo actualiza ultimo_latido_en para conexiones actualmente conectadas, sin modificar estado.
+- [x] Recolector envía latido remoto cada intervalo solo si Baileys reporta conectado, además del latido local; fallos de red no crean tareas en la cola durable.
+- [x] Agregadas pruebas FechasUtcMensajeroTest y LatidoRecolectorSqlServerTest; ejecución local y Pint pendientes.
+- [ ] Confirmar que el último latido deje de aparecer en el futuro y avance aproximadamente cada 30 s. Revisar el grupo correcto y el marcador RAFAGA-REAL-A: consulta reciente devolvió 0 eventos en grupo 10020.
 
 ## Después de certificar captura
 - [ ] Normalizador idempotente y buzón → Redis.
