@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\FechaUtc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -19,8 +20,8 @@ class EventoCrudoWhatsapp extends Model
     protected function casts(): array
     {
         return [
-            'recibido_en' => 'immutable_datetime',
-            'procesado_en' => 'immutable_datetime',
+            'recibido_en' => FechaUtc::class,
+            'procesado_en' => FechaUtc::class,
         ];
     }
 
