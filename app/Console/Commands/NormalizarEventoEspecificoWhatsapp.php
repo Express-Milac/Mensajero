@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\EventoCrudoWhatsapp;
 use App\Services\Normalizacion\NormalizarEventoWhatsapp;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -21,9 +22,9 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
 
     public function handle(NormalizarEventoWhatsapp $normalizador): int
     {
-        if (! app()->environment(['local', 'testing'])
+        if (app()->environment(['local', 'testing']) === false
             || config('database.default') !== 'sqlsrv'
-            || ! str_ends_with((string) config('database.connections.sqlsrv.database'), '_test')) {
+            || str_ends_with((string) config('database.connections.sqlsrv.database'), '_test') === false) {
             $this->error('Operación bloqueada: requiere entorno local/de pruebas y base SQL Server terminada en _test.');
 
             return self::FAILURE;
@@ -53,7 +54,7 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
             return self::FAILURE;
         }
 
-        if ($evento->chat === null || ! $evento->chat->es_monitoreado || ! $evento->chat->es_activo) {
+        if ($evento->chat === null || $evento->chat->es_monitoreado === false || $evento->chat->es_activo === false) {
             $this->error('El grupo debe permanecer activo y autorizado para el ensayo.');
 
             return self::FAILURE;
@@ -67,7 +68,7 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
             $evento->estado_procesamiento,
         ));
 
-        if (! $this->option('aplicar')) {
+        if ($this->option('aplicar') === false) {
             $this->line('Vista previa: no se ha modificado ningún registro. Para procesar exclusivamente este evento, añade --aplicar.');
 
             return self::SUCCESS;
@@ -77,7 +78,10 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
             $resultado = $normalizador->ejecutar($identificador);
         } catch (Throwable $excepcion) {
             // No emitir el contenido de eventos ni los mensajes internos de excepciones.
-            report($excepcion);
+            Log::warning('Fallo al normalizar evento específico del POC.', [
+                'evento_id' => $identificador,
+                'tipo_error' => class_basename($excepcion),
+            ]);
             $this->error('El procesamiento no concluyó; revise el registro técnico protegido del servidor.');
 
             return self::FAILURE;
