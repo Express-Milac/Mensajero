@@ -165,6 +165,70 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
         }
     }
 
+    public function test_trabajador_redis_rechaza_grupo_desautorizado_sin_perder_la_evidencia(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$conexion, $chat, $sufijo] = $this->entorno();
+            $evento = $this->capturar($conexion, $chat, 'revocado-'.$sufijo, [
+                'message' => ['conversation' => 'Texto ficticio de grupo autorizado antes'],
+            ]);
+            $huellaOriginal = $evento->hash_contenido_sha256;
+            $trabajo = new NormalizarEventoWhatsappTrabajo((int) $evento->id);
+
+            // La captura fue legítima, pero el permiso se revoca antes del consumo.
+            $chat->update(['es_monitoreado' => false]);
+
+            try {
+                $trabajo->handle(app(NormalizarEventoWhatsapp::class));
+                $this->fail('Se esperaba que la normalización rechazara el grupo desautorizado.');
+            } catch (\RuntimeException $error) {
+                $this->assertStringContainsString('Grupo no autorizado', $error->getMessage());
+            }
+
+            $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
+            $this->assertSame($huellaOriginal, $evento->fresh()->hash_contenido_sha256);
+            $this->assertSame(0, MensajeWhatsapp::query()->where('evento_crudo_id', $evento->id)->count());
+
+            // Recuperar la autorización permite volver a intentar sin duplicados.
+            $chat->update(['es_monitoreado' => true]);
+            $trabajo->handle(app(NormalizarEventoWhatsapp::class));
+            $trabajo->handle(app(NormalizarEventoWhatsapp::class));
+
+            $this->assertSame('normalizado', $evento->fresh()->estado_procesamiento);
+            $this->assertSame(1, MensajeWhatsapp::query()->where('evento_crudo_id', $evento->id)->count());
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_trabajador_redis_no_procesa_grupo_inactivo(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$conexion, $chat, $sufijo] = $this->entorno();
+            $evento = $this->capturar($conexion, $chat, 'inactivo-'.$sufijo, [
+                'message' => ['conversation' => 'Texto ficticio'],
+            ]);
+            $chat->update(['es_activo' => false]);
+
+            try {
+                (new NormalizarEventoWhatsappTrabajo((int) $evento->id))
+                    ->handle(app(NormalizarEventoWhatsapp::class));
+                $this->fail('Se esperaba rechazo al procesar un grupo inactivo.');
+            } catch (\RuntimeException $error) {
+                $this->assertStringContainsString('Grupo no autorizado', $error->getMessage());
+            }
+
+            $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
+            $this->assertSame(0, MensajeWhatsapp::query()->where('evento_crudo_id', $evento->id)->count());
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     /**
      * @return array{0: ConexionWhatsapp, 1: ChatMonitoreado, 2: string}
      */
