@@ -121,6 +121,12 @@ class NormalizacionLoteSqlServerTest extends TestCase
                 '--limite' => 6,
             ])->assertFailed();
 
+            $this->artisan('mensajero:normalizar-lote', [
+                'grupo' => $grupo->id,
+                '--ids' => '999999999999999999999999999999',
+                '--aplicar' => true,
+            ])->assertFailed();
+
             $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
         } finally {
             DB::rollBack();
