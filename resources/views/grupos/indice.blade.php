@@ -19,8 +19,14 @@
             <div class="search-row">
                 <input id="buscar" name="buscar" value="{{ $buscar }}" placeholder="Nombre o identificador del grupo">
                 <button class="secondary" type="submit">Buscar</button>
-                @if($buscar !== '')<a class="clear-link" href="{{ route('grupos.indice') }}">Limpiar</a>@endif
+                @if($buscar !== '' || $origen !== 'todos')<a class="clear-link" href="{{ route('grupos.indice') }}">Limpiar</a>@endif
             </div>
+            <label for="origen" class="filter-origin-label">Origen de la conexión</label>
+            <select id="origen" name="origen" class="filter-origin">
+                <option value="todos" @selected($origen === 'todos')>Todas las conexiones</option>
+                <option value="recolector" @selected($origen === 'recolector')>Recolector de WhatsApp</option>
+                <option value="otras" @selected($origen === 'otras')>Pasarelas y otras conexiones</option>
+            </select>
         </form>
         @if(config('mensajero.autenticacion.modo') === 'deshabilitado')
             <p class="fine operation-note"><strong>Modo temporal sin autenticación:</strong> la consulta está disponible, pero los cambios administrativos están bloqueados desde la web. En el servidor puede usarse <code>php artisan mensajero:monitoreo-chat ID activar</code>.</p>
@@ -37,6 +43,7 @@
                             <h2>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h2>
                         </div>
                         <div class="group-badges">
+                            <span class="badge neutral">{{ $grupo->conexion?->proveedor === 'recolector_whatsapp' ? 'Recolector de WhatsApp' : 'Pasarela u otra conexión' }}</span>
                             <span class="badge {{ $grupo->es_monitoreado ? '' : 'neutral' }}">{{ $grupo->es_monitoreado ? 'Monitoreado' : 'No monitoreado' }}</span>
                             @if(! $grupo->es_activo)<span class="badge danger">Inactivo</span>@endif
                         </div>
