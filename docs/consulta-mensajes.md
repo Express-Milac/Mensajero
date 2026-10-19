@@ -24,6 +24,11 @@ Los archivos multimedia privados se muestran solo como metadatos y estado de
 verificación. En este incremento **no** se publican enlaces ni los binarios.
 Vistas de imagen, reproducción y descarga segura quedan para una fase posterior.
 
+El historial presenta el número total de intervalos de conectividad y conserva
+los últimos cinco bajo un detalle plegable, con causas legibles en español.
+El estado `Capturado` se explica como evidencia guardada pero no normalizada;
+no se modifica el estado real de SQL Server.
+
 Los periodos de integridad registrados son de la **conexión**, no afirmaciones
 de pérdida en un grupo específico. La ausencia de incidencias no equivale a una
 garantía de integridad.
