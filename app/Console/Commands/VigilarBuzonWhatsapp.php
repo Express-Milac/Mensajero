@@ -15,6 +15,7 @@ final class VigilarBuzonWhatsapp extends Command
     protected $signature = 'mensajero:vigilar-buzon
         {--minutos=30 : Umbral de retraso en minutos, entre 5 y 1440}
         {--grupo= : Restringe el diagnóstico a un grupo activo y monitoreado}
+        {--desglose : Mostrar conteos por ID de grupo y antigüedad sin datos personales}
         {--alertar : Devuelve código de error si se detectan avisos atrasados}';
 
     protected $description = 'Muestra métricas de atrasos del buzón SQL sin publicar ni modificar mensajes';
@@ -68,6 +69,35 @@ final class VigilarBuzonWhatsapp extends Command
             $this->warn('Atención: existen avisos atrasados. Un aviso antiguo NO prueba que Redis haya perdido el trabajo.');
         } else {
             $this->components->info('No se detectaron atrasos según el filtro y umbral indicados.');
+        }
+
+        if ($this->option('desglose') === true) {
+            $desglose = $medidor->desglosarPendientes($minutos, $grupoId);
+
+            if ($desglose['grupos'] === []) {
+                $this->line('Desglose: no hay avisos pendientes de publicación en los grupos consultados.');
+            } else {
+                $this->line('Desglose de pendientes por grupo (ID únicamente; sin mensajes ni nombres):');
+
+                foreach ($desglose['grupos'] as $fila) {
+                    $this->line(sprintf(
+                        'Grupo #%d, conexión #%d: %d pendiente(s), %d atrasado(s), %d mayor(es) a 24 h, %d mayor(es) a 7 días; prefijo de ensayo: %s.',
+                        $fila['grupo_id'],
+                        $fila['conexion_id'],
+                        $fila['pendientes'],
+                        $fila['atrasados'],
+                        $fila['mayores_24h'],
+                        $fila['mayores_7d'],
+                        $fila['prefijo_ensayo'] ? 'sí' : 'no',
+                    ));
+                }
+
+                if ($desglose['truncado']) {
+                    $this->warn('Solo se muestran los primeros 50 grupos. El desglose no incluye a todos.');
+                }
+            }
+
+            $this->line('Un prefijo de ensayo no demuestra por sí mismo que todos los datos sean ficticios.');
         }
 
         $this->line('Sin escrituras SQL, publicaciones Redis ni tareas programadas.');
