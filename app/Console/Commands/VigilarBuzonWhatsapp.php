@@ -16,6 +16,7 @@ final class VigilarBuzonWhatsapp extends Command
         {--minutos=30 : Umbral de retraso en minutos, entre 5 y 1440}
         {--grupo= : Restringe el diagnóstico a un grupo activo y monitoreado}
         {--desglose : Mostrar conteos por ID de grupo y antigüedad sin datos personales}
+        {--clasificar : Contar avisos por tipo y versión del contrato, requiere --grupo}
         {--alertar : Devuelve código de error si se detectan avisos atrasados}';
 
     protected $description = 'Muestra métricas de atrasos del buzón SQL sin publicar ni modificar mensajes';
@@ -37,6 +38,12 @@ final class VigilarBuzonWhatsapp extends Command
         if ($minutos === false || $minutos < 5 || $minutos > 1440
             || ($grupoTexto !== null && ($grupoId === false || $grupoId < 1))) {
             $this->error('Indique --minutos entre 5 y 1440 y un --grupo positivo cuando se especifique.');
+
+            return self::FAILURE;
+        }
+
+        if ($this->option('clasificar') === true && $grupoId === null) {
+            $this->error('La clasificación requiere --grupo con ID exacto para limitar la consulta.');
 
             return self::FAILURE;
         }
@@ -98,6 +105,32 @@ final class VigilarBuzonWhatsapp extends Command
             }
 
             $this->line('Un prefijo de ensayo no demuestra por sí mismo que todos los datos sean ficticios.');
+        }
+
+        if ($this->option('clasificar') === true) {
+            $clasificacion = $medidor->clasificarPendientes($grupoId);
+
+            if ($clasificacion['categorias'] === []) {
+                $this->line('Clasificación: el grupo no tiene avisos pendientes de publicación.');
+            } else {
+                $this->line('Clasificación de avisos pendientes del grupo #'.$grupoId.':');
+
+                foreach ($clasificacion['categorias'] as $categoria) {
+                    $this->line(sprintf(
+                        'Evento: %s; mensaje: %s; contrato: %s; pendientes: %d.',
+                        $categoria['tipo_evento'],
+                        $categoria['tipo_mensaje'],
+                        $categoria['version_contrato'],
+                        $categoria['cantidad'],
+                    ));
+                }
+
+                if ($clasificacion['truncado']) {
+                    $this->warn('Clasificación limitada a 50 combinaciones; el listado es incompleto.');
+                }
+            }
+
+            $this->line('La clasificación no determina si los datos son ficticios o reales.');
         }
 
         $this->line('Sin escrituras SQL, publicaciones Redis ni tareas programadas.');
