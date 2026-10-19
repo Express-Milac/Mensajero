@@ -125,4 +125,52 @@ final class MedirEstadoBuzonWhatsapp
             'truncado' => $truncado,
         ];
     }
+
+    /**
+     * Clasifica solo cantidades por campos operativos, sin texto del mensaje,
+     * remitentes, identificadores externos ni nombres. Requiere grupo exacto.
+     *
+     * @return array{categorias: array<int, array{tipo_evento:string,
+     *     tipo_mensaje:string, version_contrato:string, cantidad:int}>, truncado:bool}
+     */
+    public function clasificarPendientes(int $grupoId): array
+    {
+        $registros = MensajeBuzonSalida::query()
+            ->join('mensajero_eventos_crudos_whatsapp as evento', 'evento.id', '=', 'mensajero_buzon_salida.entidad_id')
+            ->join('mensajero_chats_monitoreados as grupo', 'grupo.id', '=', 'evento.chat_monitoreado_id')
+            ->where('mensajero_buzon_salida.tema', 'whatsapp.crudo.aceptado')
+            ->where('mensajero_buzon_salida.tipo_entidad', 'evento_crudo_whatsapp')
+            ->whereNull('mensajero_buzon_salida.enviado_en')
+            ->where('evento.estado_procesamiento', 'capturado')
+            ->where('grupo.id', $grupoId)
+            ->where('grupo.tipo_chat', 'grupo')
+            ->where('grupo.es_monitoreado', true)
+            ->where('grupo.es_activo', true)
+            ->whereColumn('grupo.conexion_id', 'evento.conexion_id')
+            ->select('evento.tipo_evento', 'evento.tipo_mensaje', 'evento.version_contrato')
+            ->selectRaw('COUNT_BIG(*) AS cantidad')
+            ->groupBy('evento.tipo_evento', 'evento.tipo_mensaje', 'evento.version_contrato')
+            ->orderByDesc('cantidad')
+            ->limit(51)
+            ->get();
+
+        return [
+            'categorias' => $registros->take(50)->map(static function ($registro): array {
+                $eventosPermitidos = ['mensaje', 'edicion', 'eliminacion', 'reaccion'];
+                $mensajesPermitidos = ['texto', 'foto', 'video', 'audio', 'documento', 'otro', 'sticker', 'pegatina'];
+                $versionesPermitidas = ['v1', 'v2', 'v3-recolector'];
+
+                return [
+                    'tipo_evento' => in_array($registro->tipo_evento, $eventosPermitidos, true)
+                        ? $registro->tipo_evento : 'otro_no_clasificado',
+                    'tipo_mensaje' => in_array($registro->tipo_mensaje, $mensajesPermitidos, true)
+                        ? $registro->tipo_mensaje : 'otro_no_clasificado',
+                    'version_contrato' => in_array($registro->version_contrato, $versionesPermitidas, true)
+                        ? $registro->version_contrato : 'otra_version',
+                    'cantidad' => (int) $registro->cantidad,
+                ];
+            })->values()->all(),
+            'truncado' => $registros->count() > 50,
+        ];
+    }
 }
