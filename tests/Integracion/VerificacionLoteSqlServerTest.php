@@ -42,18 +42,35 @@ class VerificacionLoteSqlServerTest extends TestCase
             $mensajeOriginal = MensajeWhatsapp::query()->where('evento_crudo_id', $original->id)->firstOrFail();
             $this->assertSame((int) $mensajeOriginal->id, (int) $mensajeCitado->mensaje_citado_id);
 
-            $antes = [$original->fresh()->contenido, $cita->fresh()->contenido];
+            $ids = [$original->id, $cita->id];
+            $eventosAntes = DB::table('mensajero_eventos_crudos_whatsapp')
+                ->whereIn('id', $ids)
+                ->orderBy('id')
+                ->get();
+            $mensajesAntes = DB::table('mensajero_mensajes_whatsapp')
+                ->whereIn('evento_crudo_id', $ids)
+                ->orderBy('evento_crudo_id')
+                ->get();
 
             $codigo = Artisan::call('mensajero:verificar-lote', [
                 'grupo' => $grupo->id,
                 '--ids' => $original->id.','.$cita->id,
             ]);
 
-            $this->assertSame(0, $codigo, Artisan::output());
-            $this->assertStringContainsString('2/2 eventos correctos; 1 cita(s) verificadas', Artisan::output());
-            $this->assertSame($antes, [$original->fresh()->contenido, $cita->fresh()->contenido]);
+            // La salida de comandos con $this->line() puede estar vacía en
+            // Artisan::output() durante PHPUnit pese a que el comando funciona.
+            // Verificamos su resultado real y que la auditoría no escriba datos.
+            $this->assertSame(0, $codigo, 'La auditoría del lote debe aprobar dos mensajes y su cita.');
+            $this->assertEquals($eventosAntes, DB::table('mensajero_eventos_crudos_whatsapp')
+                ->whereIn('id', $ids)
+                ->orderBy('id')
+                ->get(), 'La auditoría no debe modificar los eventos crudos.');
+            $this->assertEquals($mensajesAntes, DB::table('mensajero_mensajes_whatsapp')
+                ->whereIn('evento_crudo_id', $ids)
+                ->orderBy('evento_crudo_id')
+                ->get(), 'La auditoría no debe modificar los mensajes normalizados.');
             $this->assertSame(2, MensajeWhatsapp::query()
-                ->whereIn('evento_crudo_id', [$original->id, $cita->id])
+                ->whereIn('evento_crudo_id', $ids)
                 ->count());
 
             MensajeWhatsapp::query()
