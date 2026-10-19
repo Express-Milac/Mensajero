@@ -126,6 +126,35 @@ class ControladorEntradaPasarela extends Controller
         ]);
     }
 
+    /**
+     * Latido efímero firmado: no altera el estado del proveedor y no requiere
+     * almacenar una solicitud de deduplicación por cada intervalo.
+     */
+    public function registrarLatido(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'clave_conexion' => ['required', 'string', 'max:64'],
+        ]);
+
+        $conexion = $this->conexion((string) $datos['clave_conexion']);
+
+        if ($conexion === null) {
+            return response()->json(['mensaje' => 'Conexión de WhatsApp desconocida.'], 404);
+        }
+
+        if ($conexion->estado !== 'conectado') {
+            return response()->json([
+                'estado' => 'ignorado',
+                'motivo' => 'conexion_no_conectada',
+            ]);
+        }
+
+        $conexion->ultimo_latido_en = now('UTC');
+        $conexion->save();
+
+        return response()->json(['estado' => 'aceptado']);
+    }
+
     public function registrarIntegridad(Request $request): JsonResponse
     {
         $datos = $request->validate([
