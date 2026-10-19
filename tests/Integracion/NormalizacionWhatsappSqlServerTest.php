@@ -132,6 +132,39 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
         }
     }
 
+    public function test_si_redis_no_responde_el_buzon_conserva_la_tarea_y_programa_reintento(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$conexion, $chat, $sufijo] = $this->entorno();
+            $evento = $this->capturar($conexion, $chat, 'reintento-'.$sufijo, [
+                'message' => ['conversation' => 'Pendiente'],
+            ]);
+
+            Queue::shouldReceive('connection')
+                ->once()
+                ->with('redis')
+                ->andThrow(new \RuntimeException('dato_privado_que_no_debe_registrarse'));
+
+            $resultado = app(DespacharBuzonWhatsapp::class)->ejecutar(1, (int) $evento->id);
+            $this->assertSame(['publicados' => 0, 'fallidos' => 1], $resultado);
+
+            $buzon = MensajeBuzonSalida::query()
+                ->where('entidad_id', $evento->id)
+                ->firstOrFail();
+
+            $this->assertNull($buzon->enviado_en);
+            $this->assertNull($buzon->reservado_hasta);
+            $this->assertSame(1, (int) $buzon->intentos);
+            $this->assertTrue($buzon->disponible_en->greaterThan(now('UTC')));
+            $this->assertStringNotContainsString('dato_privado', $buzon->ultimo_error);
+            $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     /**
      * @return array{0: ConexionWhatsapp, 1: ChatMonitoreado, 2: string}
      */
