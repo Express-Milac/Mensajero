@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
+use App\Http\Controllers\Mensajes\ControladorArchivosWhatsapp;
 use App\Http\Controllers\Mensajes\ControladorMensajes;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,14 @@ Route::middleware('mensajero.acceso')->group(function () {
         Route::get('/mensajes/eventos/{evento}', [ControladorMensajes::class, 'evento'])
             ->whereNumber('evento')
             ->name('mensajes.evento');
+        Route::get('/mensajes/archivos/{archivo}', [ControladorArchivosWhatsapp::class, 'ver'])
+            ->whereNumber('archivo')
+            ->middleware('throttle:60,1')
+            ->name('mensajes.archivo.ver');
+        Route::get('/mensajes/archivos/{archivo}/descargar', [ControladorArchivosWhatsapp::class, 'descargar'])
+            ->whereNumber('archivo')
+            ->middleware('throttle:30,1')
+            ->name('mensajes.archivo.descargar');
     });
 
     Route::patch('/grupos/{chat}/monitoreo', [ControladorGrupos::class, 'actualizarMonitoreo'])
