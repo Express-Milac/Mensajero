@@ -8,7 +8,7 @@
                 @php($grupo = $tarjeta['grupo'])
                 @php($identidadVisual = (int) $grupo->id % 6)
                 @php($iconos = ['💬', '👥', '📣', '🗨️', '📝', '📨'])
-                <article class="tarjeta-directiva tarjeta-directiva-{{ $identidadVisual }}">
+                <article class="tarjeta-directiva tarjeta-directiva-{{ $identidadVisual }}" data-grupo-id="{{ $grupo->id }}">
                     <div class="tarjeta-directiva-principal">
                         <div class="icono-tarjeta" aria-hidden="true">{{ $iconos[$identidadVisual] }}</div>
                         <div class="titulo-tarjeta">
