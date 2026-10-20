@@ -14,7 +14,7 @@ use Throwable;
 final class AnalizarPanoramaContenido
 {
     private const TEMAS = [
-        'Logística y entregas' => '/\b(entrega|entregas|ruta|rutas|destino|llegada|arribo|descarga|descargar)\b/iu',
+        'Logística y entregas' => '/\b(entrega|entregas|entregar|entregado|entregada|ruta|rutas|destino|llegada|llegó|llego|arribo|descarga|descargar)\b/iu',
         'Unidades y operadores' => '/\b(unidad|unidades|camión|camion|tractocamión|tractocamion|operador|chofer|placas|remolque|caja)\b/iu',
         'Clientes y citas' => '/\b(cliente|clientes|cita|citas|atención al cliente|recepción)\b/iu',
         'Incidencias y demoras' => '/\b(incidencia|incidencias|demora|demoras|retraso|retrasos|falla|problema|problemas)\b/iu',
