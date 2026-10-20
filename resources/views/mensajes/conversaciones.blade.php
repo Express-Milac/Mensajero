@@ -11,12 +11,6 @@
         </div>
     </section>
 
-    <section class="centro-resumen-conversaciones" aria-label="Estado de las conversaciones">
-        <article><span>Grupos autorizados</span><strong>{{ number_format($totalGrupos) }}</strong></article>
-        <article><span>Con mensajes hoy</span><strong>{{ number_format($cantidadConActividad) }}</strong></article>
-        <article><span>Mensajes de hoy</span><strong>{{ number_format($mensajesHoy) }}</strong></article>
-    </section>
-
     <section class="centro-conversaciones" aria-label="Conversaciones consultables">
         <div class="titulo-panorama centro-cabecera-grupos">
             <div><h2>Conversaciones recientes</h2><p class="muted">Cada tarjeta muestra los últimos ocho mensajes con su propio desplazamiento. No incluye conversaciones fuera del monitoreo autorizado.</p></div>
