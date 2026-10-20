@@ -1,68 +1,71 @@
 <div data-panorama-indicadores>
-    <section class="indicadores-ejecutivos" aria-label="Resumen de conversaciones">
-        <article class="card indicador-ejecutivo">
-            <div class="indicador-cabecera">
-                <span>Grupos en seguimiento</span>
-                <span class="indicador-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h7"/></svg></span>
-            </div>
-            <strong>{{ number_format($totalGrupos) }}</strong>
-            <small>Conversaciones autorizadas</small>
-            <span class="indicador-base"></span>
+    <section class="centro-metricas" aria-label="Indicadores del día">
+        <article class="centro-metrica">
+            <span class="centro-metrica-icono">▤</span><div><span>Mensajes hoy</span><strong>{{ number_format($mensajesHoy) }}</strong><small>Mensajes recibidos desde medianoche</small></div>
         </article>
-        <article class="card indicador-ejecutivo">
-            <div class="indicador-cabecera">
-                <span>Mensajes registrados hoy</span>
-                <span class="indicador-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5A8.5 8.5 0 1 1 21 11.5z"/><path d="M8 12h8"/></svg></span>
-            </div>
-            <strong>{{ number_format($mensajesHoy) }}</strong>
-            <small>Desde el inicio del día, hora local</small>
-            <span class="indicador-base"></span>
+        <article class="centro-metrica">
+            <span class="centro-metrica-icono naranja">♧</span><div><span>Grupos con mensajes hoy</span><strong>{{ number_format($cantidadConActividad) }} <em>de {{ number_format($totalGrupos) }}</em></strong><small>De los grupos en seguimiento</small></div>
         </article>
-        <article class="card indicador-ejecutivo">
-            <div class="indicador-cabecera">
-                <span>Grupos con mensajes hoy</span>
-                <span class="indicador-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h17"/><path d="m8 14 4-4 3 2 5-6"/></svg></span>
-            </div>
-            <strong>{{ number_format($cantidadConActividad) }} <span class="indicador-fraccion">/ {{ number_format($totalGrupos) }}</span></strong>
-            <small>Con al menos un mensaje hoy</small>
-            <span class="indicador-base"></span>
+        <article class="centro-metrica">
+            <span class="centro-metrica-icono violeta">♙</span><div><span>Remitentes detectados</span><strong>{{ number_format($analisis['participantesMuestra']) }}</strong><small>Identificadores distintos en la muestra</small></div>
         </article>
-        <article class="card indicador-ejecutivo">
-            <div class="indicador-cabecera">
-                <span>Último mensaje recibido</span>
-                <span class="indicador-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-            </div>
-            <strong class="indicador-fecha">{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin mensajes' }}</strong>
-            <small>Fecha y hora local</small>
-            <span class="indicador-base"></span>
+        <article class="centro-metrica">
+            <span class="centro-metrica-icono naranja">◷</span><div><span>Último mensaje</span><strong class="centro-hora">{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</strong><small>{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('d/m/Y') ?? 'Sin mensajes registrados' }}</small></div>
+        </article>
+        <article class="centro-metrica centro-metrica-seguimiento">
+            <span class="centro-metrica-icono naranja">▣</span><div><span>Menciones para revisar</span><strong>{{ count($analisis['revision']) }}</strong><small>En la muestra · No son alertas validadas</small></div><a href="#menciones-revision" aria-label="Ver menciones para revisar">→</a>
         </article>
     </section>
 
-    <section class="lecturas-ejecutivas" aria-label="Lecturas rápidas de actividad">
-        <article class="lectura-directiva lectura-destacada">
-            <div class="lectura-kicker"><span class="lectura-punto"></span> MAYOR ACTIVIDAD HOY</div>
-            @if($grupoMasActivo)
-                <strong>{{ $grupoMasActivo['grupo']->nombre_interno ?: ($grupoMasActivo['grupo']->nombre_grupo ?: 'Grupo sin nombre') }}</strong>
-                <p>{{ number_format($grupoMasActivo['hoy']) }} {{ $grupoMasActivo['hoy'] === 1 ? 'mensaje registrado' : 'mensajes registrados' }} hoy</p>
-            @else
-                <strong>Sin actividad registrada hoy</strong>
-                <p>No se han recibido mensajes nuevos en los grupos seleccionados.</p>
-            @endif
+    <section class="centro-paneles" id="temas-clave" aria-label="Lectura ejecutiva de conversaciones">
+        <article class="centro-panel centro-panel-temas">
+            <header><span class="centro-panel-icono">♨</span><h2>Temas clave del día</h2><span class="centro-panel-etiqueta">{{ count($analisis['temas']) }}</span></header>
+            <p class="centro-panel-ayuda">Palabras detectadas literalmente en los mensajes.</p>
+            <div class="centro-lista-panel">
+                @forelse($analisis['temas'] as $indice => $tema)
+                    <div class="centro-fila-panel"><span class="centro-indice">{{ $indice + 1 }}</span><span class="centro-descripcion">{{ $tema['nombre'] }}</span><strong class="centro-cantidad">{{ $tema['total'] }}</strong><small>{{ $tema['grupos'] }} {{ $tema['grupos'] === 1 ? 'grupo' : 'grupos' }}</small></div>
+                @empty
+                    <p class="centro-vacio">Sin temas coincidentes en los mensajes recientes de hoy.</p>
+                @endforelse
+            </div>
         </article>
-        <article class="lectura-directiva">
-            <div class="lectura-kicker">ÚLTIMA CONVERSACIÓN CON MOVIMIENTO</div>
-            @if($grupoMasReciente)
-                <strong>{{ $grupoMasReciente['grupo']->nombre_interno ?: ($grupoMasReciente['grupo']->nombre_grupo ?: 'Grupo sin nombre') }}</strong>
-                <p>Último mensaje: {{ $grupoMasReciente['ultima']->timezone(config('app.timezone'))->format('d/m/Y · H:i') }}</p>
-            @else
-                <strong>Sin conversaciones registradas</strong>
-                <p>Los mensajes nuevos aparecerán al ser recibidos.</p>
-            @endif
+        <article class="centro-panel" id="acuerdos-explicitos">
+            <header><span class="centro-panel-icono verde">✓</span><h2>Posibles acuerdos mencionados</h2></header>
+            <p class="centro-panel-ayuda">Expresiones textuales, sin confirmar su cumplimiento.</p>
+            <div class="centro-lista-panel">
+                @forelse($analisis['acuerdos'] as $mencion)
+                    <a class="centro-fila-enlace" href="{{ route('mensajes.evento', $mencion['evento_id']) }}">
+                        <span class="centro-fila-icono verde">✓</span><span><strong>{{ $mencion['texto'] }}</strong><small>{{ $nombresGrupos[$mencion['grupo_id']] ?? 'Grupo en seguimiento' }}</small></span><span aria-hidden="true">↗</span>
+                    </a>
+                @empty
+                    <p class="centro-vacio">Sin frases explícitas de acuerdo o confirmación en los mensajes revisados.</p>
+                @endforelse
+            </div>
         </article>
-        <article class="lectura-directiva">
-            <div class="lectura-kicker">SIN MENSAJES HOY</div>
-            <div class="lectura-numero">{{ number_format($gruposSinActividadHoy) }} <span>de {{ number_format($totalGrupos) }} grupos</span></div>
-            <p>Sin mensajes registrados durante el día. Esto no implica una incidencia.</p>
+        <article class="centro-panel">
+            <header><span class="centro-panel-icono">♧</span><h2>Participación reciente</h2></header>
+            <p class="centro-panel-ayuda">Identificadores provisionales; no nombres verificados.</p>
+            <div class="centro-lista-panel">
+                @forelse($analisis['remitentes'] as $remitente)
+                    <div class="centro-fila-participacion"><span class="centro-avatar">{{ substr($remitente['nombre'], -2) }}</span><span>{{ $remitente['nombre'] }}</span><small>{{ $remitente['mensajes'] }} {{ $remitente['mensajes'] === 1 ? 'mensaje' : 'mensajes' }}</small></div>
+                @empty
+                    <p class="centro-vacio">Todavía no hay remitentes identificables en los mensajes de hoy.</p>
+                @endforelse
+            </div>
+        </article>
+        <article class="centro-panel" id="menciones-revision">
+            <header><span class="centro-panel-icono">⚑</span><h2>Menciones para revisar</h2></header>
+            <p class="centro-panel-ayuda">Expresiones como «pendiente», «demora» o «incidencia».</p>
+            <div class="centro-lista-panel">
+                @forelse($analisis['revision'] as $mencion)
+                    <a class="centro-fila-enlace" href="{{ route('mensajes.evento', $mencion['evento_id']) }}">
+                        <span class="centro-fila-icono">!</span><span><strong>{{ $mencion['texto'] }}</strong><small>{{ $nombresGrupos[$mencion['grupo_id']] ?? 'Grupo en seguimiento' }}</small></span><span aria-hidden="true">↗</span>
+                    </a>
+                @empty
+                    <p class="centro-vacio">No se detectaron expresiones de seguimiento en los mensajes revisados.</p>
+                @endforelse
+            </div>
         </article>
     </section>
+    <p class="centro-nota-muestra">Análisis basado en los últimos {{ number_format($analisis['mensajesRevisados']) }} mensajes de hoy, hasta un máximo de 300. La detección textual no reemplaza una revisión del contexto.</p>
 </div>
