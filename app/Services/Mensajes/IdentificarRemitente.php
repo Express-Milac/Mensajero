@@ -49,7 +49,7 @@ final class IdentificarRemitente
     {
         $id = $evento->id_remitente_proveedor;
 
-        if (! is_string($id) || trim($id) === '') {
+        if (is_string($id) === false || trim($id) === '') {
             return 'Persona sin identificar';
         }
 
@@ -84,7 +84,7 @@ final class IdentificarRemitente
     public function nombreAsignado(EventoCrudoWhatsapp $evento): ?string
     {
         $id = $evento->id_remitente_proveedor;
-        if (! is_string($id) || $id === '') {
+        if (is_string($id) === false || $id === '') {
             return null;
         }
 
@@ -99,7 +99,7 @@ final class IdentificarRemitente
             return null;
         }
 
-        if (! is_array($crudo)) {
+        if (is_array($crudo) === false) {
             return null;
         }
 
@@ -107,7 +107,7 @@ final class IdentificarRemitente
         // Es un nombre de perfil elegido por quien envía, no una identidad verificada.
         $nombre = $crudo['pushName'] ?? null;
 
-        if (! is_string($nombre) || trim($nombre) === '') {
+        if (is_string($nombre) === false || trim($nombre) === '') {
             return null;
         }
 
