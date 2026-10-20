@@ -37,6 +37,9 @@ return [
     // No habilita cambios de captura ni acceso por red compartida.
     'gestion_local_grupos_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_GRUPOS_HABILITADA', false),
 
+    // Asignación manual de nombres: permiso independiente, solo POC local.
+    'gestion_local_remitentes_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_REMITENTES_HABILITADA', false),
+
     'normalizacion' => [
         // No procesar datos históricos hasta aprobar integración SQL Server.
         'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
