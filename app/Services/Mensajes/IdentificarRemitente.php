@@ -78,6 +78,14 @@ final class IdentificarRemitente
             return 'Teléfono +'.$coincidencias[1];
         }
 
+        // Baileys puede adjuntar el teléfono alternativo a un LID.
+        // Se utiliza únicamente si aparece en la misma clave del
+        // mensaje y la clave principal corresponde a este remitente.
+        $telefonoAlternativo = $this->telefonoAlternativo($evento, $id);
+        if ($telefonoAlternativo !== null) {
+            return 'Teléfono +'.$telefonoAlternativo;
+        }
+
         return 'Persona sin identificar';
     }
 
@@ -112,6 +120,29 @@ final class IdentificarRemitente
         }
 
         return mb_substr(trim($nombre), 0, 120);
+    }
+
+    private function telefonoAlternativo(EventoCrudoWhatsapp $evento, string $identificador): ?string
+    {
+        try {
+            $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
+
+        $clave = is_array($crudo) ? ($crudo['key'] ?? null) : null;
+        if (is_array($clave) === false || ($clave['participant'] ?? null) !== $identificador) {
+            return null;
+        }
+
+        $alternativo = $clave['participantPn'] ?? null;
+        if (is_string($alternativo) === false) {
+            return null;
+        }
+
+        return preg_match('/^([0-9]{8,15})@s\\.whatsapp\\.net$/D', $alternativo, $coincidencias) === 1
+            ? $coincidencias[1]
+            : null;
     }
 
     private function clave(int $conexionId, string $identificador): string
