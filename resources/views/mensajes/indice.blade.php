@@ -1,32 +1,11 @@
 <x-layout title="Panorama de conversaciones">
-    <section class="intro compact introduccion-ejecutiva">
+    <section class="intro compact introduccion-ejecutiva" data-panorama-url="{{ route('mensajes.actualizacion') }}" data-panorama-intervalo="12000">
         <p class="eyebrow">MENSAJERO MILAC · PANORAMA DE CONVERSACIONES</p>
         <h1>Lo que está pasando en los grupos</h1>
         <p class="muted">Mensajes recientes, personas que participan y movimiento del día. Abre un grupo para consultar toda la conversación.</p>
     </section>
 
-    <section class="indicadores-ejecutivos" aria-label="Resumen de conversaciones">
-        <article class="card indicador-ejecutivo">
-            <span>Grupos en seguimiento</span>
-            <strong>{{ number_format($totalGrupos) }}</strong>
-            <small>Conversaciones seleccionadas</small>
-        </article>
-        <article class="card indicador-ejecutivo">
-            <span>Mensajes registrados hoy</span>
-            <strong>{{ number_format($mensajesHoy) }}</strong>
-            <small>Contados por fecha de recepción</small>
-        </article>
-        <article class="card indicador-ejecutivo">
-            <span>Grupos con mensajes hoy</span>
-            <strong>{{ number_format($cantidadConActividad) }}</strong>
-            <small>De {{ number_format($totalGrupos) }} grupos seleccionados</small>
-        </article>
-        <article class="card indicador-ejecutivo">
-            <span>Último mensaje recibido</span>
-            <strong class="indicador-fecha">{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin mensajes' }}</strong>
-            <small>Fecha y hora local</small>
-        </article>
-    </section>
+    @include('mensajes.partes.panorama-indicadores')
 
     <section class="seccion-panorama" aria-label="Explorador de grupos">
         <div class="titulo-panorama">
@@ -61,54 +40,8 @@
             @endif
         </form>
 
-        <div class="cabecera-carrusel">
-            <span>{{ $tarjetas->count() }} grupos en esta vista</span>
-            <span>Desplázate hacia abajo para explorar tarjetas ↓</span>
-        </div>
-        <div class="carrusel-grupos-vertical" tabindex="0" role="region" aria-label="Carrusel vertical de tarjetas de grupos">
-            @forelse($tarjetas as $indice => $tarjeta)
-                @php($grupo = $tarjeta['grupo'])
-                @php($identidadVisual = (int) $grupo->id % 6)
-                @php($iconos = ['💬', '👥', '📣', '🗨️', '📝', '📨'])
-                <article class="tarjeta-directiva tarjeta-directiva-{{ $identidadVisual }}">
-                    <div class="tarjeta-directiva-principal">
-                        <div class="icono-tarjeta" aria-hidden="true">{{ $iconos[$identidadVisual] }}</div>
-                        <div class="titulo-tarjeta">
-                            <h3>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h3>
-                            <p>{{ $tarjeta['hoy'] }} {{ $tarjeta['hoy'] === 1 ? 'mensaje recibido hoy' : 'mensajes recibidos hoy' }}</p>
-                        </div>
-                        @if($tarjeta['ensayo'])
-                            <span class="etiqueta-ensayo">Ensayo</span>
-                        @endif
-                    </div>
-
-                    @if(count($tarjeta['mensajes']) > 0)
-                        <div class="fragmentos-grupo" aria-label="Últimos mensajes capturados">
-                            @foreach($tarjeta['mensajes'] as $mensaje)
-                                <div class="fragmento-grupo">
-                                    <div class="fragmento-datos">
-                                        <span class="fragmento-remitente">{{ $mensaje['remitente'] }}</span>
-                                        <time datetime="{{ $mensaje['fecha']?->toIso8601String() }}">{{ $mensaje['fecha']?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin fecha' }}</time>
-                                    </div>
-                                    <p>{{ $mensaje['texto'] }}</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <p class="sin-mensajes-grupo">Todavía no hay mensajes conservados de este grupo para mostrar.</p>
-                    @endif
-                    <div class="pie-tarjeta-directiva">
-                        <span>{{ $tarjeta['ultima']?->timezone(config('app.timezone'))->format('Último mensaje: d/m/Y H:i') ?? 'Sin mensajes registrados' }}</span>
-                        <a href="{{ route('mensajes.grupo', $grupo->id) }}">Abrir conversación <span aria-hidden="true">→</span></a>
-                    </div>
-                </article>
-            @empty
-                <section class="card empty-state">
-                    <h3>No hay grupos para este filtro</h3>
-                    <p class="muted">Puedes cambiar el filtro o seleccionar nuevos grupos desde su administración.</p>
-                </section>
-            @endforelse
-        </div>
+        <div class="estado-actualizacion" id="estado-actualizacion" role="status" aria-live="polite">Actualización automática cada 12 segundos · Comprobando mensajes</div>
+        @include('mensajes.partes.panorama-tarjetas')
     </section>
 
     <section class="nota-interpretacion" aria-label="Alcance de la información">
@@ -118,4 +51,5 @@
         </div>
         <span>Contenido verificable · Sin conclusiones automáticas</span>
     </section>
+    <script src="{{ asset('js/panorama.js') }}?v={{ filemtime(public_path('js/panorama.js')) }}" defer></script>
 </x-layout>
