@@ -52,7 +52,9 @@
                                 </div>
                                 <p>{{ $mensaje['texto'] }}</p>
                                 <a class="centro-ver-evidencia" href="{{ route('mensajes.evento', $mensaje['id']) }}">Ver mensaje original ↗</a>
-                                <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $mensaje['id']) }}">Identificar remitente ↗</a>
+                                @if($mensaje['tiene_remitente'])
+                                    <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $mensaje['id']) }}">Identificar remitente ↗</a>
+                                @endif
                             </div>
                         </div>
                     @empty
