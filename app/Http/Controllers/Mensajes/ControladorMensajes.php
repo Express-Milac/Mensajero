@@ -22,6 +22,26 @@ final class ControladorMensajes extends Controller
      */
     public function indice(Request $request, ExtraerContenidoWhatsapp $extraer): View
     {
+        return view('mensajes.indice', $this->datosPanorama($request, $extraer));
+    }
+
+    /**
+     * El navegador consulta periódicamente este fragmento, sin recargar
+     * la página y sin exponer rutas ni datos adicionales.
+     */
+    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer): \Illuminate\Http\Response
+    {
+        return response()
+            ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer))
+            ->header('Cache-Control', 'private, no-store, max-age=0')
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function datosPanorama(Request $request, ExtraerContenidoWhatsapp $extraer): array
+    {
         $opciones = $request->validate([
             'actividad' => ['nullable', 'in:todos,hoy,sin_actividad'],
             'orden' => ['nullable', 'in:recientes,actividad,nombre'],
@@ -103,7 +123,7 @@ final class ControladorMensajes extends Controller
                 ($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0)),
         };
 
-        return view('mensajes.indice', [
+        return [
             'tarjetas' => $visibles->values(),
             'totalGrupos' => $tarjetas->count(),
             'cantidadConActividad' => $cantidadConActividad,
@@ -111,7 +131,7 @@ final class ControladorMensajes extends Controller
             'ultimaParticipacion' => $ultimaParticipacion,
             'actividad' => $actividad,
             'orden' => $orden,
-        ]);
+        ];
     }
 
     /**
