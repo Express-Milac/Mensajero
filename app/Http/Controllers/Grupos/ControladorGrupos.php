@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Grupos;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChatMonitoreado;
+use App\Services\Grupos\CambiarVisibilidadTablero;
 use App\Services\Monitoreo\CambiarMonitoreoChat;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,10 @@ class ControladorGrupos extends Controller
 
         $origen = $request->query('origen', 'todos');
         $estado = $request->query('estado', 'todos');
+        $visibilidad = $request->query('visibilidad', 'todos');
+        if (in_array($visibilidad, ['todos', 'visibles', 'ocultos'], true) === false) {
+            $visibilidad = 'todos';
+        }
 
         if (in_array($estado, ['todos', 'monitoreados', 'no_monitoreados', 'inactivos'], true) === false) {
             $estado = 'todos';
@@ -49,6 +54,12 @@ class ControladorGrupos extends Controller
             $consulta->where('es_activo', false);
         }
 
+        if ($visibilidad === 'visibles') {
+            $consulta->where('es_visible_tablero', true);
+        } elseif ($visibilidad === 'ocultos') {
+            $consulta->where('es_visible_tablero', false);
+        }
+
         if ($buscar !== '') {
             $consulta->where(function ($subconsulta) use ($buscar) {
                 $subconsulta
@@ -70,9 +81,45 @@ class ControladorGrupos extends Controller
             'descubiertos' => (clone $base)->count(),
             'autorizados' => (clone $base)->where('es_monitoreado', true)->where('es_activo', true)->count(),
             'sin_monitorear' => (clone $base)->where('es_monitoreado', false)->count(),
+            'visibles' => (clone $base)->where('es_visible_tablero', true)->where('es_monitoreado', true)->where('es_activo', true)->count(),
+            'ocultos' => (clone $base)->where('es_visible_tablero', false)->count(),
         ];
 
-        return view('grupos.indice', compact('grupos', 'buscar', 'origen', 'estado', 'estadisticas'));
+        $puedeCambiarVista = (config('mensajero.autenticacion.modo') === 'local'
+            && auth()->check()
+            && auth()->user()->can('administrar'))
+            || (config('mensajero.autenticacion.modo') === 'deshabilitado'
+                && app()->environment(['local', 'testing'])
+                && config('mensajero.consulta_local_sin_autenticacion', false)
+                && config('mensajero.gestion_local_grupos_habilitada', false)
+                && in_array($request->ip(), ['127.0.0.1', '::1'], true));
+
+        return view('grupos.indice', compact('grupos', 'buscar', 'origen', 'estado', 'visibilidad', 'estadisticas', 'puedeCambiarVista'));
+    }
+
+    public function actualizarVisibilidad(
+        Request $request,
+        int $chat,
+        CambiarVisibilidadTablero $cambiarVisibilidad,
+    ): RedirectResponse {
+        $datos = $request->validate([
+            'es_visible_tablero' => ['required', 'boolean'],
+        ]);
+
+        $actorId = auth()->id();
+        $actualizado = $cambiarVisibilidad->ejecutar(
+            $chat,
+            (bool) $datos['es_visible_tablero'],
+            is_numeric($actorId) ? 'administrador' : 'gestor_local_autorizado',
+            is_numeric($actorId) ? (int) $actorId : null,
+        );
+
+        return back()->with(
+            'estado',
+            $actualizado->es_visible_tablero
+                ? 'El grupo vuelve a aparecer en el tablero. La captura no cambió.'
+                : 'El grupo ya no se muestra en el tablero. La captura continúa sin cambios.',
+        );
     }
 
     public function actualizarMonitoreo(
