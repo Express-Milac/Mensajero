@@ -74,7 +74,7 @@ final class ControladorMensajes extends Controller
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $this->etiquetaRemitente($evento),
-                    'texto' => \\Illuminate\\Support\\Str::limit($this->resumen($evento, $extraer), 190),
+                    'texto' => \Illuminate\Support\Str::limit($this->resumen($evento, $extraer), 190),
                     'fecha' => $evento->recibido_en,
                 ])->all(),
                 // No inferir que un grupo sea de ensayo por su nombre.
