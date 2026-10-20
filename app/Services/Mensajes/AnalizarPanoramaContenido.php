@@ -26,7 +26,7 @@ final class AnalizarPanoramaContenido
     private const REVISION = '/\b(pendiente|pendientes|demora|demoras|retraso|retrasos|urgente|falta|faltan|incidencia|incidencias|sin respuesta)\b/iu';
 
     /**
-     * @param Collection<int, EventoCrudoWhatsapp> $eventos
+     * @param  Collection<int, EventoCrudoWhatsapp>  $eventos
      * @return array<string, mixed>
      */
     public function ejecutar(Collection $eventos, ExtraerContenidoWhatsapp $extraer): array
@@ -55,7 +55,7 @@ final class AnalizarPanoramaContenido
             $remitente = $evento->id_remitente_proveedor;
             if (is_string($remitente) && $remitente !== '') {
                 $clave = hash('sha256', (string) $evento->conexion_id.'|'.$remitente);
-                if (! isset($remitentes[$clave])) {
+                if (isset($remitentes[$clave]) === false) {
                     $remitentes[$clave] = ['clave' => $clave, 'nombre' => 'Remitente '.strtoupper(substr($clave, 0, 8)), 'mensajes' => 0];
                 }
                 $remitentes[$clave]['mensajes']++;
