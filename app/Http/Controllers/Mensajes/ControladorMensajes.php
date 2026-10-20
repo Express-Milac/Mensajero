@@ -69,7 +69,9 @@ final class ControladorMensajes extends Controller
             'tipo' => ['nullable', 'in:mensaje,edicion,eliminacion,reaccion,otro'],
             'tipo_mensaje' => ['nullable', 'in:texto,foto,video,audio,documento,ubicacion,contacto,otro'],
             'desde' => ['nullable', 'date_format:Y-m-d'],
-            'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'hasta' => $request->filled('desde')
+                ? ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde']
+                : ['nullable', 'date_format:Y-m-d'],
         ]);
         $tipo = $datos['tipo'] ?? '';
         $tipoMensaje = $datos['tipo_mensaje'] ?? '';
