@@ -14,6 +14,7 @@ class ConsultaEvidenciaAccesoTest extends TestCase
         ]);
 
         $this->get('/tablero')->assertForbidden();
+        $this->get('/grupos')->assertForbidden();
         $this->get('/mensajes')->assertForbidden();
         $this->get('/mensajes/actualizacion')->assertForbidden();
         $this->get('/mensajes/tecnico')->assertForbidden();
@@ -27,6 +28,10 @@ class ConsultaEvidenciaAccesoTest extends TestCase
             'mensajero.autenticacion.modo' => 'deshabilitado',
             'mensajero.consulta_local_sin_autenticacion' => true,
         ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->get('/grupos')
+            ->assertForbidden();
 
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
             ->get('/mensajes')
