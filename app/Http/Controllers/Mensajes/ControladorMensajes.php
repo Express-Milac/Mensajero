@@ -8,6 +8,7 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Mensajes\AnalizarPanoramaContenido;
+use App\Services\Mensajes\IdentificarRemitente;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
@@ -23,28 +24,28 @@ final class ControladorMensajes extends Controller
      * Panorama directivo: actividad y contenido verificable de cada grupo.
      * No presenta señales técnicas como indicadores de negocio.
      */
-    public function indice(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): View
+    public function indice(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): View
     {
-        return view('mensajes.indice', $this->datosPanorama($request, $extraer, $analizador));
+        return view('mensajes.indice', $this->datosPanorama($request, $extraer, $analizador, $identificador));
     }
 
     /**
      * Catálogo de conversaciones consultables: separado del tablero con
      * indicadores directivos. Conserva filtros y carruseles individuales.
      */
-    public function conversaciones(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): View
+    public function conversaciones(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): View
     {
-        return view('mensajes.conversaciones', $this->datosPanorama($request, $extraer, $analizador));
+        return view('mensajes.conversaciones', $this->datosPanorama($request, $extraer, $analizador, $identificador));
     }
 
     /**
      * El navegador consulta periódicamente este fragmento, sin recargar
      * la página y sin exponer rutas ni datos adicionales.
      */
-    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): Response
+    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): Response
     {
         return response()
-            ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer, $analizador))
+            ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer, $analizador, $identificador))
             ->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('X-Content-Type-Options', 'nosniff');
     }
@@ -52,7 +53,7 @@ final class ControladorMensajes extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function datosPanorama(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): array
+    private function datosPanorama(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): array
     {
         $opciones = $request->validate([
             'actividad' => ['nullable', 'in:todos,hoy,sin_actividad'],
@@ -88,7 +89,7 @@ final class ControladorMensajes extends Controller
                 ->groupBy('chat_monitoreado_id')
                 ->pluck('total', 'chat_monitoreado_id');
 
-        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos): array {
+        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos, $identificador): array {
             // Se limita la consulta de contenido a ocho mensajes más
             // recientes por grupo. Nunca se descargan todos los eventos.
             $recientes = EventoCrudoWhatsapp::query()
@@ -100,13 +101,15 @@ final class ControladorMensajes extends Controller
                 ->limit(8)
                 ->get();
 
+            $identificador->precargar($recientes);
+
             return [
                 'grupo' => $grupo,
                 'hoy' => (int) ($conteos[$grupo->id] ?? 0),
                 'ultima' => $recientes->first()?->recibido_en,
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
-                    'remitente' => $this->etiquetaRemitente($evento),
+                    'remitente' => $identificador->nombre($evento),
                     'texto' => Str::limit($this->resumen($evento, $extraer), 190),
                     'fecha' => $evento->recibido_en,
                 ])->all(),
@@ -221,6 +224,7 @@ final class ControladorMensajes extends Controller
         Request $request,
         int $chat,
         ExtraerContenidoWhatsapp $extraer,
+        IdentificarRemitente $identificador,
     ): View {
         $grupo = ChatMonitoreado::query()
             ->with('conexion')
@@ -276,10 +280,11 @@ final class ControladorMensajes extends Controller
             ->paginate(30)
             ->withQueryString();
 
+        $identificador->precargar($eventos->getCollection());
         $eventos->getCollection()->transform(fn (EventoCrudoWhatsapp $evento) => [
             'evento' => $evento,
             'resumen' => $this->resumen($evento, $extraer),
-            'remitente' => $this->etiquetaRemitente($evento),
+            'remitente' => $identificador->nombre($evento),
         ]);
 
         $periodosConexion = PeriodoIntegridadWhatsapp::query()
@@ -299,6 +304,7 @@ final class ControladorMensajes extends Controller
         int $evento,
         ExtraerContenidoWhatsapp $extraer,
         PrepararContenidoEvidencia $preparador,
+        IdentificarRemitente $identificador,
     ): View {
         $registro = EventoCrudoWhatsapp::query()
             ->with(['chat', 'mensaje.remitente', 'archivo'])
@@ -314,11 +320,8 @@ final class ControladorMensajes extends Controller
         $contenido = $vista['contenido'];
         $truncado = $vista['truncado'];
 
-        // La identificación íntegra del remitente no se muestra en la vista POC.
-        $idRemitente = $registro->id_remitente_proveedor;
-        $remitente = is_string($idRemitente) && $idRemitente !== ''
-            ? 'Remitente '.strtoupper(substr(hash('sha256', $idRemitente), 0, 8))
-            : 'No identificado';
+        $identificador->precargar(collect([$registro]));
+        $remitente = $identificador->nombre($registro);
 
         return view('mensajes.evento', compact('registro', 'resumen', 'contenido', 'truncado', 'remitente'));
     }
@@ -363,19 +366,4 @@ final class ControladorMensajes extends Controller
         };
     }
 
-    private function etiquetaRemitente(EventoCrudoWhatsapp $evento): string
-    {
-        $contacto = $evento->mensaje?->remitente;
-        $nombre = $contacto?->nombre_visible ?: $contacto?->nombre_notificacion;
-
-        if (is_string($nombre) && $nombre !== '') {
-            return $nombre;
-        }
-
-        $id = $evento->id_remitente_proveedor;
-
-        return is_string($id) && $id !== ''
-            ? 'Remitente '.strtoupper(substr(hash('sha256', $id), 0, 8))
-            : 'Remitente no identificado';
-    }
 }
