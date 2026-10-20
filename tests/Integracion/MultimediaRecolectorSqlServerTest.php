@@ -121,6 +121,107 @@ class MultimediaRecolectorSqlServerTest extends TestCase
         }
     }
 
+    public function test_archivo_privado_permite_ver_y_descargar_solo_a_grupo_autorizado_e_integro(): void
+    {
+        $this->assertSame('sqlsrv', config('database.default'));
+        $this->assertStringEndsWith('_test', (string) config('database.connections.sqlsrv.database'));
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+
+        DB::beginTransaction();
+
+        try {
+            [$conexion, $chat] = $this->crearGrupoAutorizado();
+
+            $contenidoArchivo = base64_decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Ok0AAAAASUVORK5CYII=',
+                true,
+            );
+            $this->assertIsString($contenidoArchivo);
+
+            $identificador = hash('sha256', 'foto-'.$conexion->clave_conexion);
+            $ruta = 'multimedia/whatsapp/'.$conexion->clave_conexion.'/2026/10/'.$identificador.'.png';
+            Storage::disk('mensajero_local')->put($ruta, $contenidoArchivo);
+
+            $datos = [
+                'clave_conexion' => $conexion->clave_conexion,
+                'chat_id' => $chat->id_chat_proveedor,
+                'tipo_evento' => 'mensaje',
+                'tipo_mensaje' => 'foto',
+                'evento_externo_id' => 'foto-'.$conexion->clave_conexion,
+                'mensaje_proveedor_id' => 'foto-'.$conexion->clave_conexion,
+                'contenido_crudo' => '{"imageMessage":{"mimetype":"image/png"}}',
+                'recibido_en' => now('UTC')->toIso8601String(),
+                'version_contrato' => 'v2-recolector',
+                'multimedia' => [
+                    'identificador_archivo' => $identificador,
+                    'ruta_relativa' => $ruta,
+                    'hash_sha256' => hash('sha256', $contenidoArchivo),
+                    'tamano_bytes' => strlen($contenidoArchivo),
+                    'tipo_mime' => 'image/png',
+                    'nombre_original' => 'foto.png',
+                    'extension' => 'png',
+                ],
+            ];
+
+            $this->enviarFirmado(
+                '/api/pasarela/v1/eventos',
+                $datos,
+                'vista-multimedia-'.$conexion->clave_conexion,
+            )->assertOk()->assertJsonPath('estado', 'aceptado');
+
+            $archivo = ArchivoWhatsapp::query()
+                ->where('conexion_id', $conexion->id)
+                ->where('identificador_archivo', $identificador)
+                ->firstOrFail();
+
+            $rutaVer = '/mensajes/archivos/'.$archivo->id;
+            $rutaDescargar = $rutaVer.'/descargar';
+
+            config([
+                'mensajero.autenticacion.modo' => 'deshabilitado',
+                'mensajero.consulta_local_sin_autenticacion' => false,
+            ]);
+
+            $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+                ->get($rutaVer)->assertForbidden();
+
+            config(['mensajero.consulta_local_sin_autenticacion' => true]);
+
+            $this->get($rutaVer)
+                ->assertOk()
+                ->assertHeader('Content-Type', 'image/png')
+                ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+            $this->get($rutaDescargar)
+                ->assertOk()
+                ->assertHeader('Content-Type', 'application/octet-stream')
+                ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+            $this->get('/mensajes/eventos/'.$archivo->evento_crudo_id)
+                ->assertOk()
+                ->assertSee('Descargar archivo privado')
+                ->assertSee($rutaVer, false);
+
+            // La verificación de integridad no se limita al momento de captura.
+            Storage::disk('mensajero_local')->put($ruta, 'archivo alterado');
+            $this->get($rutaVer)->assertNotFound();
+
+            Storage::disk('mensajero_local')->put($ruta, $contenidoArchivo);
+            $chat->update(['es_monitoreado' => false]);
+
+            $this->get($rutaVer)->assertNotFound();
+            $this->get($rutaDescargar)->assertNotFound();
+
+            $this->assertSame($datos['multimedia']['hash_sha256'], $archivo->fresh()->hash_sha256);
+            $this->assertDatabaseHas('mensajero_eventos_crudos_whatsapp', [
+                'id' => $archivo->evento_crudo_id,
+                'estado_procesamiento' => 'capturado',
+            ]);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     /**
      * @return array{0: ConexionWhatsapp, 1: ChatMonitoreado}
      */
