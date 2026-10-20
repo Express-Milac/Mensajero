@@ -15,7 +15,7 @@
                 <span class="indicador-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5A8.5 8.5 0 1 1 21 11.5z"/><path d="M8 12h8"/></svg></span>
             </div>
             <strong>{{ number_format($mensajesHoy) }}</strong>
-            <small>Actividad de las últimas horas del día</small>
+            <small>Desde el inicio del día, hora local</small>
             <span class="indicador-base"></span>
         </article>
         <article class="card indicador-ejecutivo">
