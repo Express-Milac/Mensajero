@@ -207,7 +207,12 @@ class MultimediaRecolectorSqlServerTest extends TestCase
             $this->get($rutaVer)->assertNotFound();
 
             Storage::disk('mensajero_local')->put($ruta, $contenidoArchivo);
-            $chat->update(['es_monitoreado' => false]);
+            $this->assertTrue($chat->update(['es_monitoreado' => false]));
+            $this->assertFalse($chat->fresh()->es_monitoreado);
+            $this->assertFalse(ChatMonitoreado::query()
+                ->whereKey($chat->id)
+                ->where('es_monitoreado', true)
+                ->exists());
 
             $this->get($rutaVer)->assertNotFound();
             $this->get($rutaDescargar)->assertNotFound();
