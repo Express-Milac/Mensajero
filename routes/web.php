@@ -29,6 +29,9 @@ Route::middleware('mensajero.acceso')->group(function () {
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
         Route::get('/mensajes', [ControladorMensajes::class, 'indice'])
             ->name('mensajes.indice');
+        Route::get('/mensajes/tecnico', [ControladorMensajes::class, 'tecnico'])
+            ->middleware('mensajero.acceso:administrador')
+            ->name('mensajes.tecnico');
         Route::get('/mensajes/grupos/{chat}', [ControladorMensajes::class, 'grupo'])
             ->whereNumber('chat')
             ->name('mensajes.grupo');
