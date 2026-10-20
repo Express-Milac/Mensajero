@@ -94,6 +94,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
                 ->assertSee('Abrir conversación')
+                ->assertSee('data-carrusel-mensajes', false)
+                ->assertSee('data-grupo-id="'.$grupo->id.'"', false)
+                ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
+                ->assertDontSee('carrusel-grupos-vertical', false)
                 ->assertSee('js/panorama.js')
                 ->assertSee('data-panorama-url');
 
@@ -105,6 +109,8 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertHeader('X-Content-Type-Options', 'nosniff')
                 ->assertSee('data-panorama-indicadores', false)
                 ->assertSee('data-panorama-tarjetas', false)
+                ->assertSee('data-grupo-id="'.$grupo->id.'"', false)
+                ->assertSee('data-carrusel-mensajes', false)
                 ->assertSee('Llegó '.$contenido)
                 ->assertDontSee($contenido, false)
                 ->assertDontSee($secretoPrueba, false)
@@ -257,7 +263,12 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Lo que está pasando en los grupos')
                 ->assertSee('Captura recolector '.$sufijo)
                 ->assertSee('Captura pasarela '.$sufijo)
-                ->assertSee('Carrusel vertical de tarjetas de grupos');
+                ->assertSee('Grupos con carruseles independientes')
+                ->assertSee('Carrusel de mensajes de Captura recolector '.$sufijo)
+                ->assertSee('Carrusel de mensajes de Captura pasarela '.$sufijo)
+                ->assertSee('data-grupo-id="'.$grupoRecolector->id.'"', false)
+                ->assertSee('data-grupo-id="'.$grupoPasarela->id.'"', false)
+                ->assertDontSee('carrusel-grupos-vertical', false);
 
             // Sin mensajes capturados hoy, el filtro debe omitir los dos.
             $this->get('/mensajes?actividad=hoy')
