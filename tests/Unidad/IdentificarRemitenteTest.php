@@ -46,6 +46,34 @@ final class IdentificarRemitenteTest extends TestCase
         $this->assertSame('Persona sin identificar', $identificador->nombre($lid));
     }
 
+    public function test_utiliza_telefono_asociado_a_lid_solo_si_la_clave_lo_confirma(): void
+    {
+        $evento = new EventoCrudoWhatsapp([
+            'conexion_id' => 1,
+            'id_remitente_proveedor' => '81234567890@lid',
+            'contenido' => json_encode([
+                'key' => [
+                    'participant' => '81234567890@lid',
+                    'participantPn' => '5214611234567@s.whatsapp.net',
+                ],
+                'message' => ['conversation' => 'Saludos'],
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $identificador = new IdentificarRemitente;
+        $this->assertSame('Teléfono +5214611234567', $identificador->nombre($evento));
+
+        $evento->contenido = json_encode([
+            'key' => [
+                'participant' => 'otro@lid',
+                'participantPn' => '5214611234567@s.whatsapp.net',
+            ],
+            'message' => ['conversation' => 'Saludos'],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->assertSame('Persona sin identificar', $identificador->nombre($evento));
+    }
+
     public function test_no_utiliza_nombres_incrustados_en_el_texto_ni_identificadores_falsos(): void
     {
         $evento = new EventoCrudoWhatsapp([
