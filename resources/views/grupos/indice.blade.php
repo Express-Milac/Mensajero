@@ -63,8 +63,10 @@
             @endif
         </form>
 
-        @if(config('mensajero.autenticacion.modo') === 'deshabilitado')
-            <div class="catalogo-aviso" role="note"><strong>Configuración local:</strong> el gestor de visibilidad está cerrado por defecto. Para usarlo en este equipo, activa la opción local explícita. El monitoreo de WhatsApp continúa reservado a un administrador autenticado.</div>
+        @if(config('mensajero.autenticacion.modo') === 'deshabilitado' && ! $puedeCambiarVista)
+            <div class="catalogo-aviso" role="note"><strong>Gestión protegida:</strong> solo puedes consultar grupos. La opción de mostrar u ocultar necesita activación explícita para desarrollo local. Autorizar capturas requiere un administrador autenticado.</div>
+        @elseif(config('mensajero.autenticacion.modo') === 'deshabilitado')
+            <div class="catalogo-aviso" role="note"><strong>Gestión local temporal habilitada:</strong> puedes mostrar u ocultar grupos uno por uno. No puedes modificar qué grupos captura WhatsApp. Desactiva el permiso local al terminar las pruebas.</div>
         @endif
 
         <div class="catalogo-ayuda-gestor" role="note"><strong>Dos decisiones diferentes:</strong> «Mostrar en tablero» solo cambia la presentación. «Autorizar monitoreo» permite capturar mensajes; no se modifica al ocultar un grupo. Ningún registro histórico se elimina.</div>
