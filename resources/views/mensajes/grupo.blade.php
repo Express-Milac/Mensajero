@@ -137,6 +137,9 @@
                             default => 'Otro estado',
                         } }}</span>
                         <a href="{{ route('mensajes.evento', $registro->id) }}">Ver evidencia →</a>
+                        @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
+                            <a href="{{ route('remitentes.editar', $registro->id) }}">Identificar remitente →</a>
+                        @endif
                     </div>
                 </div>
             </article>
