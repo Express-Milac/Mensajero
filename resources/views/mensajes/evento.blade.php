@@ -19,6 +19,9 @@
                 <span class="etiqueta-tipo-mensaje">{{ ucfirst($registro->tipo_evento) }} · {{ $registro->tipo_mensaje ?: 'Tipo sin clasificar' }}</span>
                 <h2>Mensaje original</h2>
                 <p class="detalle-remitente">{{ $remitente }}</p>
+                @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
+                    <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $registro->id) }}">Identificar o corregir nombre de esta persona →</a>
+                @endif
                 <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y · H:i:s') ?? 'Sin fecha' }}</time>
             </div>
             <span class="estado-mensaje">{{ match ($registro->estado_procesamiento) {
