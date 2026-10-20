@@ -39,6 +39,11 @@ return [
         'cola' => env('MENSAJERO_COLA_NORMALIZACION', 'mensajero_normalizacion'),
     ],
 
+    'multimedia' => [
+        // Tope de descarga/visualización: 250 MiB. Sin enlaces públicos.
+        'limite_consulta_bytes' => (int) env('MENSAJERO_LIMITE_CONSULTA_MULTIMEDIA_BYTES', 262144000),
+    ],
+
     'base_datos' => [
         'prefijo_tablas' => 'mensajero_',
     ],
