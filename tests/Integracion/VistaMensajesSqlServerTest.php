@@ -93,6 +93,45 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee($contenido, false)
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
+                ->assertSee('Abrir conversación')
+                ->assertSee('js/panorama.js')
+                ->assertSee('data-panorama-url');
+
+            // La actualización entrega solo los fragmentos, sin revelar
+            // secretos ni renderizar un documento HTML completo.
+            $this->get('/mensajes/actualizacion')
+                ->assertOk()
+                ->assertHeader('Cache-Control', 'private, no-store, max-age=0')
+                ->assertHeader('X-Content-Type-Options', 'nosniff')
+                ->assertSee('data-panorama-indicadores', false)
+                ->assertSee('data-panorama-tarjetas', false)
+                ->assertSee('Llegó '.$contenido)
+                ->assertDontSee($contenido, false)
+                ->assertDontSee($secretoPrueba, false)
+                ->assertDontSee($identificadorPrivado, false)
+                ->assertDontSee('<!doctype html>', false);
+
+            // Otro mensaje aparece en la respuesta de actualización,
+            // sin necesidad de normalizarlo ni volver a cargar la página.
+            $mensajeNuevo = 'Nuevo mensaje visible sin recargar '.$sufijo;
+            $capturaNueva = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
+                conexionId: (int) $conexion->id,
+                chatId: $grupo->id_chat_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: 'vista-nuevo-'.$sufijo,
+                mensajeProveedorId: 'vista-nuevo-'.$sufijo,
+                contenidoCrudo: json_encode(['message' => ['conversation' => $mensajeNuevo]], JSON_THROW_ON_ERROR),
+                recibidoEn: CarbonImmutable::now('UTC')->addSecond(),
+                versionContrato: 'v3-recolector',
+                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+            ));
+            $this->assertSame('aceptado', $capturaNueva->estado);
+
+            $this->get('/mensajes/actualizacion?actividad=hoy&orden=recientes')
+                ->assertOk()
+                ->assertSee($mensajeNuevo)
+                ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Abrir conversación');
 
             $this->get('/tablero')
