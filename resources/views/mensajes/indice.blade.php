@@ -1,5 +1,5 @@
 <x-layout title="Panorama de conversaciones">
-    <section class="intro compact introduccion-ejecutiva" data-panorama-url="{{ route('mensajes.actualizacion') }}" data-panorama-intervalo="12000">
+    <section class="intro compact introduccion-ejecutiva" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-panorama-intervalo="12000">
         <p class="eyebrow">MENSAJERO MILAC · PANORAMA DE CONVERSACIONES</p>
         <h1>Lo que está pasando en los grupos</h1>
         <p class="muted">Mensajes recientes, personas que participan y movimiento del día. Abre un grupo para consultar toda la conversación.</p>
