@@ -29,7 +29,7 @@ final class AnalizarPanoramaContenido
      * @param  Collection<int, EventoCrudoWhatsapp>  $eventos
      * @return array<string, mixed>
      */
-    public function ejecutar(Collection $eventos, ExtraerContenidoWhatsapp $extraer): array
+    public function ejecutar(Collection $eventos, ExtraerContenidoWhatsapp $extraer, ?IdentificarRemitente $identificador = null): array
     {
         $temas = [];
         foreach (self::TEMAS as $nombre => $patron) {
@@ -41,6 +41,8 @@ final class AnalizarPanoramaContenido
         $totalAcuerdos = 0;
         $totalRevision = 0;
         $remitentes = [];
+
+        $identificador?->precargar($eventos);
 
         foreach ($eventos as $evento) {
             try {
@@ -56,9 +58,12 @@ final class AnalizarPanoramaContenido
             if (is_string($remitente) && $remitente !== '') {
                 $clave = hash('sha256', (string) $evento->conexion_id.'|'.$remitente);
                 if (isset($remitentes[$clave]) === false) {
-                    $remitentes[$clave] = ['clave' => $clave, 'nombre' => 'Remitente '.strtoupper(substr($clave, 0, 8)), 'mensajes' => 0];
+                    $remitentes[$clave] = ['clave' => $clave, 'nombre' => $identificador?->nombre($evento) ?? 'Persona sin identificar', 'mensajes' => 0];
                 }
                 $remitentes[$clave]['mensajes']++;
+                if ($identificador !== null && $remitentes[$clave]['nombre'] === 'Persona sin identificar') {
+                    $remitentes[$clave]['nombre'] = $identificador->nombre($evento);
+                }
             }
 
             if ($texto === '') {
