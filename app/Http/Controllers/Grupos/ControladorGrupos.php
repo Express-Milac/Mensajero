@@ -17,6 +17,11 @@ class ControladorGrupos extends Controller
         $buscar = trim((string) $request->query('buscar', ''));
 
         $origen = $request->query('origen', 'todos');
+        $estado = $request->query('estado', 'todos');
+
+        if (in_array($estado, ['todos', 'monitoreados', 'no_monitoreados', 'inactivos'], true) === false) {
+            $estado = 'todos';
+        }
 
         if (in_array($origen, ['todos', 'recolector', 'otras'], true) === false) {
             $origen = 'todos';
@@ -36,6 +41,14 @@ class ControladorGrupos extends Controller
             });
         }
 
+        if ($estado === 'monitoreados') {
+            $consulta->where('es_monitoreado', true)->where('es_activo', true);
+        } elseif ($estado === 'no_monitoreados') {
+            $consulta->where('es_monitoreado', false);
+        } elseif ($estado === 'inactivos') {
+            $consulta->where('es_activo', false);
+        }
+
         if ($buscar !== '') {
             $consulta->where(function ($subconsulta) use ($buscar) {
                 $subconsulta
@@ -52,7 +65,14 @@ class ControladorGrupos extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return view('grupos.indice', compact('grupos', 'buscar', 'origen'));
+        $base = ChatMonitoreado::query()->where('tipo_chat', 'grupo');
+        $estadisticas = [
+            'descubiertos' => (clone $base)->count(),
+            'autorizados' => (clone $base)->where('es_monitoreado', true)->where('es_activo', true)->count(),
+            'sin_monitorear' => (clone $base)->where('es_monitoreado', false)->count(),
+        ];
+
+        return view('grupos.indice', compact('grupos', 'buscar', 'origen', 'estado', 'estadisticas'));
     }
 
     public function actualizarMonitoreo(
