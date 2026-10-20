@@ -11,6 +11,7 @@
     }
 
     const intervalo = Number(pantalla.dataset.panoramaIntervalo) || 12000;
+    const botonActualizar = document.querySelector('[data-actualizar-manual]');
     let consultando = false;
 
     // Los botones solo desplazan mensajes de su propio grupo.
@@ -189,6 +190,10 @@
         }
 
         consultando = true;
+        if (botonActualizar) {
+            botonActualizar.disabled = true;
+        }
+        estado.textContent = 'Consultando nuevos mensajes...';
 
         try {
             const url = new URL(pantalla.dataset.panoramaUrl, window.location.origin);
@@ -223,25 +228,32 @@
             const indicadores = actualizarIndicadores(documento);
             const tarjetas = actualizarTarjetas(documento);
 
-            if (indicadores || tarjetas) {
-                estado.textContent = 'Mensajes actualizados · ' +
-                    new Intl.DateTimeFormat('es-MX', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                    }).format(new Date());
-                estado.classList.remove('actualizacion-fallida');
-            } else if (estado.classList.contains('actualizacion-fallida')) {
-                estado.textContent = 'Actualización automática activa · Cada 12 segundos';
-                estado.classList.remove('actualizacion-fallida');
-            }
+            const horaConsulta = new Intl.DateTimeFormat('es-MX', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }).format(new Date());
+
+            estado.textContent = (indicadores || tarjetas ? 'Mensajes actualizados' : 'Sin cambios') +
+                ' · Última consulta ' + horaConsulta;
+            estado.classList.remove('actualizacion-fallida');
         } catch {
             estado.textContent = 'No se pudo actualizar la información. Reintentando automáticamente.';
             estado.classList.add('actualizacion-fallida');
         } finally {
             consultando = false;
+            if (botonActualizar) {
+                botonActualizar.disabled = false;
+            }
         }
     }
 
+    botonActualizar?.addEventListener('click', comprobar);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            void comprobar();
+        }
+    });
     window.setInterval(comprobar, intervalo);
+    void comprobar();
 })();
