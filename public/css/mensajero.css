@@ -83,3 +83,6 @@
 .descarga-multimedia{display:inline-flex;align-items:center;min-height:42px;padding:10px 14px;background:#e7f2df;border-radius:10px;color:#194c3c;font-weight:650;font-size:13px;text-decoration:none}
 .descarga-multimedia:focus-visible{outline:3px solid #336a57;outline-offset:3px}
 @media(max-width:800px){.evidencia-multimedia img,.evidencia-multimedia video{width:100%;max-height:320px}.evidencia-multimedia audio{width:100%}}
+
+/* Navegación móvil: conservar acceso a Inicio, Grupos y Mensajes. */
+@media(max-width:800px){.navigation{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;margin-top:15px;overflow-x:auto;scrollbar-width:thin}.navigation .nav{flex:0 0 auto;font-size:13px;padding:10px 13px}.brand{font-size:13px}}
