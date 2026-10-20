@@ -103,9 +103,10 @@ class VistaMensajesSqlServerTest extends TestCase
 
             // La actualización entrega solo los fragmentos, sin revelar
             // secretos ni renderizar un documento HTML completo.
-            $this->get('/mensajes/actualizacion')
+            $respuestaActualizacion = $this->get('/mensajes/actualizacion');
+            $respuestaActualizacion
                 ->assertOk()
-                ->assertHeader('Cache-Control', 'private, no-store, max-age=0')
+                ->assertHeader('Cache-Control')
                 ->assertHeader('X-Content-Type-Options', 'nosniff')
                 ->assertSee('data-panorama-indicadores', false)
                 ->assertSee('data-panorama-tarjetas', false)
@@ -116,6 +117,13 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
                 ->assertDontSee('<!doctype html>', false);
+
+            // Symfony puede reordenar las directivas del encabezado.
+            // Verificar su conjunto, no la serialización de su orden.
+            $this->assertEqualsCanonicalizing(
+                ['max-age=0', 'no-store', 'private'],
+                array_map('trim', explode(',', (string) $respuestaActualizacion->headers->get('Cache-Control'))),
+            );
 
             // Otro mensaje aparece en la respuesta de actualización,
             // sin necesidad de normalizarlo ni volver a cargar la página.
