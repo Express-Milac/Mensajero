@@ -50,7 +50,14 @@
         </aside>
         <main>
             <header class="barra-superior">
-                <div class="ruta-superior"><span class="marca-punto"></span> EXPRESS MILAC <span class="separador-ruta">/</span> MENSAJERO</div>
+                <div class="ruta-superior">
+                    @if(file_exists(public_path('identidad/logo-milac-color.png')))
+                        <img class="logotipo-milac-cabecera" src="{{ asset('identidad/logo-milac-color.png') }}" alt="Express MILAC">
+                    @else
+                        <span class="marca-punto"></span> EXPRESS MILAC
+                    @endif
+                    <span class="separador-ruta">/</span> MENSAJERO
+                </div>
                 <div class="barra-superior-derecha">
                     <span class="etiqueta-corporativa">PLATAFORMA CORPORATIVA</span>
                     @auth
