@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mensajes;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArchivoWhatsapp;
+use App\Models\ChatMonitoreado;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -33,18 +34,25 @@ final class ControladorArchivosWhatsapp extends Controller
     private function entregar(int $archivoId, bool $descargar): BinaryFileResponse
     {
         $archivo = ArchivoWhatsapp::query()
-            ->with('eventoCrudo.chat')
+            ->with('eventoCrudo')
             ->findOrFail($archivoId);
 
         $evento = $archivo->eventoCrudo;
-        $grupo = $evento?->chat;
 
-        if ($grupo === null
-            || $grupo->tipo_chat !== 'grupo'
-            || ! $grupo->es_monitoreado
-            || ! $grupo->es_activo
-            || (int) $grupo->id !== (int) $archivo->chat_monitoreado_id
-            || (int) $grupo->conexion_id !== (int) $archivo->conexion_id
+        // La autorización nunca depende de una relación cargada previamente
+        // ni de la autorización existente cuando se capturó el archivo.
+        // Se consulta en SQL Server para cada solicitud, incluso descargas.
+        $grupoAutorizado = ChatMonitoreado::query()
+            ->whereKey($archivo->chat_monitoreado_id)
+            ->where('conexion_id', $archivo->conexion_id)
+            ->where('tipo_chat', 'grupo')
+            ->where('es_monitoreado', true)
+            ->where('es_activo', true)
+            ->exists();
+
+        if (! $grupoAutorizado
+            || $evento === null
+            || (int) $evento->chat_monitoreado_id !== (int) $archivo->chat_monitoreado_id
             || (int) $evento->conexion_id !== (int) $archivo->conexion_id
             || $archivo->estado !== 'verificado'
             || $archivo->disco !== 'mensajero_local') {
