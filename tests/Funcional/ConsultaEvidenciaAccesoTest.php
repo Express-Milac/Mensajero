@@ -13,7 +13,9 @@ class ConsultaEvidenciaAccesoTest extends TestCase
             'mensajero.consulta_local_sin_autenticacion' => false,
         ]);
 
+        $this->get('/tablero')->assertForbidden();
         $this->get('/mensajes')->assertForbidden();
+        $this->get('/mensajes/tecnico')->assertForbidden();
         $this->get('/mensajes/grupos/10020')->assertForbidden();
         $this->get('/mensajes/eventos/11070')->assertForbidden();
     }
