@@ -4,6 +4,7 @@ use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
 use App\Http\Controllers\Mensajes\ControladorArchivosWhatsapp;
 use App\Http\Controllers\Mensajes\ControladorMensajes;
+use App\Http\Controllers\Remitentes\ControladorRemitentes;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,15 @@ Route::middleware('mensajero.acceso')->group(function () {
         Route::get('/mensajes/actualizacion', [ControladorMensajes::class, 'actualizacion'])
             ->middleware('throttle:15,1')
             ->name('mensajes.actualizacion');
+        Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
+            ->name('remitentes.indice');
+        Route::get('/mensajes/remitentes/eventos/{evento}', [ControladorRemitentes::class, 'editar'])
+            ->whereNumber('evento')
+            ->name('remitentes.editar');
+        Route::patch('/mensajes/remitentes/eventos/{evento}', [ControladorRemitentes::class, 'actualizar'])
+            ->whereNumber('evento')
+            ->middleware(['mensajero.gestion_remitentes', 'throttle:20,1'])
+            ->name('remitentes.actualizar');
         Route::get('/mensajes/tecnico', [ControladorMensajes::class, 'tecnico'])
             ->middleware('mensajero.acceso:administrador')
             ->name('mensajes.tecnico');
