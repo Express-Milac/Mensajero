@@ -68,10 +68,11 @@
         <div class="carrusel-grupos-vertical" tabindex="0" role="region" aria-label="Carrusel vertical de tarjetas de grupos">
             @forelse($tarjetas as $indice => $tarjeta)
                 @php($grupo = $tarjeta['grupo'])
+                @php($identidadVisual = (int) $grupo->id % 6)
                 @php($iconos = ['💬', '👥', '📣', '🗨️', '📝', '📨'])
-                <article class="tarjeta-directiva tarjeta-directiva-{{ $indice % 6 }}">
+                <article class="tarjeta-directiva tarjeta-directiva-{{ $identidadVisual }}">
                     <div class="tarjeta-directiva-principal">
-                        <div class="icono-tarjeta" aria-hidden="true">{{ $iconos[$indice % count($iconos)] }}</div>
+                        <div class="icono-tarjeta" aria-hidden="true">{{ $iconos[$identidadVisual] }}</div>
                         <div class="titulo-tarjeta">
                             <h3>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h3>
                             <p>{{ $tarjeta['hoy'] }} {{ $tarjeta['hoy'] === 1 ? 'mensaje recibido hoy' : 'mensajes recibidos hoy' }}</p>
