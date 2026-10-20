@@ -84,7 +84,7 @@
                             <span>{{ $grupo->nombre_interno && $grupo->nombre_grupo && $grupo->nombre_interno !== $grupo->nombre_grupo ? $grupo->nombre_grupo : 'Grupo de WhatsApp' }}</span>
                         </div>
                         <div class="gestor-etiquetas">
-                            <span class="catalogo-estado {{ $grupo->es_visible_tablero ? 'activo' : 'inactivo' }}">{{ $grupo->es_visible_tablero ? 'Visible en tablero' : 'Oculto del tablero' }}</span>
+                            <span class="catalogo-estado {{ $grupo->es_visible_tablero ? 'activo' : 'inactivo' }}">{{ ! $grupo->es_visible_tablero ? 'Oculto del tablero' : ($autorizado ? 'Visible en tablero' : 'Visible si se autoriza captura') }}</span>
                             <span class="catalogo-estado {{ $autorizado ? 'activo' : 'neutral' }}">{{ $autorizado ? 'Captura habilitada' : 'Captura no habilitada' }}</span>
                             @if(! $grupo->es_activo)<span class="catalogo-estado inactivo">Grupo inactivo</span>@endif
                         </div>
