@@ -42,6 +42,7 @@
                         <span>Grupos</span>
                     </a>
                     <span class="centro-menu-separador" aria-hidden="true"></span>
+                    <span class="centro-menu-subtitulo">ACCESOS DEL TABLERO</span>
                     <a class="nav" href="{{ route('tablero') }}#temas-clave"><span class="centro-nav-icono" aria-hidden="true">▤</span><span>Temas clave</span></a>
                     <a class="nav" href="{{ route('tablero') }}#acuerdos-explicitos"><span class="centro-nav-icono" aria-hidden="true">✓</span><span>Posibles acuerdos</span></a>
                     <a class="nav" href="{{ route('tablero') }}#menciones-revision"><span class="centro-nav-icono" aria-hidden="true">⚑</span><span>Menciones para revisar</span></a>
