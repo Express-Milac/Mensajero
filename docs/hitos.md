@@ -66,3 +66,52 @@ criterios no estén comprobados.
 Gemini solo después de capturar/consultar con integridad y permisos.
 Toda interpretación deberá conservar enlace a eventos fuente y permitir
 revisión humana antes de alimentar decisiones operativas.
+
+## Enfoque directivo del dashboard — 20/10/2026
+
+El tablero **no evalúa infraestructura, normalización o salud de Redis como
+prioridad gerencial**. La pantalla de entrada (`/tablero`) y el panorama
+(`/mensajes`) presentan las **conversaciones y sus mensajes**, no un
+tablero de tecnología:
+
+- Total de grupos seleccionados, mensajes registrados hoy, grupos con
+  mensajes hoy y fecha del último mensaje almacenado.
+- Carrusel de desplazamiento **vertical**, con tarjetas diferenciadas
+  mediante iconos y colores estables por ID de grupo. Los colores
+  **no** afirman riesgo, importancia, progreso o desempeño.
+- Hasta tres mensajes recientes por tarjeta, con remitente, extracto
+  literal, hora y enlace para abrir el historial. El contenido está
+  escapado en Blade y procede de evidencia persistida; sin IA ni
+  interpretación inventada.
+- Filtros de grupos con/sin mensajes registrados hoy y orden por
+  mensaje reciente, volumen del día o nombre.
+- Distintivo `Ensayo` solo para conexiones técnicas que cumplen
+  exactamente `ensayo-redis-<16 caracteres hexadecimales>`.
+  No se decide si otro grupo es de prueba por su nombre.
+
+El diagnóstico técnico anterior (`/mensajes/tecnico`) mantiene
+contadores de captura, mensajes normalizados y periodos de integridad,
+pero es **acceso de administrador**, cerrado por defecto durante el
+POC sin inicio de sesión. La nueva entrada ejecutiva también exige el
+middleware de consulta protegida, incluso para `/tablero`.
+
+La fase de análisis con Gemini podrá agregar temas, acuerdos, tareas,
+responsables y seguimiento **solamente cuando cada afirmación incluya
+fuentes verificables**. Hasta entonces no debe presentarse como una
+conclusión fáctica a partir de la actividad o de los colores.
+
+### Comprobación agrupada pendiente en Windows
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php routes\web.php tests\Integracion\VistaMensajesSqlServerTest.php tests\Funcional\ConsultaEvidenciaAccesoTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+vendor\bin\phpunit --filter ConsultaEvidenciaAccesoTest
+php artisan view:clear
+```
+
+En localhost, revisar `http://127.0.0.1:8000/tablero`, filtrar
+`?actividad=hoy`, cambiar el orden y abrir las conversaciones. No
+activar trabajadores, no alterar registros históricos ni publicar los
+40 avisos pendientes. Restaurar
+`MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION=false` al terminar.
