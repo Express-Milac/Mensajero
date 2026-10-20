@@ -103,3 +103,56 @@ deben presentar estados vacíos, nunca contenido de muestra inventado.
 **Prohibido** despachar, normalizar o publicar masivamente los 40 avisos
 históricos conocidos, ejecutar `redis-cli FLUSH*` o arrancar trabajadores
 de manera permanente como efecto de este rediseño.
+
+## Menú con destinos verificables (20/10/2026)
+
+Se corrigieron enlaces duplicados y la inconsistencia de diseño detectada
+tras validar la nueva interfaz en Windows.
+
+- **Centro de mando** (`/tablero`): indicadores, análisis literal de
+  menciones y grupos en seguimiento; permanece como vista ejecutiva.
+- **Conversaciones** (`/mensajes`): **vista independiente** para explorar
+  los grupos autorizados, sus últimos ocho mensajes por grupo y enlaces al
+  historial. Cuenta con filtros, búsqueda entre las tarjetas visibles,
+  selección cuadrícula/lista y actualización automática cada 12 segundos,
+  sin mostrar los KPI completos del tablero.
+- **Grupos** (`/grupos`): **catálogo administrativo rediseñado** con
+  búsqueda, filtros de estado (`todos|monitoreados|no_monitoreados|inactivos`),
+  filtro por origen, paginación de 50 y tarjetas. Se muestran grupos
+  descubiertos, cuántos están autorizados y cuántos no se monitorean.
+  «Ver conversación» solo aparece para grupos activos y monitoreados.
+  Activar o detener monitoreo sigue requiriendo administrador, sin
+  excepciones por estar en modo local sin login.
+- **Temas clave / Posibles acuerdos / Menciones para revisar**:
+  **accesos del tablero**, no sistemas independientes. Cada enlace lleva
+  a una sección real del Centro de mando. No hay páginas vacías ni
+  notificaciones falsas.
+- **Diagnóstico técnico**: solo administradores autenticados.
+
+Se añadió el estilo `public/css/catalogo-grupos.css` para que catálogo,
+conversaciones y lectura de un grupo compartan la identidad visual del
+Centro de mando, sin modificar su lógica de autorización o evidencia.
+Se corrigió una referencia errónea al PNG del logotipo a color.
+
+**Privacidad**: la ruta `/grupos` ahora exige también la autorización
+`mensajero.consulta_evidencia`, porque su catálogo contiene nombres
+e identificadores internos. En el POC solo se permite desde
+`127.0.0.1` con el permiso temporal explícito; no se expone a red.
+El resto de rutas conserva sus protecciones.
+
+**Validación local** (no ejecutar contra producción):
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Grupos\ControladorGrupos.php app\Http\Controllers\Mensajes\ControladorMensajes.php routes\web.php tests\Integracion\VistaMensajesSqlServerTest.php tests\Funcional\ConsultaEvidenciaAccesoTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+vendor\bin\phpunit --filter ConsultaEvidenciaAccesoTest
+node --check public\js\panorama.js
+php artisan view:clear
+```
+
+Comprobar en navegador los tres destinos, los filtros «Monitoreados /
+Sin monitorear», los enlaces al historial y el funcionamiento de las
+tarjetas en móvil. Confirmar que el modo local de prueba no ofrece
+botones que puedan cambiar la lista autorizada sin autenticación.
+No se realizó migración ni se procesaron los 40 avisos históricos.
