@@ -29,6 +29,15 @@ final class ControladorMensajes extends Controller
     }
 
     /**
+     * Catálogo de conversaciones consultables: separado del tablero con
+     * indicadores directivos. Conserva filtros y carruseles individuales.
+     */
+    public function conversaciones(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): View
+    {
+        return view('mensajes.conversaciones', $this->datosPanorama($request, $extraer, $analizador));
+    }
+
+    /**
      * El navegador consulta periódicamente este fragmento, sin recargar
      * la página y sin exponer rutas ni datos adicionales.
      */
