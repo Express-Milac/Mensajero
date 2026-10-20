@@ -678,3 +678,12 @@ main h2{letter-spacing:-.65px}
 @media(prefers-reduced-motion:reduce){
   .barra-corporativa .nav,.accion-primaria,.accion-secundaria,.tarjeta-directiva .fragmento-grupo{transition:none}
 }
+
+/* La variante oficial a color del logotipo, cuando sea proporcionada. */
+.logotipo-milac-cabecera{
+  display:inline-block;max-height:31px;max-width:146px;object-fit:contain;
+  width:auto;height:auto;margin-right:4px;
+}
+@media(max-width:800px){
+  .logotipo-milac-cabecera{max-height:23px;max-width:108px}
+}
