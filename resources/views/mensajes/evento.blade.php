@@ -37,7 +37,25 @@
     @if($registro->archivo)
         <section class="card evidence-section">
             <h2>Archivo privado asociado</h2>
-            <p class="muted">El binario no está publicado por esta interfaz; permanece en el almacenamiento privado.</p>
+            <p class="muted">Archivo conservado en almacenamiento privado. La consulta comprueba nuevamente autorización, tamaño y SHA-256 antes de entregarlo.</p>
+            @if($registro->archivo->estado === 'verificado')
+                @php($enlaceArchivo = route('mensajes.archivo.ver', $registro->archivo->id))
+                @php($tipoArchivo = strtolower(trim(explode(';', $registro->archivo->tipo_mime ?? '')[0])))
+                <div class="media-evidence">
+                    @if(in_array($tipoArchivo, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true))
+                        <img src="{{ $enlaceArchivo }}" alt="Fotografía adjunta al evento #{{ $registro->id }}" loading="lazy" referrerpolicy="no-referrer">
+                    @elseif(in_array($tipoArchivo, ['audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav'], true))
+                        <audio controls preload="none" src="{{ $enlaceArchivo }}">Tu navegador no puede reproducir este audio.</audio>
+                    @elseif(in_array($tipoArchivo, ['video/mp4', 'video/webm'], true))
+                        <video controls preload="metadata" playsinline src="{{ $enlaceArchivo }}">Tu navegador no puede reproducir este video.</video>
+                    @else
+                        <p class="fine">Este formato se entrega mediante descarga protegida.</p>
+                    @endif
+                    <a class="media-download" href="{{ route('mensajes.archivo.descargar', $registro->archivo->id) }}">Descargar archivo privado →</a>
+                </div>
+            @else
+                <p class="fine">El archivo todavía no está verificado; su descarga no está disponible.</p>
+            @endif
             <dl class="evidence-metadata">
                 <div><dt>Tipo</dt><dd>{{ $registro->archivo->tipo_mime ?: 'Desconocido' }}</dd></div>
                 <div><dt>Nombre</dt><dd>{{ $registro->archivo->nombre_original ?: 'No informado' }}</dd></div>
