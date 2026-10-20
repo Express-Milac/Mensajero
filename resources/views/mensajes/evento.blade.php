@@ -41,7 +41,7 @@
             @if($registro->archivo->estado === 'verificado')
                 @php($enlaceArchivo = route('mensajes.archivo.ver', $registro->archivo->id))
                 @php($tipoArchivo = strtolower(trim(explode(';', $registro->archivo->tipo_mime ?? '')[0])))
-                <div class="media-evidence">
+                <div class="evidencia-multimedia">
                     @if(in_array($tipoArchivo, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true))
                         <img src="{{ $enlaceArchivo }}" alt="Fotografía adjunta al evento #{{ $registro->id }}" loading="lazy" referrerpolicy="no-referrer">
                     @elseif(in_array($tipoArchivo, ['audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav'], true))
@@ -51,7 +51,7 @@
                     @else
                         <p class="fine">Este formato se entrega mediante descarga protegida.</p>
                     @endif
-                    <a class="media-download" href="{{ route('mensajes.archivo.descargar', $registro->archivo->id) }}">Descargar archivo privado →</a>
+                    <a class="descarga-multimedia" href="{{ route('mensajes.archivo.descargar', $registro->archivo->id) }}">Descargar archivo privado →</a>
                 </div>
             @else
                 <p class="fine">El archivo todavía no está verificado; su descarga no está disponible.</p>
