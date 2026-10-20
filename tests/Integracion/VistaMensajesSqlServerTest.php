@@ -84,7 +84,7 @@ class VistaMensajesSqlServerTest extends TestCase
             ]);
 
             $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
-                ->get('/mensajes')
+                ->get('/tablero')
                 ->assertOk()
                 ->assertSee('Lo que está pasando en los grupos')
                 ->assertSee('Mensajero MILAC')
@@ -158,6 +158,28 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee($mensajeNuevo)
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Abrir conversación');
+
+            // Opciones de menú independientes: cada destino tiene
+            // una pantalla y una función distinta.
+            $this->get('/mensajes')
+                ->assertOk()
+                ->assertSee('Explorar conversaciones')
+                ->assertSee('Conversaciones recientes')
+                ->assertSee('Grupo de prueba visual '.$sufijo)
+                ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
+                ->assertDontSee('Temas clave del día');
+
+            $this->get('/grupos?estado=monitoreados&origen=recolector')
+                ->assertOk()
+                ->assertSee('Catálogo de grupos')
+                ->assertSee('Grupos disponibles')
+                ->assertSee('Grupo de prueba visual '.$sufijo)
+                ->assertSee('Ver conversación')
+                ->assertSee('Acceso controlado');
+
+            $this->get('/grupos?estado=no_monitoreados')
+                ->assertOk()
+                ->assertDontSee('Grupo de prueba visual '.$sufijo);
 
             $this->get('/tablero')
                 ->assertOk()
