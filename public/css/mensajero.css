@@ -203,3 +203,39 @@
 @media(max-width:1100px){.indicadores-ejecutivos{grid-template-columns:repeat(2,minmax(0,1fr))}.fragmentos-grupo{grid-template-columns:1fr}}
 @media(max-width:700px){.indicadores-ejecutivos{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.indicador-ejecutivo{padding:16px 14px;min-height:145px}.indicador-ejecutivo strong{font-size:28px}.indicador-ejecutivo strong.indicador-fecha{font-size:19px}.titulo-panorama{align-items:flex-start;flex-direction:column}.filtros-panorama{display:grid;grid-template-columns:1fr}.filtros-panorama select{width:100%}.carrusel-grupos-vertical{max-height:72vh;padding-right:6px}.tarjeta-directiva{padding:18px 14px}.icono-tarjeta{width:44px;height:44px;flex-basis:44px;font-size:20px}.titulo-tarjeta h3{font-size:16px}.fragmentos-grupo{margin:16px 0 12px}.nota-interpretacion{display:block}.nota-interpretacion>span{display:block;max-width:none;margin-top:10px;text-align:left}}
 @media(prefers-reduced-motion:reduce){.tarjeta-directiva{transition:none}.tarjeta-directiva:hover{transform:none}}
+
+/* Carrusel realmente vertical: una tarjeta de grupo por fila y
+   mensajes dentro de cada tarjeta también en una columna. */
+.carrusel-grupos-vertical{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-auto-flow:row;
+  align-content:start;
+  overflow-y:auto;
+  overflow-x:hidden;
+  max-height:min(780px,75vh);
+  scroll-snap-type:y proximity;
+}
+.carrusel-grupos-vertical>.tarjeta-directiva{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+.fragmentos-grupo{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.fragmento-grupo{width:100%;min-width:0}
+.estado-actualizacion{
+  margin:8px 3px 12px;
+  color:#436754;
+  font-size:12px;
+  line-height:1.5;
+  min-height:20px;
+}
+.estado-actualizacion.actualizacion-fallida{color:#99652f}
+@media(max-width:700px){
+  .carrusel-grupos-vertical{max-height:65vh}
+  .fragmentos-grupo{display:flex;flex-direction:column}
+}
