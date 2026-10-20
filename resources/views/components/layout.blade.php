@@ -3,28 +3,61 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Mensajero' }} · MILAC</title>
+    <meta name="theme-color" content="#17212c">
+    <title>{{ $title ?? 'Mensajero' }} · Express MILAC</title>
     <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}?v={{ filemtime(public_path('css/mensajero.css')) }}">
 </head>
 <body>
     <div class="shell">
-        <aside>
-            <a class="brand" href="{{ route('tablero') }}"><span class="mark">M</span> MENSAJERO</a>
-            <p class="eyebrow">CONVERSACIONES</p>
+        <aside class="barra-corporativa" aria-label="Navegación principal">
+            <a class="brand marca-corporativa" href="{{ route('tablero') }}" aria-label="Express MILAC, Mensajero, inicio">
+                @if(file_exists(public_path('identidad/logo-milac-blanco.png')))
+                    <img class="logotipo-milac" src="{{ asset('identidad/logo-milac-blanco.png') }}" alt="Express MILAC">
+                @else
+                    <span class="marca-texto">EXPRESS <strong>MILAC</strong></span>
+                @endif
+                <span class="marca-separador"></span>
+                <span class="marca-producto">MENSAJERO <small>Inteligencia de conversaciones</small></span>
+            </a>
+            <p class="eyebrow etiqueta-menu">ESPACIO DE TRABAJO</p>
             <nav class="navigation">
-                <a class="nav {{ request()->routeIs('tablero') ? 'active' : '' }}" href="{{ route('tablero') }}">Inicio</a>
-                <a class="nav {{ request()->routeIs('grupos.*') ? 'active' : '' }}" href="{{ route('grupos.indice') }}">Grupos</a>
+                <a class="nav {{ request()->routeIs('tablero') ? 'active' : '' }}" href="{{ route('tablero') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+                    <span>Resumen ejecutivo</span>
+                </a>
+                <a class="nav {{ request()->routeIs('grupos.*') ? 'active' : '' }}" href="{{ route('grupos.indice') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+                    <span>Administrar grupos</span>
+                </a>
                 @if(config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
-                    <a class="nav {{ request()->routeIs('mensajes.*') && !request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}">Panorama de grupos</a>
+                    <a class="nav {{ request()->routeIs('mensajes.*') && !request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.5-.8L4 20l1.8-5A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h7"/></svg>
+                        <span>Conversaciones</span>
+                    </a>
                     @if(config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar'))
-                        <a class="nav {{ request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.tecnico') }}">Diagnóstico técnico</a>
+                        <a class="nav {{ request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.tecnico') }}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg>
+                            <span>Diagnóstico técnico</span>
+                        </a>
                     @endif
                 @endif
             </nav>
-            <div class="aside-note">Lo que se dice.<br>Lo que importa.</div>
+            <div class="aside-note nota-marca">
+                <span class="nota-marca-linea"></span>
+                <strong>Lo que se dice.<br>Lo que importa.</strong>
+                <small>EXPRESS MILAC · USO INTERNO</small>
+            </div>
         </aside>
         <main>
-            <header><span>MILAC / Mensajero</span>@auth<form method="post" action="{{ route('salir') }}">@csrf<button class="text-button">Cerrar sesión</button></form>@endauth</header>
+            <header class="barra-superior">
+                <div class="ruta-superior"><span class="marca-punto"></span> EXPRESS MILAC <span class="separador-ruta">/</span> MENSAJERO</div>
+                <div class="barra-superior-derecha">
+                    <span class="etiqueta-corporativa">PLATAFORMA CORPORATIVA</span>
+                    @auth
+                        <form method="post" action="{{ route('salir') }}">@csrf<button class="text-button boton-salir">Cerrar sesión</button></form>
+                    @endauth
+                </div>
+            </header>
             {{ $slot }}
         </main>
     </div>
