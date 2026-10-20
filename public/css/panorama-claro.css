@@ -175,3 +175,5 @@
 
 /* Separación real entre destinos y accesos rápidos del menú. */
 .panorama-claro .centro-menu-separador{display:block;height:1px;background:#edf0f4;margin:8px 12px}
+
+.panorama-claro .centro-menu-subtitulo{display:block;padding:7px 14px 4px;font-size:9px;font-weight:850;letter-spacing:1.3px;color:#8998a8}
