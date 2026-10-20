@@ -86,3 +86,63 @@
 
 /* Navegación móvil: conservar acceso a Inicio, Grupos y Mensajes. */
 @media(max-width:800px){.navigation{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;margin-top:15px;overflow-x:auto;scrollbar-width:thin}.navigation .nav{flex:0 0 auto;font-size:13px;padding:10px 13px}.brand{font-size:13px}}
+
+/* Historial operativo: conversación legible sin alterar los eventos crudos. */
+.conversacion-lectura{background:#eaf0eb;border:1px solid #dce7df;border-radius:18px;padding:24px clamp(14px,3vw,32px);display:flex;flex-direction:column;gap:12px}
+.encabezado-conversacion{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+.encabezado-conversacion h2{font-size:19px;margin:0;color:#24473d}
+.encabezado-conversacion p{margin:0}
+.separador-fecha{align-self:center;background:#d7e4d9;border:1px solid #c6d8ca;border-radius:100px;color:#345a4a;padding:7px 18px;font-size:13px;font-weight:650;margin:12px 0 5px}
+.mensaje-fila{display:flex;align-items:flex-start;gap:11px;max-width:860px}
+.mensaje-avatar{width:37px;height:37px;flex:0 0 37px;display:grid;place-items:center;border-radius:50%;background:#cde1d3;color:#234f3f;font-size:15px;font-weight:750;line-height:1}
+.mensaje-burbuja{flex:1;min-width:0;background:#fff;border:1px solid #d6e4da;border-radius:6px 16px 16px 16px;padding:15px 18px;box-shadow:0 2px 9px #173b2907}
+.mensaje-cabecera{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:5px 16px;margin-bottom:8px}
+.mensaje-autor{font-size:14px;font-weight:750;color:#244d3e;overflow-wrap:anywhere}
+.mensaje-cabecera time{font-size:12px;color:#5e7369;white-space:nowrap}
+.mensaje-texto{font-size:15px;line-height:1.7;color:#18342d;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 14px}
+.mensaje-pie{border-top:1px solid #eaf0eb;padding-top:10px;display:flex;gap:7px 15px;align-items:center;flex-wrap:wrap;font-size:12px;color:#677971}
+.mensaje-pie a{margin-left:auto;font-size:13px;font-weight:750;color:#235c49;text-decoration:none}
+.mensaje-pie a:hover{text-decoration:underline}
+.mensaje-pie a:focus-visible{outline:2px solid #315f4e;outline-offset:3px}
+.etiqueta-tipo-mensaje{display:inline-block;color:#3c644e;background:#eaf2e8;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;margin-bottom:4px}
+.conversacion-lectura .evidencia-multimedia{margin:10px 0 14px}
+.conversacion-lectura .evidencia-multimedia img{max-height:260px}
+.conversacion-lectura .evidencia-multimedia video{max-height:270px}
+.conversacion-lectura .descarga-multimedia{font-size:12px;min-height:36px;padding:8px 12px}
+.vista-imagen-multimedia{display:inline-block;max-width:100%;line-height:0}
+.vista-imagen-multimedia:focus-visible{outline:3px solid #336a57;outline-offset:3px}
+.archivo-adjunto{font-size:13px;color:#566d60;margin:0;line-height:1.5}
+
+/* Detalle operativo primero; trazabilidad accesible a petición. */
+.detalle-mensaje{padding:27px 30px}
+.detalle-mensaje-encabezado{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
+.detalle-mensaje-encabezado h2{font-size:24px;margin:6px 0 8px}
+.detalle-remitente{font-size:15px;font-weight:700;color:#224b3c;margin:0 0 5px}
+.detalle-mensaje-encabezado time{font-size:13px;color:#617770}
+.estado-mensaje{font-size:12px;color:#516a60;background:#edf2ef;padding:7px 10px;border-radius:100px;white-space:nowrap}
+.detalle-contenido{font-size:19px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;background:#eff6ef;border-left:4px solid #8dbb94;padding:21px 23px;border-radius:0 12px 12px 0;margin:22px 0 15px;color:#1d3930}
+.detalle-nota{font-size:12px;color:#6a7c74;margin:0}
+.seccion-trazabilidad>.eyebrow{margin:0 0 8px}
+.seccion-trazabilidad h2{margin:0 0 6px}
+.seccion-trazabilidad>.muted{font-size:13px;max-width:720px;margin:8px 0 20px}
+.detalle-tecnico{border:1px solid #dae5dd;border-radius:12px;background:#fbfdfb;margin-top:12px;padding:0 17px}
+.detalle-tecnico summary{cursor:pointer;color:#275748;font-size:14px;font-weight:700;padding:17px 0;line-height:1.4}
+.detalle-tecnico summary:hover{color:#153f31}
+.detalle-tecnico summary:focus-visible{outline:2px solid #315f4e;outline-offset:3px}
+.detalle-tecnico[open]{padding-bottom:17px}
+.detalle-tecnico .evidence-metadata{margin:0}
+.detalle-tecnico .raw-json{margin:12px 0 0;max-height:420px}
+.detalle-tecnico .fine{line-height:1.6}
+
+@media(max-width:700px){
+ .conversacion-lectura{padding:16px 12px;gap:11px}
+ .mensaje-fila{gap:7px}
+ .mensaje-avatar{width:30px;height:30px;flex-basis:30px;font-size:13px}
+ .mensaje-burbuja{padding:13px 12px}
+ .mensaje-cabecera time{white-space:normal}
+ .mensaje-pie a{margin-left:0}
+ .detalle-mensaje{padding:20px 16px}
+ .detalle-mensaje-encabezado{flex-wrap:wrap}
+ .detalle-contenido{font-size:17px;padding:16px}
+ .detalle-tecnico{padding:0 12px}
+}
