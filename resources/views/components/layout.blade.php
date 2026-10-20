@@ -3,31 +3,34 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#17212c">
+    <meta name="theme-color" content="#ffffff">
     <title>{{ $title ?? 'Mensajero' }} · Express MILAC</title>
     <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}?v={{ filemtime(public_path('css/mensajero.css')) }}">
+    @if(request()->routeIs('tablero') || request()->routeIs('mensajes.indice'))
+        <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
+    @endif
 </head>
-<body>
+<body class="{{ request()->routeIs('tablero', 'mensajes.indice') ? 'panorama-claro' : '' }}">
     <div class="shell">
         <aside class="barra-corporativa" aria-label="Navegación principal">
             <a class="brand marca-corporativa" href="{{ route('tablero') }}" aria-label="Express MILAC, Mensajero, inicio">
-                @if(file_exists(public_path('identidad/logo-milac-blanco.png')))
+                @if(file_exists(public_path('identidad/logo-milac-color.png')))
                     <img class="logotipo-milac" src="{{ asset('identidad/logo-milac-blanco.png') }}" alt="Express MILAC">
                 @else
                     <span class="marca-texto">EXPRESS <strong>MILAC</strong></span>
                 @endif
                 <span class="marca-separador"></span>
-                <span class="marca-producto">MENSAJERO <small>Inteligencia de conversaciones</small></span>
+                <span class="marca-producto">Mensajero <small>Conversaciones y seguimiento</small></span>
             </a>
-            <p class="eyebrow etiqueta-menu">ESPACIO DE TRABAJO</p>
+            <p class="eyebrow etiqueta-menu">MENSAJERO MILAC</p>
             <nav class="navigation">
                 <a class="nav {{ request()->routeIs('tablero') ? 'active' : '' }}" href="{{ route('tablero') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
-                    <span>Resumen ejecutivo</span>
+                    <span>Centro de mando</span>
                 </a>
                 <a class="nav {{ request()->routeIs('grupos.*') ? 'active' : '' }}" href="{{ route('grupos.indice') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
-                    <span>Administrar grupos</span>
+                    <span>Grupos</span>
                 </a>
                 @if(config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
                     <a class="nav {{ request()->routeIs('mensajes.*') && !request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}">
@@ -41,12 +44,13 @@
                         </a>
                     @endif
                 @endif
+                @if(request()->routeIs('tablero') || request()->routeIs('mensajes.indice'))
+                    <a class="nav" href="{{ route('tablero') }}#temas-clave"><span class="centro-nav-icono" aria-hidden="true">▤</span><span>Temas clave</span></a>
+                    <a class="nav" href="{{ route('tablero') }}#acuerdos-explicitos"><span class="centro-nav-icono" aria-hidden="true">✓</span><span>Posibles acuerdos</span></a>
+                    <a class="nav" href="{{ route('tablero') }}#menciones-revision"><span class="centro-nav-icono" aria-hidden="true">⚑</span><span>Menciones para revisar</span></a>
+                @endif
             </nav>
-            <div class="aside-note nota-marca">
-                <span class="nota-marca-linea"></span>
-                <strong>Lo que se dice.<br>Lo que importa.</strong>
-                <small>EXPRESS MILAC · USO INTERNO</small>
-            </div>
+
         </aside>
         <main>
             <header class="barra-superior">
@@ -59,7 +63,7 @@
                     <span class="separador-ruta">/</span> MENSAJERO
                 </div>
                 <div class="barra-superior-derecha">
-                    <span class="etiqueta-corporativa">PLATAFORMA CORPORATIVA</span>
+                    <span class="etiqueta-corporativa">CONSULTA DE GRUPOS AUTORIZADOS</span>
                     @auth
                         <form method="post" action="{{ route('salir') }}">@csrf<button class="text-button boton-salir">Cerrar sesión</button></form>
                     @endauth
