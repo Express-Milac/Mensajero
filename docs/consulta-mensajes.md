@@ -199,3 +199,42 @@ vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTes
 Después se debe revisar la interfaz desde un navegador **solo local**.
 Una prueba visual no debe usar túneles públicos ni modificar los
 40 avisos históricos que permanecen pendientes de publicación.
+
+## Mejora conjunta de experiencia operativa (20/10/2026)
+
+Después de revisar visualmente las pantallas de grupo #10020 y evento
+#11070, el historial pasó a presentar los mensajes como una
+**conversación de solo lectura**: separadores de fecha local, remitente,
+hora, contenido en bloques legibles, adjuntos privados integrados y
+enlace visible a la evidencia original. El orden continúa siendo
+**del más reciente al más antiguo**; no se infiere dirección
+entrante/saliente ni estados de entrega que la captura no justifica.
+Los estados de procesamiento permanecen visibles en segundo plano.
+Los filtros anteriores y la paginación no cambian.
+
+La pantalla individual presenta primero el mensaje, remitente y fecha.
+Identificadores, hash SHA-256 y versión de contrato pasan a un panel
+desplegable. El contenido crudo, depurado para ocultar secretos e
+identificadores sensibles, también se muestra bajo un panel desplegable
+con el mismo rótulo `Vista protegida del contenido crudo`.
+**No se borra ni altera ningún dato de SQL Server** por este cambio;
+el detalle forense sigue disponible y la vista protegida no es
+equivalente al original completo.
+
+La visualización de multimedia en historial y detalle comparte la misma
+plantilla y las mismas rutas privadas de Laravel. Un grupo revocado
+continúa sin permisos de lectura, y la entrega revalida tamaño y SHA-256.
+
+**Validación conjunta pendiente en Windows:**
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php tests\Integracion\VistaMensajesSqlServerTest.php tests\Integracion\MultimediaRecolectorSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter "VistaMensajesSqlServerTest|MultimediaRecolectorSqlServerTest"
+```
+
+Una vez aprobadas, actualizar `http://127.0.0.1:8000/mensajes/grupos/10020`
+y `http://127.0.0.1:8000/mensajes/eventos/11070`, únicamente
+en el equipo local. No se activan tareas Redis ni se despachan los
+40 avisos pendientes. Deshabilitar nuevamente el acceso sin inicio
+de sesión al finalizar la revisión.
