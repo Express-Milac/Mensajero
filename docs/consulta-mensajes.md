@@ -238,3 +238,54 @@ y `http://127.0.0.1:8000/mensajes/eventos/11070`, únicamente
 en el equipo local. No se activan tareas Redis ni se despachan los
 40 avisos pendientes. Deshabilitar nuevamente el acceso sin inicio
 de sesión al finalizar la revisión.
+
+## Carrusel vertical y mensajes nuevos sin recarga (20/10/2026)
+
+Tras la captura real de un mensaje por el recolector dedicado, se corrigió
+el tablero directivo (`/tablero` y `/mensajes`) para que las tarjetas
+**y sus extractos** se apilen verticalmente. El CSS utiliza una sola columna
+y scroll vertical con límite de altura, sin scroll horizontal de tarjetas.
+El CSS y JavaScript llevan versión basada en la fecha de modificación del
+archivo para no reutilizar estilos viejos del navegador.
+
+El panorama se **actualiza automáticamente cada 12 segundos**, sin
+recargar el documento. El navegador consulta de forma asíncrona la ruta
+GET `/mensajes/actualizacion`, reutilizando los filtros aplicados;
+el servidor responde solo con indicadores y tarjetas representados en
+Blade. El navegador sustituye fragmentos solo si su contenido cambia,
+conserva el desplazamiento y procura conservar el foco por ID de grupo.
+En pestañas ocultas no solicita actualización. Si hay un error, la página
+sigue visible y reintenta en el siguiente intervalo.
+
+La nueva ruta utiliza los mismos middlewares de control de acceso que
+`/mensajes`, además de limitación de peticiones. La respuesta es
+`private, no-store` y `nosniff`. En el POC no permite acceso desde redes
+externas, y el contenido de cada mensaje se escapa como texto de Blade.
+**No usa publicación Redis ni cambios de tablas**.
+
+La actualización es por **consultas periódicas**, no por eventos push
+instantáneos. Se espera una demora típica de hasta aproximadamente
+12 segundos más la latencia de captura/red. Si se detiene el recolector,
+el tablero no puede mostrar mensajes que no llegaron a SQL Server.
+
+### Validación agrupada en Windows
+
+Con `DB_DATABASE=mensajero_test`, entorno local y sin modificar el POC:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php routes\web.php tests\Integracion\VistaMensajesSqlServerTest.php tests\Funcional\ConsultaEvidenciaAccesoTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+vendor\bin\phpunit --filter ConsultaEvidenciaAccesoTest
+node --check public\js\panorama.js
+php artisan view:clear
+```
+
+Después, en `http://127.0.0.1:8000/tablero`, realizar una recarga
+forzada **única tras instalar la mejora** para adquirir CSS/JS nuevos,
+mandar un mensaje de texto **nuevo** al grupo de ensayo autorizado y
+esperar hasta 12–20 segundos **sin recargar la página**. Confirmar que
+los indicadores y el extracto del grupo cambian por sí solos. Si no,
+revisar la pestaña de red de las herramientas del navegador para
+`/mensajes/actualizacion` y su código HTTP. Esta función no actualiza
+todavía el historial de grupo abierto: su alcance es el tablero.
