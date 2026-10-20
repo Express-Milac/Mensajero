@@ -134,7 +134,7 @@ final class ControladorMensajes extends Controller
                 ->limit(300)
                 ->get();
 
-        $analisis = $analizador->ejecutar($muestra, $extraer);
+        $analisis = $analizador->ejecutar($muestra, $extraer, $identificador);
         $nombresGrupos = $grupos->mapWithKeys(fn (ChatMonitoreado $grupo): array => [
             $grupo->id => $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre'),
         ])->all();
