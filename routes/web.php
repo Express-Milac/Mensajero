@@ -30,6 +30,11 @@ Route::middleware('mensajero.acceso')->group(function () {
         ->middleware('mensajero.consulta_evidencia')
         ->name('grupos.indice');
 
+    Route::patch('/grupos/{chat}/visibilidad', [ControladorGrupos::class, 'actualizarVisibilidad'])
+        ->whereNumber('chat')
+        ->middleware(['mensajero.consulta_evidencia', 'mensajero.gestion_grupos', 'throttle:30,1'])
+        ->name('grupos.visibilidad.actualizar');
+
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
         Route::get('/mensajes', [ControladorMensajes::class, 'conversaciones'])
             ->name('mensajes.indice');
