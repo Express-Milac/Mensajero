@@ -6,14 +6,14 @@
     <meta name="theme-color" content="#ffffff">
     <title>{{ $title ?? 'Mensajero' }} · Express MILAC</title>
     <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}?v={{ filemtime(public_path('css/mensajero.css')) }}">
-    @if(request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo'))
+    @if(request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*'))
         <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
     @endif
-    @if(request()->routeIs('grupos.indice', 'mensajes.indice', 'mensajes.grupo'))
+    @if(request()->routeIs('grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*'))
         <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     @endif
 </head>
-<body class="{{ request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo') ? 'panorama-claro' : '' }}">
+<body class="{{ request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*') ? 'panorama-claro' : '' }}">
     <div class="shell">
         <aside class="barra-corporativa" aria-label="Navegación principal">
             <a class="brand marca-corporativa" href="{{ route('tablero') }}" aria-label="Express MILAC, Mensajero, inicio">
@@ -36,6 +36,10 @@
                     <a class="nav {{ request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}" @if(request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.5-.8L4 20l1.8-5A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h7"/></svg>
                         <span>Conversaciones</span>
+                    </a>
+                    <a class="nav {{ request()->routeIs('remitentes.*') ? 'active' : '' }}" href="{{ route('remitentes.indice') }}" @if(request()->routeIs('remitentes.*')) aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
+                        <span>Remitentes</span>
                     </a>
                     <a class="nav {{ request()->routeIs('grupos.indice') ? 'active' : '' }}" href="{{ route('grupos.indice') }}" @if(request()->routeIs('grupos.indice')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3zM16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 6"/></svg>
