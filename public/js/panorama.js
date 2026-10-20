@@ -12,7 +12,50 @@
 
     const intervalo = Number(pantalla.dataset.panoramaIntervalo) || 12000;
     const botonActualizar = document.querySelector('[data-actualizar-manual]');
+    const campoBusqueda = document.querySelector('[data-buscar-conversaciones]');
+    const resultadoBusqueda = document.querySelector('[data-resultado-busqueda]');
+    const botonesModo = Array.from(document.querySelectorAll('[data-modo-tarjetas]'));
+    let modoActual = 'cuadricula';
     let consultando = false;
+
+    // Búsqueda deliberadamente acotada a los mensajes visibles de cada
+    // tarjeta. No consulta ni expone JSON completo ni grupos no autorizados.
+    function normalizar(valor) {
+        return String(valor ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+    }
+
+    function aplicarBusqueda() {
+        const consulta = normalizar(campoBusqueda?.value?.trim());
+        const tarjetas = Array.from(zonaGrupos.querySelectorAll('[data-grupo-id]'));
+        let visibles = 0;
+        for (const tarjeta of tarjetas) {
+            const encontrado = consulta === '' || normalizar(tarjeta.dataset.textoBusqueda).includes(consulta);
+            tarjeta.hidden = !encontrado;
+            if (encontrado) {
+                visibles++;
+            }
+        }
+        if (resultadoBusqueda) {
+            resultadoBusqueda.hidden = consulta === '';
+            resultadoBusqueda.textContent = consulta === ''
+                ? ''
+                : visibles + (visibles === 1 ? ' grupo coincide' : ' grupos coinciden') +
+                    ' con la búsqueda entre los mensajes recientes.';
+        }
+    }
+
+    campoBusqueda?.addEventListener('input', aplicarBusqueda);
+    for (const boton of botonesModo) {
+        boton.addEventListener('click', () => {
+            modoActual = boton.dataset.modoTarjetas === 'lista' ? 'lista' : 'cuadricula';
+            zonaGrupos.querySelector('.lista-grupos-directivos')?.classList.toggle('modo-lista', modoActual === 'lista');
+            for (const opcion of botonesModo) {
+                const activo = opcion.dataset.modoTarjetas === modoActual;
+                opcion.classList.toggle('activo', activo);
+                opcion.setAttribute('aria-pressed', String(activo));
+            }
+        });
+    }
 
     // Los botones solo desplazan mensajes de su propio grupo.
     zonaGrupos.addEventListener('click', (evento) => {
@@ -227,6 +270,9 @@
 
             const indicadores = actualizarIndicadores(documento);
             const tarjetas = actualizarTarjetas(documento);
+            if (tarjetas) {
+                aplicarBusqueda();
+            }
 
             const horaConsulta = new Intl.DateTimeFormat('es-MX', {
                 hour: '2-digit',
