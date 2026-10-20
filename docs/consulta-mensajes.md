@@ -110,3 +110,62 @@ http://127.0.0.1:8000/mensajes
 El POC y la interfaz no sustituyen aún pruebas prolongadas de disponibilidad,
 normalización con Redis real ni reconciliación independiente de los intervalos
 de integridad.
+
+
+## Incremento funcional: visualizar y descargar multimedia privada (20/10/2026)
+
+La fase 1 incorpora dos rutas nuevas, ambas bajo los **mismos dos
+middlewares de acceso y consulta de evidencia** que los mensajes:
+
+- `GET /mensajes/archivos/{archivo}`: muestra imagen, audio o video
+  compatible en el navegador, y fuerza descarga de otros tipos.
+- `GET /mensajes/archivos/{archivo}/descargar`: descarga el archivo.
+
+La página de evidencia `/mensajes/eventos/{evento}` ofrece fotografía,
+reproductor de audio o video, según el tipo declarado, y enlace de
+descarga. La respuesta vuelve a determinar el MIME desde el archivo
+real; **PDF, documentos y tipos no admitidos nunca se representan como
+HTML ejecutable**. No se crean enlaces permanentes y la ruta física no
+aparece en la interfaz.
+
+Cada solicitud comprueba de nuevo: autenticación/autorización, chat aún
+activo y monitoreado, correspondencia del archivo con evento/grupo/
+conexión, estado verificado, disco privado, estructura segura de ruta,
+ubicación real dentro de la raíz (también frente a enlaces simbólicos),
+existencia, tamaño y SHA-256. El límite de consulta es **250 MiB** por
+defecto y puede ajustarse mediante
+`MENSAJERO_LIMITE_CONSULTA_MULTIMEDIA_BYTES`. Al devolver el archivo se
+incluyen `Cache-Control: private, no-store` y
+`X-Content-Type-Options: nosniff`. Hay límites de solicitudes por
+ruta. **La descarga no normaliza mensajes ni altera el buzón SQL**.
+
+Requisitos: los binarios ya deben existir en el mismo
+`MENSAJERO_RUTA_ALMACENAMIENTO` que utiliza el recolector; una
+instalación en dos máquinas necesita un volumen privado compartido o
+traslado durable de archivos verificado. La ruta no se infiere desde la
+BD sin comprobaciones. Esta función no descarga archivos de WhatsApp
+por sí sola.
+
+### Validación conjunta pendiente en Windows / `mensajero_test`
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+
+php -l app\Http\Controllers\Mensajes\ControladorArchivosWhatsapp.php
+php -l tests\Integracion\MultimediaRecolectorSqlServerTest.php
+php -l routes\web.php
+
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorArchivosWhatsapp.php routes\web.php tests\Integracion\MultimediaRecolectorSqlServerTest.php
+
+vendor\bin\phpunit -c phpunit.integracion.xml --filter MultimediaRecolectorSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+vendor\bin\phpunit --filter ConsultaEvidenciaAccesoTest
+
+php artisan route:list --path=mensajes
+```
+
+La nueva prueba de integración cubre **acceso denegado por defecto**,
+visualización privada, descarga, integridad alterada y revocación del
+grupo. La pantalla debe revisarse posteriormente en un navegador local
+con un archivo real del recolector. **No activar procesamiento masivo
+ni tocar los 40 avisos pendientes por este incremento**.
