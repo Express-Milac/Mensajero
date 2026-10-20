@@ -289,3 +289,42 @@ los indicadores y el extracto del grupo cambian por sí solos. Si no,
 revisar la pestaña de red de las herramientas del navegador para
 `/mensajes/actualizacion` y su código HTTP. Esta función no actualiza
 todavía el historial de grupo abierto: su alcance es el tablero.
+
+## Carruseles independientes por grupo (20/10/2026)
+
+Ajuste de alcance solicitado tras el primer rediseño: **cada grupo es su
+propio carrusel de mensajes**, no existe un carrusel único que contenga
+a todos los grupos. Las tarjetas de los grupos se distribuyen en una
+cuadrícula responsive (dos columnas en escritorio amplio; una en
+ventanas estrechas), y la página conserva su desplazamiento normal.
+
+Cada tarjeta conserva encabezado, ícono/color por identificador y
+enlace al historial; dentro tiene su propia zona desplazable
+verticalmente con **hasta ocho mensajes recientes**, remitente, fecha
+y extracto conservado. Para grupos con más de tres mensajes aparecen
+controles ↑ y ↓ que afectan exclusivamente esa tarjeta. También se
+puede usar rueda, tacto o teclado sobre la zona enfocada.
+
+La actualización protegida del panorama continúa cada 12 segundos,
+pero ahora identifica cada tarjeta por `data-grupo-id` y reemplaza
+únicamente grupos cambiados: conserva los carruseles sin novedades,
+el desplazamiento de cada grupo, el mensaje que el usuario estaba
+leyendo cuando todavía está entre los ocho visibles y el foco de
+los controles. No cambia la cola de WhatsApp ni Redis.
+
+**Validación de una sola pasada en Windows:**
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php tests\Integracion\VistaMensajesSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+node --check public\js\panorama.js
+php artisan view:clear
+```
+En el tablero `http://127.0.0.1:8000/tablero` actualizar
+una vez para incorporar la nueva distribución. Después enviar
+un mensaje al grupo de pruebas y esperar la actualización sin
+recargar la página: solo deben cambiar indicadores y tarjeta
+correspondiente. Si un grupo tiene más de tres mensajes,
+comprobar que ↑/↓ funcionan sin desplazar los mensajes de otro.
+Requiere `mensajero_test` y mantener las restricciones
+de acceso local.
