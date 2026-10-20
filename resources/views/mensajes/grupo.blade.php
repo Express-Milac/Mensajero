@@ -27,8 +27,27 @@
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="secondary">Aplicar filtro</button>
-            @if($tipo !== '')<a href="{{ route('mensajes.grupo', $grupo->id) }}">Limpiar</a>@endif
+            <div>
+                <label for="tipo_mensaje">Tipo de mensaje</label>
+                <select id="tipo_mensaje" name="tipo_mensaje">
+                    <option value="">Todos</option>
+                    @foreach(['texto' => 'Texto', 'foto' => 'Fotografías', 'video' => 'Videos', 'audio' => 'Audios', 'documento' => 'Documentos', 'ubicacion' => 'Ubicaciones', 'contacto' => 'Contactos', 'otro' => 'Otros'] as $clave => $nombre)
+                        <option value="{{ $clave }}" @selected($tipoMensaje === $clave)>{{ $nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="desde">Desde</label>
+                <input id="desde" type="date" name="desde" value="{{ $desde }}" aria-label="Fecha desde">
+            </div>
+            <div>
+                <label for="hasta">Hasta</label>
+                <input id="hasta" type="date" name="hasta" value="{{ $hasta }}" aria-label="Fecha hasta">
+            </div>
+            <button type="submit" class="secondary">Filtrar mensajes</button>
+            @if($tipo !== '' || $tipoMensaje !== '' || $desde !== '' || $hasta !== '')
+                <a href="{{ route('mensajes.grupo', $grupo->id) }}">Limpiar filtros</a>
+            @endif
         </form>
     </section>
 
