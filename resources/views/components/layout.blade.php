@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Mensajero' }} · MILAC</title>
-    <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}?v={{ filemtime(public_path('css/mensajero.css')) }}">
 </head>
 <body>
     <div class="shell">
