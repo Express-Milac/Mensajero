@@ -110,6 +110,7 @@ final class ControladorMensajes extends Controller
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $identificador->nombre($evento),
+                    'tiene_remitente' => is_string($evento->id_remitente_proveedor) && $evento->id_remitente_proveedor !== '',
                     'texto' => Str::limit($this->resumen($evento, $extraer), 190),
                     'fecha' => $evento->recibido_en,
                 ])->all(),
