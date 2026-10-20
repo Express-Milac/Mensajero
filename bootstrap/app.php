@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AutorizarGestionGrupos;
+use App\Http\Middleware\AutorizarGestionRemitentes;
 use App\Http\Middleware\ProtegerConsultaEvidencia;
 use App\Http\Middleware\RequerirAccesoMensajero;
 use App\Http\Middleware\VerificarFirmaMeta;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'mensajero.acceso' => RequerirAccesoMensajero::class,
             'mensajero.consulta_evidencia' => ProtegerConsultaEvidencia::class,
             'mensajero.gestion_grupos' => AutorizarGestionGrupos::class,
+            'mensajero.gestion_remitentes' => AutorizarGestionRemitentes::class,
             'mensajero.firma_meta' => VerificarFirmaMeta::class,
             'mensajero.firma_pasarela' => VerificarFirmaPasarela::class,
         ]);
