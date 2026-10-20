@@ -87,30 +87,57 @@
 
     <p class="fine processing-help">Estado «Capturado»: evidencia original almacenada en SQL Server; la normalización automática sigue desactivada. No impide consultar el texto y su evidencia.</p>
 
-    <section class="event-list" aria-label="Eventos del grupo">
+    <section class="conversacion-lectura" aria-label="Mensajes del grupo">
+        <div class="encabezado-conversacion">
+            <h2>Conversación registrada</h2>
+            <p class="fine">{{ $eventos->total() }} eventos · Del más reciente al más antiguo · Solo lectura</p>
+        </div>
+        @php($diaAnterior = null)
         @forelse($eventos as $fila)
             @php($registro = $fila['evento'])
-            <article class="card event-card">
-                <div class="event-header">
-                    <div class="event-badges">
-                        <span class="badge {{ $registro->tipo_evento === 'mensaje' ? '' : 'neutral' }}">{{ ucfirst($registro->tipo_evento) }}</span>
-                        <span class="badge neutral">{{ $registro->tipo_mensaje ?: 'Tipo histórico sin clasificar' }}</span>
-                        <span class="badge {{ $registro->estado_procesamiento === 'normalizado' ? '' : 'neutral' }}">{{ match ($registro->estado_procesamiento) {
+            @php($fechaLocal = $registro->recibido_en?->timezone(config('app.timezone')))
+            @php($dia = $fechaLocal?->format('Y-m-d') ?? 'sin-fecha')
+            @if($dia !== $diaAnterior)
+                <div class="separador-fecha" role="heading" aria-level="3">
+                    {{ $fechaLocal?->format('d/m/Y') ?? 'Fecha desconocida' }}
+                </div>
+                @php($diaAnterior = $dia)
+            @endif
+            <article class="mensaje-fila" aria-label="Evento #{{ $registro->id }}">
+                <span class="mensaje-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($fila['remitente'], 0, 1)) }}</span>
+                <div class="mensaje-burbuja">
+                    <div class="mensaje-cabecera">
+                        <strong class="mensaje-autor">{{ $fila['remitente'] }}</strong>
+                        <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $fechaLocal?->format('H:i:s') ?? 'Sin hora' }}</time>
+                    </div>
+                    @if($registro->tipo_evento !== 'mensaje')
+                        <span class="etiqueta-tipo-mensaje">{{ match ($registro->tipo_evento) {
+                            'edicion' => 'Edición',
+                            'eliminacion' => 'Eliminación',
+                            'reaccion' => 'Reacción',
+                            default => 'Otro evento',
+                        } }}</span>
+                    @endif
+                    <p class="mensaje-texto">{{ \Illuminate\Support\Str::limit($fila['resumen'], 1500) }}</p>
+                    @if($registro->archivo)
+                        @include('mensajes.partes.multimedia-privada', ['archivo' => $registro->archivo])
+                    @endif
+                    <div class="mensaje-pie">
+                        <span>Evento #{{ $registro->id }}</span>
+                        @if($registro->tipo_mensaje && $registro->tipo_mensaje !== 'texto')
+                            <span>{{ ucfirst($registro->tipo_mensaje) }}</span>
+                        @endif
+                        @if($registro->id_mensaje_citado_proveedor)
+                            <span>Con cita</span>
+                        @endif
+                        <span>{{ match ($registro->estado_procesamiento) {
                             'capturado' => 'Capturado',
                             'normalizado' => 'Normalizado',
                             'pendiente_semantica' => 'Pendiente de interpretación',
-                            default => ucfirst(str_replace('_', ' ', $registro->estado_procesamiento)),
+                            default => 'Otro estado',
                         } }}</span>
+                        <a href="{{ route('mensajes.evento', $registro->id) }}">Ver evidencia →</a>
                     </div>
-                    <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Fecha desconocida' }}</time>
-                </div>
-                <p class="event-sender">{{ $fila['remitente'] }}</p>
-                <p class="event-text">{{ \Illuminate\Support\Str::limit($fila['resumen'], 600) }}</p>
-                <div class="event-footer">
-                    <span>Evento #{{ $registro->id }}</span>
-                    @if($registro->archivo)<span>Archivo: {{ $registro->archivo->estado }}</span>@endif
-                    @if($registro->id_mensaje_citado_proveedor)<span>Contiene una cita</span>@endif
-                    <a href="{{ route('mensajes.evento', $registro->id) }}">Ver evidencia →</a>
                 </div>
             </article>
         @empty
