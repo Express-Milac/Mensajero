@@ -76,7 +76,7 @@ final class ControladorMensajes extends Controller
                 ->pluck('total', 'chat_monitoreado_id');
 
         $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos): array {
-            // Se limita la consulta de contenido a los tres mensajes más
+            // Se limita la consulta de contenido a ocho mensajes más
             // recientes por grupo. Nunca se descargan todos los eventos.
             $recientes = EventoCrudoWhatsapp::query()
                 ->with('mensaje.remitente')
@@ -84,7 +84,7 @@ final class ControladorMensajes extends Controller
                 ->where('tipo_evento', 'mensaje')
                 ->orderByDesc('recibido_en')
                 ->orderByDesc('id')
-                ->limit(3)
+                ->limit(8)
                 ->get();
 
             return [
