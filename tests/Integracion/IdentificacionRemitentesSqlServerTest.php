@@ -102,6 +102,43 @@ class IdentificacionRemitentesSqlServerTest extends TestCase
                 ->assertSee('Laura Martínez — Tráfico');
             $this->get('/mensajes/remitentes')->assertOk()->assertSee('Laura Martínez — Tráfico');
 
+            // El mismo JID en otra conexión nunca hereda el nombre
+            // corporativo asignado a la primera conexión.
+            $otraConexion = ConexionWhatsapp::query()->create([
+                'clave_conexion' => 'identidad-otra-'.$sufijo,
+                'proveedor' => 'recolector_whatsapp',
+                'estado' => 'conectado',
+            ]);
+            $otroGrupo = ChatMonitoreado::query()->create([
+                'conexion_id' => $otraConexion->id,
+                'id_chat_proveedor' => 'identidad-otra-'.$sufijo.'@g.us',
+                'nombre_grupo' => 'Otro grupo identidad '.$sufijo,
+                'tipo_chat' => 'grupo',
+                'es_activo' => true,
+                'es_monitoreado' => true,
+            ]);
+            $otraCaptura = $capturar->ejecutar(new EventoWhatsappEntrante(
+                conexionId: (int) $otraConexion->id,
+                chatId: $otroGrupo->id_chat_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: 'identidad-otra-'.$sufijo,
+                mensajeProveedorId: 'identidad-otra-'.$sufijo,
+                contenidoCrudo: json_encode([
+                    'key' => ['remoteJid' => $otroGrupo->id_chat_proveedor, 'participant' => $jid],
+                    'pushName' => 'Otro perfil de WhatsApp',
+                    'message' => ['conversation' => 'Mensaje de otra conexión'],
+                ], JSON_THROW_ON_ERROR),
+                recibidoEn: CarbonImmutable::now('UTC'),
+                versionContrato: 'v3-recolector',
+                remitenteProveedorId: $jid,
+            ));
+            $this->assertSame('aceptado', $otraCaptura->estado);
+            $this->get('/mensajes/grupos/'.$otroGrupo->id)
+                ->assertOk()
+                ->assertSee('Otro perfil de WhatsApp')
+                ->assertDontSee('Laura Martínez — Tráfico');
+
             $this->assertSame($hashOriginal, $evento->fresh()->hash_contenido_sha256);
             $this->assertSame('capturado', $evento->fresh()->estado_procesamiento);
             $this->assertSame(1, IdentidadRemitente::query()->where('conexion_id', $conexion->id)->count());
