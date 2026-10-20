@@ -15,8 +15,10 @@ la cola de Redis ni modificar los mensajes:
 2. `pushName` del mensaje, si WhatsApp lo suministra. Es nombre de
    perfil elegido por el participante, **no identidad verificada**.
 3. Nombre visible o notificación de contacto normalizado, si existe.
-4. Número telefónico solo si el identificador del proveedor tiene el
-   formato de teléfono `@s.whatsapp.net` válido.
+4. Número telefónico si el identificador tiene formato
+   `@s.whatsapp.net` válido o si el mismo mensaje de WhatsApp incluye
+   `key.participantPn` vinculado explícitamente al `participant`
+   del identificador LID observado. Nunca inferirlo de los dígitos del LID.
 5. «Persona sin identificar» para un LID u otro identificador que no
    contenga nombre o teléfono fiable.
 
