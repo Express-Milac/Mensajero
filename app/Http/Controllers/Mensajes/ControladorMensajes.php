@@ -9,6 +9,7 @@ use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use JsonException;
@@ -66,8 +67,14 @@ final class ControladorMensajes extends Controller
 
         $datos = $request->validate([
             'tipo' => ['nullable', 'in:mensaje,edicion,eliminacion,reaccion,otro'],
+            'tipo_mensaje' => ['nullable', 'in:texto,foto,video,audio,documento,ubicacion,contacto,otro'],
+            'desde' => ['nullable', 'date_format:Y-m-d'],
+            'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
         ]);
         $tipo = $datos['tipo'] ?? '';
+        $tipoMensaje = $datos['tipo_mensaje'] ?? '';
+        $desde = $datos['desde'] ?? '';
+        $hasta = $datos['hasta'] ?? '';
 
         $consulta = EventoCrudoWhatsapp::query()
             ->with(['mensaje.remitente', 'archivo'])
@@ -75,6 +82,26 @@ final class ControladorMensajes extends Controller
 
         if ($tipo !== '') {
             $consulta->where('tipo_evento', $tipo);
+        }
+
+        if ($tipoMensaje !== '') {
+            $consulta->where('tipo_mensaje', $tipoMensaje);
+        }
+
+        // Se filtra en hora local visible al usuario, almacenando la
+        // consulta como UTC porque SQL Server datetime2 no tiene zona.
+        $zonaHoraria = (string) config('app.timezone', 'America/Mexico_City');
+
+        if ($desde !== '') {
+            $inicioUtc = CarbonImmutable::parse($desde, $zonaHoraria)
+                ->startOfDay()->utc()->format('Y-m-d H:i:s.u');
+            $consulta->where('recibido_en', '>=', $inicioUtc);
+        }
+
+        if ($hasta !== '') {
+            $finUtc = CarbonImmutable::parse($hasta, $zonaHoraria)
+                ->endOfDay()->utc()->format('Y-m-d H:i:s.u');
+            $consulta->where('recibido_en', '<=', $finUtc);
         }
 
         $eventos = $consulta
@@ -99,7 +126,7 @@ final class ControladorMensajes extends Controller
             ->limit(5)
             ->get();
 
-        return view('mensajes.grupo', compact('grupo', 'eventos', 'periodos', 'totalPeriodos', 'tipo'));
+        return view('mensajes.grupo', compact('grupo', 'eventos', 'periodos', 'totalPeriodos', 'tipo', 'tipoMensaje', 'desde', 'hasta'));
     }
 
     public function evento(
