@@ -70,6 +70,7 @@ final class ControladorMensajes extends Controller
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
             ->where('es_activo', true)
+            ->where('es_visible_tablero', true)
             ->get();
 
         $identificadores = $grupos->pluck('id')->all();
