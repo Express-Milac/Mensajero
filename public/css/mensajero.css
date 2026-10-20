@@ -75,9 +75,9 @@
 @media(max-width:800px){.filter-origin{max-width:none}}
 
 /* Evidencia multimedia: reproducción adaptable sin crear URLs públicas. */
-.media-evidence{display:flex;align-items:flex-start;flex-direction:column;gap:13px;margin:18px 0 12px;max-width:100%}
-.media-evidence img,.media-evidence video{display:block;max-width:100%;width:auto;max-height:460px;border-radius:12px;object-fit:contain;background:#eef3ef;border:1px solid #e0e9e2}
-.media-evidence audio{max-width:100%;width:480px}
-.media-download{display:inline-flex;align-items:center;min-height:42px;padding:10px 14px;background:#e7f2df;border-radius:10px;color:#194c3c;font-weight:650;font-size:13px;text-decoration:none}
-.media-download:focus-visible{outline:3px solid #336a57;outline-offset:3px}
-@media(max-width:800px){.media-evidence img,.media-evidence video{width:100%;max-height:320px}.media-evidence audio{width:100%}}
+.evidencia-multimedia{display:flex;align-items:flex-start;flex-direction:column;gap:13px;margin:18px 0 12px;max-width:100%}
+.evidencia-multimedia img,.evidencia-multimedia video{display:block;max-width:100%;width:auto;max-height:460px;border-radius:12px;object-fit:contain;background:#eef3ef;border:1px solid #e0e9e2}
+.evidencia-multimedia audio{max-width:100%;width:480px}
+.descarga-multimedia{display:inline-flex;align-items:center;min-height:42px;padding:10px 14px;background:#e7f2df;border-radius:10px;color:#194c3c;font-weight:650;font-size:13px;text-decoration:none}
+.descarga-multimedia:focus-visible{outline:3px solid #336a57;outline-offset:3px}
+@media(max-width:800px){.evidencia-multimedia img,.evidencia-multimedia video{width:100%;max-height:320px}.evidencia-multimedia audio{width:100%}}
