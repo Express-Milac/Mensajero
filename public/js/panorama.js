@@ -101,7 +101,10 @@
 
         // Conservar el grupo visible en la pantalla cuando cambie el orden.
         const grupoVisible = Array.from(lista.querySelectorAll(':scope > [data-grupo-id]'))
-            .find((tarjeta) => tarjeta.getBoundingClientRect().bottom > 125);
+            .find((tarjeta) => {
+                const rectangulo = tarjeta.getBoundingClientRect();
+                return rectangulo.bottom > 125 && rectangulo.top < window.innerHeight - 60;
+            });
         const identificadorVisible = grupoVisible?.dataset.grupoId;
         const distanciaVisible = grupoVisible?.getBoundingClientRect().top;
 
