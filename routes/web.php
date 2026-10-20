@@ -26,10 +26,12 @@ Route::middleware('mensajero.acceso')->group(function () {
     Route::get('/tablero', [ControladorMensajes::class, 'indice'])
         ->middleware('mensajero.consulta_evidencia')
         ->name('tablero');
-    Route::get('/grupos', [ControladorGrupos::class, 'indice'])->name('grupos.indice');
+    Route::get('/grupos', [ControladorGrupos::class, 'indice'])
+        ->middleware('mensajero.consulta_evidencia')
+        ->name('grupos.indice');
 
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
-        Route::get('/mensajes', [ControladorMensajes::class, 'indice'])
+        Route::get('/mensajes', [ControladorMensajes::class, 'conversaciones'])
             ->name('mensajes.indice');
         Route::get('/mensajes/actualizacion', [ControladorMensajes::class, 'actualizacion'])
             ->middleware('throttle:15,1')
