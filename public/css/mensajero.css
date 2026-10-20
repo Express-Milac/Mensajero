@@ -687,3 +687,12 @@ main h2{letter-spacing:-.65px}
 @media(max-width:800px){
   .logotipo-milac-cabecera{max-height:23px;max-width:108px}
 }
+
+/* Evitar que la variante compacta de la cabecera heredada reduzca el
+   espacio inferior de la nueva portada ejecutiva. */
+.intro.compact.cabecera-ejecutiva{
+  padding:37px clamp(27px,3.2vw,52px);
+}
+@media(max-width:800px){
+  .intro.compact.cabecera-ejecutiva{padding:28px 21px}
+}
