@@ -95,6 +95,11 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee($identificadorPrivado, false)
                 ->assertSee('Abrir conversación');
 
+            $this->get('/tablero')
+                ->assertOk()
+                ->assertSee('Lo que está pasando en los grupos')
+                ->assertSee('Grupo de prueba visual '.$sufijo);
+
             $this->get('/mensajes?actividad=hoy')
                 ->assertOk()
                 ->assertSee('Grupo de prueba visual '.$sufijo);
