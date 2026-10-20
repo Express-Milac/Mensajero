@@ -1,22 +1,4 @@
 <div data-panorama-indicadores>
-    <section class="centro-metricas" aria-label="Indicadores del día">
-        <article class="centro-metrica">
-            <span class="centro-metrica-icono">▤</span><div><span>Mensajes hoy</span><strong>{{ number_format($mensajesHoy) }}</strong><small>Mensajes recibidos desde medianoche</small></div>
-        </article>
-        <article class="centro-metrica">
-            <span class="centro-metrica-icono naranja">♧</span><div><span>Grupos con mensajes hoy</span><strong>{{ number_format($cantidadConActividad) }} <em>de {{ number_format($totalGrupos) }}</em></strong><small>De los grupos en seguimiento</small></div>
-        </article>
-        <article class="centro-metrica">
-            <span class="centro-metrica-icono violeta">♙</span><div><span>Remitentes detectados</span><strong>{{ number_format($analisis['participantesMuestra']) }}</strong><small>Identificadores distintos en la muestra</small></div>
-        </article>
-        <article class="centro-metrica">
-            <span class="centro-metrica-icono naranja">◷</span><div><span>Último mensaje</span><strong class="centro-hora">{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</strong><small>{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('d/m/Y') ?? 'Sin mensajes registrados' }}</small></div>
-        </article>
-        <article class="centro-metrica centro-metrica-seguimiento">
-            <span class="centro-metrica-icono naranja">▣</span><div><span>Menciones para revisar</span><strong>{{ number_format($analisis['totalRevision']) }}</strong><small>En la muestra · No son alertas validadas</small></div><a href="#menciones-revision" aria-label="Ver menciones para revisar">→</a>
-        </article>
-    </section>
-
     <section class="centro-paneles" id="temas-clave" aria-label="Lectura ejecutiva de conversaciones">
         <article class="centro-panel centro-panel-temas">
             <header><span class="centro-panel-icono">♨</span><h2>Temas clave del día</h2><span class="centro-panel-etiqueta">{{ count($analisis['temas']) }}</span></header>
