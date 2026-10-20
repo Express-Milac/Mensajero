@@ -13,7 +13,7 @@
             <span class="centro-metrica-icono naranja">◷</span><div><span>Último mensaje</span><strong class="centro-hora">{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</strong><small>{{ $ultimaParticipacion?->timezone(config('app.timezone'))->format('d/m/Y') ?? 'Sin mensajes registrados' }}</small></div>
         </article>
         <article class="centro-metrica centro-metrica-seguimiento">
-            <span class="centro-metrica-icono naranja">▣</span><div><span>Menciones para revisar</span><strong>{{ count($analisis['revision']) }}</strong><small>En la muestra · No son alertas validadas</small></div><a href="#menciones-revision" aria-label="Ver menciones para revisar">→</a>
+            <span class="centro-metrica-icono naranja">▣</span><div><span>Menciones para revisar</span><strong>{{ number_format($analisis['totalRevision']) }}</strong><small>En la muestra · No son alertas validadas</small></div><a href="#menciones-revision" aria-label="Ver menciones para revisar">→</a>
         </article>
     </section>
 
