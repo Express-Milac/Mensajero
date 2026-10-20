@@ -31,7 +31,7 @@ class AnalizarPanoramaContenidoTest extends TestCase
         $this->assertContains('Logística y entregas', array_column($resultado['temas'], 'nombre'));
         $this->assertContains('Unidades y operadores', array_column($resultado['temas'], 'nombre'));
         $this->assertSame(2, $resultado['remitentes'][0]['mensajes']);
-        $this->assertStringStartsWith('Remitente ', $resultado['remitentes'][0]['nombre']);
+        $this->assertSame('Persona sin identificar', $resultado['remitentes'][0]['nombre']);
     }
 
     public function test_ignora_texto_ilegible_y_no_usa_metadatos_secretos(): void
