@@ -20,6 +20,7 @@ class ChatMonitoreado extends Model
     {
         return [
             'es_monitoreado' => 'boolean',
+            'es_visible_tablero' => 'boolean',
             'es_activo' => 'boolean',
             'version_autorizacion' => 'integer',
             'visto_primera_vez_en' => 'immutable_datetime',
