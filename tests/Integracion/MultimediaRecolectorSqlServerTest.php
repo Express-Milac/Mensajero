@@ -207,8 +207,27 @@ class MultimediaRecolectorSqlServerTest extends TestCase
             $this->get($rutaVer)->assertNotFound();
 
             Storage::disk('mensajero_local')->put($ruta, $contenidoArchivo);
-            $this->assertTrue($chat->update(['es_monitoreado' => false]));
+
+            // Reproducir la revocación mediante el flujo real y auditado,
+            // nunca mediante una instancia Eloquent con datos obsoletos.
+            $chat = app(CambiarMonitoreoChat::class)->ejecutar(
+                (int) $chat->id,
+                false,
+                'prueba_integracion',
+                null,
+                'Revocación tras captura multimedia',
+            );
+
+            $this->assertFalse($chat->es_monitoreado);
             $this->assertFalse($chat->fresh()->es_monitoreado);
+            $this->assertSame(2, (int) $chat->version_autorizacion);
+            $this->assertDatabaseHas('mensajero_auditoria_monitoreo_chats', [
+                'chat_monitoreado_id' => $chat->id,
+                'version_autorizacion' => 2,
+                'es_monitoreado_anterior' => true,
+                'es_monitoreado_nuevo' => false,
+            ]);
+
             $this->assertFalse(ChatMonitoreado::query()
                 ->whereKey($chat->id)
                 ->where('es_monitoreado', true)
@@ -252,7 +271,7 @@ class MultimediaRecolectorSqlServerTest extends TestCase
             ->where('id_chat_proveedor', $idChat)
             ->firstOrFail();
 
-        app(CambiarMonitoreoChat::class)->ejecutar(
+        $chat = app(CambiarMonitoreoChat::class)->ejecutar(
             (int) $chat->id,
             true,
             'prueba_integracion',
