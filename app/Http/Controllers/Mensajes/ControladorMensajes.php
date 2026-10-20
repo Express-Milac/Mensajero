@@ -16,7 +16,109 @@ use JsonException;
 
 final class ControladorMensajes extends Controller
 {
-    public function indice(): View
+    /**
+     * Panorama directivo: actividad y contenido verificable de cada grupo.
+     * No presenta señales técnicas como indicadores de negocio.
+     */
+    public function indice(Request $request, ExtraerContenidoWhatsapp $extraer): View
+    {
+        $opciones = $request->validate([
+            'actividad' => ['nullable', 'in:todos,hoy,sin_actividad'],
+            'orden' => ['nullable', 'in:recientes,actividad,nombre'],
+        ]);
+
+        $actividad = $opciones['actividad'] ?? 'todos';
+        $orden = $opciones['orden'] ?? 'recientes';
+        $zona = (string) config('app.timezone', 'America/Mexico_City');
+        $inicioDia = CarbonImmutable::now($zona)->startOfDay()->utc();
+        $finDia = CarbonImmutable::now($zona)->endOfDay()->utc();
+
+        $grupos = ChatMonitoreado::query()
+            ->with('conexion')
+            ->where('tipo_chat', 'grupo')
+            ->where('es_monitoreado', true)
+            ->where('es_activo', true)
+            ->get();
+
+        $identificadores = $grupos->pluck('id')->all();
+        $conteos = $identificadores === []
+            ? collect()
+            : EventoCrudoWhatsapp::query()
+                ->select('chat_monitoreado_id')
+                ->selectRaw('COUNT_BIG(*) AS total')
+                ->whereIn('chat_monitoreado_id', $identificadores)
+                ->where('tipo_evento', 'mensaje')
+                ->whereBetween('recibido_en', [
+                    $inicioDia->format('Y-m-d H:i:s.u'),
+                    $finDia->format('Y-m-d H:i:s.u'),
+                ])
+                ->groupBy('chat_monitoreado_id')
+                ->pluck('total', 'chat_monitoreado_id');
+
+        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos): array {
+            // Se limita la consulta de contenido a los tres mensajes más
+            // recientes por grupo. Nunca se descargan todos los eventos.
+            $recientes = EventoCrudoWhatsapp::query()
+                ->with('mensaje.remitente')
+                ->where('chat_monitoreado_id', $grupo->id)
+                ->where('tipo_evento', 'mensaje')
+                ->orderByDesc('recibido_en')
+                ->orderByDesc('id')
+                ->limit(3)
+                ->get();
+
+            return [
+                'grupo' => $grupo,
+                'hoy' => (int) ($conteos[$grupo->id] ?? 0),
+                'ultima' => $recientes->first()?->recibido_en,
+                'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
+                    'id' => $evento->id,
+                    'remitente' => $this->etiquetaRemitente($evento),
+                    'texto' => \\Illuminate\\Support\\Str::limit($this->resumen($evento, $extraer), 190),
+                    'fecha' => $evento->recibido_en,
+                ])->all(),
+                // No inferir que un grupo sea de ensayo por su nombre.
+                'ensayo' => preg_match('/^ensayo-redis-[0-9a-f]{16}$/D', (string) $grupo->conexion?->clave_conexion) === 1,
+            ];
+        });
+
+        $cantidadConActividad = $tarjetas->filter(fn (array $fila): bool => $fila['hoy'] > 0)->count();
+        $mensajesHoy = $tarjetas->sum('hoy');
+        $ultimaParticipacion = $tarjetas->pluck('ultima')->filter()->sortDesc()->first();
+
+        $visibles = $tarjetas->filter(fn (array $fila): bool => match ($actividad) {
+            'hoy' => $fila['hoy'] > 0,
+            'sin_actividad' => $fila['hoy'] === 0,
+            default => true,
+        });
+
+        $visibles = match ($orden) {
+            'actividad' => $visibles->sort(fn (array $a, array $b): int => ($b['hoy'] <=> $a['hoy'])
+                ?: (($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0))),
+            'nombre' => $visibles->sort(fn (array $a, array $b): int => strcasecmp(
+                (string) ($a['grupo']->nombre_interno ?: $a['grupo']->nombre_grupo ?: ''),
+                (string) ($b['grupo']->nombre_interno ?: $b['grupo']->nombre_grupo ?: ''),
+            )),
+            default => $visibles->sort(fn (array $a, array $b): int =>
+                ($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0)),
+        };
+
+        return view('mensajes.indice', [
+            'tarjetas' => $visibles->values(),
+            'totalGrupos' => $tarjetas->count(),
+            'cantidadConActividad' => $cantidadConActividad,
+            'mensajesHoy' => $mensajesHoy,
+            'ultimaParticipacion' => $ultimaParticipacion,
+            'actividad' => $actividad,
+            'orden' => $orden,
+        ]);
+    }
+
+    /**
+     * Diagnóstico separado de la consulta directiva. Acceso restringido
+     * al rol administrador, sin excepción temporal de administrador.
+     */
+    public function tecnico(): View
     {
         $grupos = ChatMonitoreado::query()
             ->with('conexion')
@@ -28,18 +130,16 @@ final class ControladorMensajes extends Controller
             ->orderBy('id')
             ->get();
 
-        // Se clasifica por proveedor técnico, nunca por nombre o estado operativo.
         $gruposRecolector = $grupos->filter(
             fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
         );
         $gruposOtrasConexiones = $grupos->reject(
             fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
         );
-
         $identificadores = $grupos->pluck('id');
         $conexiones = $grupos->pluck('conexion_id')->unique();
 
-        return view('mensajes.indice', [
+        return view('mensajes.tecnico', [
             'grupos' => $grupos,
             'gruposRecolector' => $gruposRecolector,
             'gruposOtrasConexiones' => $gruposOtrasConexiones,
