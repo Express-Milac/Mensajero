@@ -86,7 +86,28 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
                 ->get('/mensajes')
                 ->assertOk()
+                ->assertSee('Lo que está pasando en los grupos')
+                ->assertSee('Grupos y sus mensajes recientes')
+                ->assertSee('Grupo de prueba visual '.$sufijo)
+                ->assertSee('Llegó '.$contenido)
+                ->assertDontSee($contenido, false)
+                ->assertDontSee($secretoPrueba, false)
+                ->assertDontSee($identificadorPrivado, false)
+                ->assertSee('Abrir conversación');
+
+            $this->get('/mensajes?actividad=hoy')
+                ->assertOk()
                 ->assertSee('Grupo de prueba visual '.$sufijo);
+
+            $this->get('/mensajes?orden=nombre')
+                ->assertOk()
+                ->assertSee('Grupo de prueba visual '.$sufijo);
+
+            // Los indicadores de integridad no deben dominar el panorama.
+            $this->get('/mensajes')->assertDontSee('MENSAJES NORMALIZADOS');
+
+            // El diagnóstico exige un administrador, también en el POC sin login.
+            $this->get('/mensajes/tecnico')->assertForbidden();
 
             $this->get('/mensajes/grupos/'.$grupo->id)
                 ->assertOk()
@@ -189,12 +210,16 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
                 ->get('/mensajes')
                 ->assertOk()
-                ->assertSeeInOrder([
-                    'Grupos de WhatsApp del recolector',
-                    'Captura recolector '.$sufijo,
-                    'Pasarelas y otras conexiones',
-                    'Captura pasarela '.$sufijo,
-                ]);
+                ->assertSee('Lo que está pasando en los grupos')
+                ->assertSee('Captura recolector '.$sufijo)
+                ->assertSee('Captura pasarela '.$sufijo)
+                ->assertSee('Carrusel vertical de tarjetas de grupos');
+
+            // Sin mensajes capturados hoy, el filtro debe omitir los dos.
+            $this->get('/mensajes?actividad=hoy')
+                ->assertOk()
+                ->assertDontSee('Captura recolector '.$sufijo)
+                ->assertDontSee('Captura pasarela '.$sufijo);
 
             $this->get('/grupos?origen=recolector')
                 ->assertOk()
