@@ -107,6 +107,12 @@ final class ControladorMensajes extends Controller
         $cantidadConActividad = $tarjetas->filter(fn (array $fila): bool => $fila['hoy'] > 0)->count();
         $mensajesHoy = $tarjetas->sum('hoy');
         $ultimaParticipacion = $tarjetas->pluck('ultima')->filter()->sortDesc()->first();
+        $grupoMasActivo = $tarjetas->filter(fn (array $fila): bool => $fila['hoy'] > 0)
+            ->sortByDesc('hoy')
+            ->first();
+        $grupoMasReciente = $tarjetas->filter(fn (array $fila): bool => $fila['ultima'] !== null)
+            ->sortByDesc(fn (array $fila): int => $fila['ultima']->timestamp)
+            ->first();
 
         $visibles = $tarjetas->filter(fn (array $fila): bool => match ($actividad) {
             'hoy' => $fila['hoy'] > 0,
@@ -130,6 +136,9 @@ final class ControladorMensajes extends Controller
             'cantidadConActividad' => $cantidadConActividad,
             'mensajesHoy' => $mensajesHoy,
             'ultimaParticipacion' => $ultimaParticipacion,
+            'grupoMasActivo' => $grupoMasActivo,
+            'grupoMasReciente' => $grupoMasReciente,
+            'gruposSinActividadHoy' => $tarjetas->count() - $cantidadConActividad,
             'actividad' => $actividad,
             'orden' => $orden,
         ];
