@@ -90,6 +90,7 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Mensajero MILAC')
                 ->assertSee('EXPRESS MILAC')
                 ->assertSee('Grupos en seguimiento')
+                ->assertDontSee('centro-metricas', false)
                 ->assertSee('Temas clave del día')
                 ->assertSee('Posibles acuerdos mencionados')
                 ->assertSee('Menciones para revisar')
@@ -171,8 +172,8 @@ class VistaMensajesSqlServerTest extends TestCase
 
             $this->get('/grupos?estado=monitoreados&origen=recolector')
                 ->assertOk()
-                ->assertSee('Catálogo de grupos')
-                ->assertSee('Grupos disponibles')
+                ->assertSee('Gestor de grupos')
+                ->assertSee('Administrar visibilidad')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Ver conversación')
                 ->assertSee('Acceso controlado');
