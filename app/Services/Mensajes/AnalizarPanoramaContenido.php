@@ -38,6 +38,8 @@ final class AnalizarPanoramaContenido
 
         $acuerdos = [];
         $revision = [];
+        $totalAcuerdos = 0;
+        $totalRevision = 0;
         $remitentes = [];
 
         foreach ($eventos as $evento) {
@@ -77,12 +79,18 @@ final class AnalizarPanoramaContenido
                 'fecha' => $evento->recibido_en,
             ];
 
-            if (preg_match(self::ACUERDOS_EXPLICITOS, $texto) === 1 && count($acuerdos) < 4) {
-                $acuerdos[] = $registro;
+            if (preg_match(self::ACUERDOS_EXPLICITOS, $texto) === 1) {
+                $totalAcuerdos++;
+                if (count($acuerdos) < 4) {
+                    $acuerdos[] = $registro;
+                }
             }
 
-            if (preg_match(self::REVISION, $texto) === 1 && count($revision) < 4) {
-                $revision[] = $registro;
+            if (preg_match(self::REVISION, $texto) === 1) {
+                $totalRevision++;
+                if (count($revision) < 4) {
+                    $revision[] = $registro;
+                }
             }
         }
 
@@ -102,6 +110,8 @@ final class AnalizarPanoramaContenido
             'temas' => $temasVisibles,
             'acuerdos' => $acuerdos,
             'revision' => $revision,
+            'totalRevision' => $totalRevision,
+            'totalAcuerdos' => $totalAcuerdos,
             'participantesMuestra' => count($remitentes),
             'remitentes' => collect($remitentes)->sortByDesc('mensajes')->take(4)->values()->all(),
             'mensajesRevisados' => $eventos->count(),
