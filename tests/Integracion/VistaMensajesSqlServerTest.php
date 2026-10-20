@@ -99,6 +99,27 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Estado «Capturado»')
                 ->assertDontSee('Integridad pendiente de conciliación');
 
+            // Filtros funcionales de consulta: sobre el histórico crudo,
+            // sin activar normalización ni alterar el contenido de la evidencia.
+            $diaLocal = CarbonImmutable::now((string) config('app.timezone'))->format('Y-m-d');
+
+            $this->get('/mensajes/grupos/'.$grupo->id.'?tipo_mensaje=texto&desde='.$diaLocal.'&hasta='.$diaLocal)
+                ->assertOk()
+                ->assertSee('Filtrar mensajes')
+                ->assertSee('Llegó '.$contenido);
+
+            $this->get('/mensajes/grupos/'.$grupo->id.'?tipo_mensaje=audio')
+                ->assertOk()
+                ->assertDontSee('Llegó '.$contenido);
+
+            $this->get('/mensajes/grupos/'.$grupo->id.'?desde=2001-01-01&hasta=2001-01-02')
+                ->assertOk()
+                ->assertDontSee('Llegó '.$contenido);
+
+            $this->get('/mensajes/grupos/'.$grupo->id.'?hasta='.$diaLocal)
+                ->assertOk()
+                ->assertSee('Llegó '.$contenido);
+
             $this->get('/mensajes/eventos/'.$captura->eventoCrudoId)
                 ->assertOk()
                 ->assertSee('v3-recolector')
