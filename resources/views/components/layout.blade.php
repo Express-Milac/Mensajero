@@ -39,7 +39,7 @@
                     </a>
                     <a class="nav {{ request()->routeIs('grupos.indice') ? 'active' : '' }}" href="{{ route('grupos.indice') }}" @if(request()->routeIs('grupos.indice')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3zM16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 6"/></svg>
-                        <span>Grupos</span>
+                        <span>Gestor de grupos</span>
                     </a>
                     <span class="centro-menu-separador" aria-hidden="true"></span>
                     <span class="centro-menu-subtitulo">ACCESOS DEL TABLERO</span>
