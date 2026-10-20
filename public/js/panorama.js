@@ -20,19 +20,30 @@
             return false;
         }
 
-        // No mover el foco del teclado si está interactuando con una tarjeta.
-        if (actual.contains(document.activeElement)) {
-            return false;
-        }
-
         const carrusel = actual.querySelector('.carrusel-grupos-vertical');
         const posicion = carrusel?.scrollTop ?? 0;
+        const foco = actual.contains(document.activeElement) ? document.activeElement : null;
+        const enlaceActivo = foco?.closest('a[href]');
+        const grupoActivo = foco?.closest('[data-grupo-id]')?.dataset.grupoId;
+        const rutaActiva = enlaceActivo?.getAttribute('href');
 
         actual.innerHTML = recibido.innerHTML;
 
         const nuevoCarrusel = actual.querySelector('.carrusel-grupos-vertical');
         if (nuevoCarrusel) {
             nuevoCarrusel.scrollTop = posicion;
+
+            // Si el usuario navega con teclado, mantenerlo en el mismo
+            // grupo aunque el orden cambie con los mensajes entrantes.
+            if (foco === carrusel) {
+                nuevoCarrusel.focus({ preventScroll: true });
+            } else if (grupoActivo && rutaActiva) {
+                const tarjeta = Array.from(nuevoCarrusel.querySelectorAll('[data-grupo-id]'))
+                    .find((elemento) => elemento.dataset.grupoId === grupoActivo);
+                const destino = Array.from(tarjeta?.querySelectorAll('a[href]') ?? [])
+                    .find((enlace) => enlace.getAttribute('href') === rutaActiva);
+                destino?.focus({ preventScroll: true });
+            }
         }
 
         return true;
