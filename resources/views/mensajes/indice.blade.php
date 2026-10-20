@@ -12,7 +12,7 @@
             <div>
                 <p class="eyebrow">CONVERSACIONES</p>
                 <h2>Grupos y sus mensajes recientes</h2>
-                <p class="muted">Cada tarjeta muestra hasta tres mensajes reales conservados. Los colores identifican tarjetas; no califican desempeño ni urgencia.</p>
+                <p class="muted">Cada tarjeta tiene su propio carrusel vertical de hasta ocho mensajes conservados, con desplazamiento independiente. Los colores identifican grupos, no califican desempeño ni urgencia.</p>
             </div>
             <a class="enlace-panorama" href="{{ route('grupos.indice') }}">Gestionar grupos →</a>
         </div>
