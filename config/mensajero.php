@@ -33,6 +33,10 @@ return [
     // Consultas de conversaciones sin iniciar sesión: únicamente POC local explícito.
     'consulta_local_sin_autenticacion' => (bool) env('MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION', false),
 
+    // Modificación manual de visibilidad en el POC local. Cerrada por defecto.
+    // No habilita cambios de captura ni acceso por red compartida.
+    'gestion_local_grupos_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_GRUPOS_HABILITADA', false),
+
     'normalizacion' => [
         // No procesar datos históricos hasta aprobar integración SQL Server.
         'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
