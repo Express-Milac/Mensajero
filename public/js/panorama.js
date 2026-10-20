@@ -31,7 +31,7 @@
 
         carrusel.scrollBy({
             top: movimiento * direccion,
-            behavior: movimientoReducido ? 'instant' : 'smooth',
+            behavior: movimientoReducido ? 'auto' : 'smooth',
         });
     });
 
