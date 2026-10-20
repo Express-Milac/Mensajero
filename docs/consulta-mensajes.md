@@ -20,9 +20,11 @@ habilitado, se extraen resúmenes de texto de los eventos existentes **sin guard
 ni modificar nada**. Ediciones, eliminaciones y reacciones se muestran como
 eventos distintos, nunca como falsos mensajes originales.
 
-Los archivos multimedia privados se muestran solo como metadatos y estado de
-verificación. En este incremento **no** se publican enlaces ni los binarios.
-Vistas de imagen, reproducción y descarga segura quedan para una fase posterior.
+Los archivos multimedia privados conservan metadatos y estado de verificación.
+Cuando el binario está disponible y el grupo continúa autorizado, la vista de
+evidencia permite reproducir formatos compatibles y descargar el archivo mediante
+una ruta protegida. No se publican rutas físicas ni enlaces permanentes.
+La validación de acceso y contenido se realiza nuevamente en cada solicitud.
 
 El historial presenta el número total de intervalos de conectividad y conserva
 los últimos cinco bajo un detalle plegable, con causas legibles en español.
@@ -60,7 +62,7 @@ La página de detalle prepara una representación depurada de los datos técnico
 
 ## Seguridad mientras no exista inicio de sesión
 
-En modo `MENSAJERO_MODO_AUTENTICACION=deshabilitado`, las tres rutas nuevas
+En modo `MENSAJERO_MODO_AUTENTICACION=deshabilitado`, las rutas protegidas de consulta de mensajes y multimedia
 devuelven **403 por defecto**.
 
 Excepción temporal y explícita para probar únicamente en el propio equipo:
@@ -169,3 +171,31 @@ visualización privada, descarga, integridad alterada y revocación del
 grupo. La pantalla debe revisarse posteriormente en un navegador local
 con un archivo real del recolector. **No activar procesamiento masivo
 ni tocar los 40 avisos pendientes por este incremento**.
+
+
+## Filtros funcionales del historial por grupo (20/10/2026)
+
+La pantalla `/mensajes/grupos/{chat}` incorpora filtros de consulta sin
+escrituras por **tipo de evento**, **tipo de mensaje** (texto, fotografía,
+video, audio, documento, ubicación, contacto u otros) y fechas
+`desde`/`hasta`. Las fechas que captura el usuario se interpretan en la
+zona `config('app.timezone')` de Mensajero y se convierten a UTC
+para consultar `recibido_en` en SQL Server. Ambas fechas son inclusivas.
+Es posible utilizar solo una de las fechas.
+
+Los filtros usan condiciones SQL parametrizadas, no ejecutan trabajos de
+normalización y se conservan durante la paginación. La navegación nunca
+concede permiso a un grupo no autorizado.
+
+Para comprobar este incremento, ejecutar **una batería conjunta**
+en `mensajero_test` (no sobre producción):
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php resources\views\mensajes\grupo.blade.php tests\Integracion\VistaMensajesSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+```
+
+Después se debe revisar la interfaz desde un navegador **solo local**.
+Una prueba visual no debe usar túneles públicos ni modificar los
+40 avisos históricos que permanecen pendientes de publicación.
