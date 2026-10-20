@@ -23,7 +23,9 @@ Route::post('/acceso', [ControladorSesion::class, 'iniciar'])
 
 Route::middleware('mensajero.acceso')->group(function () {
     Route::post('/salir', [ControladorSesion::class, 'salir'])->name('salir');
-    Route::view('/tablero', 'tablero')->name('tablero');
+    Route::get('/tablero', [ControladorMensajes::class, 'indice'])
+        ->middleware('mensajero.consulta_evidencia')
+        ->name('tablero');
     Route::get('/grupos', [ControladorGrupos::class, 'indice'])->name('grupos.indice');
 
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
