@@ -75,8 +75,23 @@ Al conectarse, el recolector enviará la lista de grupos a Mensajero. Abrir `/gr
 
 `datos/sesion/` contiene credenciales criptográficas de WhatsApp. Debe protegerse como un secreto y nunca copiarse a Git.
 
-## Limitación actual del incremento
+## Multimedia y validación operativa pendiente
 
-El evento crudo conserva los metadatos de mensajes de foto, video, audio y documento, pero la descarga durable del binario se implementará y certificará como incremento separado **antes de considerar el recolector apto para grupos operativos reales**.
+El recolector ya incorpora una cola durable de descargas y un almacén
+privado para foto, video, audio y documento. La captura registra
+metadatos de ruta, tamaño y SHA-256 en SQL Server, y la interfaz Laravel
+puede visualizar y entregar archivos de forma privada tras revalidar
+el acceso del grupo y la integridad. La prueba de integración Laravel
+aprobó **2 casos y 43 aserciones** el 20/10/2026.
 
-Este POC no se considera fuente directiva hasta aprobar pruebas de carga, reinicios, desconexión, multimedia y reconciliación.
+**La integración real con WhatsApp y la transferencia física del archivo
+todavía requieren una prueba controlada**: confirmar que Node y Laravel
+utilicen la misma raíz `RECOLECTOR_RUTA_ALMACENAMIENTO` /
+`MENSAJERO_RUTA_ALMACENAMIENTO`, con un grupo aislado y un número
+secundario. El módulo no se considera certificado para producción solo
+por haber aprobado pruebas de integración. No se vinculará el número
+principal de MILAC y no se capturarán grupos operativos reales antes
+de aprobar conectividad, almacenamiento y políticas de acceso.
+
+Este POC no se considera fuente directiva hasta aprobar pruebas de carga,
+reinicios, desconexión, recuperación y reconciliación.
