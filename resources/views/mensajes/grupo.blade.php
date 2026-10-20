@@ -1,14 +1,14 @@
 <x-layout title="Historial de grupo">
     <nav class="breadcrumbs" aria-label="Ruta de navegación">
-        <a href="{{ route('mensajes.indice') }}">Mensajes originales</a>
+        <a href="{{ route('mensajes.indice') }}">Conversaciones</a>
         <span>/</span>
         <span>Grupo #{{ $grupo->id }}</span>
     </nav>
 
     <section class="intro compact">
-        <p class="eyebrow">HISTORIAL CRONOLÓGICO</p>
+        <p class="eyebrow">CONVERSACIÓN · MENSAJERO MILAC</p>
         <h1>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h1>
-        <p class="muted">Eventos originales conservados en SQL Server, ordenados por fecha de recepción. No se modifican los mensajes ni se ejecuta inteligencia artificial al consultarlos.</p>
+        <p class="muted">Lee los mensajes recibidos en este grupo, del más reciente al más antiguo, y consulta la evidencia original cuando necesites revisar el contexto.</p>
         <div class="metadata-row">
             <span>Grupo #{{ $grupo->id }}</span>
             <span>Conexión: {{ $grupo->conexion?->nombre_visible ?: $grupo->conexion?->clave_conexion }}</span>
