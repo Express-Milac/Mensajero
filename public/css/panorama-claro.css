@@ -172,3 +172,6 @@
  .panorama-claro .centro-tarjeta-grupo .pie-tarjeta-directiva{flex-direction:column;align-items:stretch}
  .panorama-claro .centro-tarjeta-grupo .pie-tarjeta-directiva>a{justify-content:center}
 }
+
+/* Separación real entre destinos y accesos rápidos del menú. */
+.panorama-claro .centro-menu-separador{display:block;height:1px;background:#edf0f4;margin:8px 12px}
