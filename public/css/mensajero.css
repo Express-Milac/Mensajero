@@ -312,3 +312,369 @@
   .lista-grupos-directivos{gap:12px}
   .tarjeta-directiva .fragmentos-grupo.carrusel-mensajes-grupo{max-height:270px}
 }
+
+/* ================================================================
+   MENSAJERO / EXPRESS MILAC · DISEÑO EJECUTIVO 2026
+   Naranja y grafito inspirados en la imagen de la flota corporativa.
+   Valores de diseño provisionales hasta recibir el manual de marca.
+   No recrear un logotipo: usar solamente el PNG institucional validado.
+   ================================================================ */
+:root{
+  --milac-naranja:#ed703f;
+  --milac-naranja-fuerte:#da5424;
+  --milac-grafito:#182630;
+  --milac-grafito-claro:#273846;
+  --milac-texto:#1b2b35;
+  --milac-fondo:#f4f6f8;
+  --milac-linea:#e4e9ed;
+  --milac-muted:#697988;
+  --milac-sombra:0 13px 34px rgba(24,38,48,.065);
+}
+body{background:var(--milac-fondo);color:var(--milac-texto);font-family:Inter, "Segoe UI",Arial,sans-serif}
+.shell{grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.shell>.barra-corporativa{
+  position:sticky;top:0;height:100vh;
+  padding:30px 20px 24px;
+  display:flex;flex-direction:column;
+  background:var(--milac-grafito);
+  color:#eaf0f3;border-right:1px solid #30404e;
+}
+.shell>main{
+  width:100%;max-width:none;min-width:0;
+  padding:0 clamp(22px,4vw,78px) 78px;
+  margin:0 auto;
+}
+.barra-superior{
+  height:78px;margin:0 0 31px;border-bottom:1px solid var(--milac-linea);
+  display:flex;justify-content:space-between;align-items:center;
+  color:#637481;
+}
+.ruta-superior{display:flex;align-items:center;gap:11px;font-size:10px;font-weight:800;letter-spacing:1.45px;color:#526370}
+.marca-punto{width:8px;height:8px;border-radius:50%;background:var(--milac-naranja)}
+.separador-ruta{color:#b0bec7}
+.barra-superior-derecha{display:flex;align-items:center;gap:20px}
+.etiqueta-corporativa{font-size:10px;letter-spacing:1.3px;font-weight:800;color:#8a9aa5}
+.boton-salir{font-weight:700;font-size:12px;color:#4b6272}
+.marca-corporativa{
+  display:flex;flex-direction:column;align-items:flex-start;gap:0;
+  padding:6px 11px 24px;border-bottom:1px solid rgba(255,255,255,.12);
+  color:#fff;text-decoration:none;font-size:inherit;letter-spacing:normal;
+}
+.marca-texto{font-size:17px;font-weight:800;letter-spacing:1px;line-height:1.3;color:#f6f8f9}
+.marca-texto strong{font-weight:900;color:var(--milac-naranja)}
+.logotipo-milac{display:block;max-width:184px;max-height:62px;width:auto;height:auto;object-fit:contain}
+.marca-separador{display:block;width:35px;height:3px;background:var(--milac-naranja);border-radius:10px;margin:17px 0}
+.marca-producto{font-size:18px;font-weight:800;letter-spacing:1.2px;line-height:1.25}
+.marca-producto small{display:block;font-size:10px;line-height:1.6;letter-spacing:.2px;font-weight:500;margin-top:5px;color:#aebbc5}
+.barra-corporativa .etiqueta-menu{
+  margin:31px 12px 13px;font-size:10px;letter-spacing:2px;font-weight:750;color:#8799a6
+}
+.barra-corporativa .navigation{display:flex;flex-direction:column;gap:6px}
+.barra-corporativa .nav{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;border-radius:10px;color:#bfcbd3;
+  font-size:13px;font-weight:650;transition:background .2s,color .2s;
+  border:1px solid transparent;
+}
+.barra-corporativa .nav svg{width:18px;height:18px;flex:0 0 18px;color:#8e9dab}
+.barra-corporativa .nav:hover{background:#293946;color:#fff}
+.barra-corporativa .nav.active{
+  background:#344451;color:#fff;border-color:#4c5a65;
+  box-shadow:inset 3px 0 0 var(--milac-naranja);
+}
+.barra-corporativa .nav.active svg{color:#ffad8f}
+.barra-corporativa .nota-marca{
+  margin:auto 11px 0;padding-top:24px;color:#fff;font-size:inherit
+}
+.nota-marca-linea{display:block;height:3px;width:26px;background:var(--milac-naranja);margin-bottom:18px}
+.nota-marca strong{font-size:16px;letter-spacing:-.2px;font-weight:650;line-height:1.5}
+.nota-marca small{display:block;margin-top:21px;font-weight:800;letter-spacing:1.4px;font-size:9px;color:#8395a3}
+main h1,main h2,main h3{color:var(--milac-texto)}
+main h2{letter-spacing:-.65px}
+
+/* Cabecera ejecutiva: un solo punto de entrada con énfasis corporativo */
+.cabecera-ejecutiva{
+  position:relative;overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1.65fr) minmax(250px,.75fr);
+  gap:36px;align-items:center;min-height:248px;
+  padding:37px clamp(27px,3.2vw,52px);
+  margin:0 0 30px;border-radius:21px;
+  color:#fff;background:linear-gradient(113deg,#172530 0%,#243748 75%,#314757 100%);
+  box-shadow:0 16px 44px rgba(23,38,49,.17);
+}
+.cabecera-ejecutiva:before{
+  content:"";position:absolute;width:300px;height:300px;right:-135px;top:-180px;
+  border:1px solid rgba(255,255,255,.08);border-radius:50%;
+  box-shadow:0 0 0 45px rgba(255,255,255,.017),0 0 0 90px rgba(255,255,255,.015);
+  pointer-events:none;
+}
+.cabecera-ejecutiva:after{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--milac-naranja)
+}
+.cabecera-ejecutiva-contenido,.cabecera-panel{position:relative;z-index:1;min-width:0}
+.cabecera-etiqueta{
+  color:#ffb797;font-size:10px;font-weight:850;letter-spacing:2px;
+  display:flex;align-items:center;gap:11px
+}
+.cabecera-raya{width:25px;height:2px;background:var(--milac-naranja);display:inline-block}
+.cabecera-ejecutiva h1{
+  margin:18px 0 13px;color:#fff;letter-spacing:-1.8px;
+  font-size:clamp(30px,3vw,45px);font-weight:760;line-height:1.12;
+}
+.cabecera-ejecutiva h1 span{display:block;color:#f3f5f6}
+.cabecera-descripcion{
+  font-size:14px;line-height:1.75;color:#bfcbd4;max-width:710px;margin:0 0 23px
+}
+.cabecera-acciones{display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+.accion-primaria,.accion-secundaria{
+  min-height:42px;display:inline-flex;align-items:center;justify-content:center;
+  gap:12px;padding:11px 16px;border-radius:9px;font-size:12px;font-weight:800;
+  text-decoration:none;transition:background .15s,transform .15s;border:1px solid transparent;
+}
+.accion-primaria{background:var(--milac-naranja);color:#182630}
+.accion-primaria:hover{background:#ffa078;color:#182630}
+.accion-secundaria{background:rgba(255,255,255,.07);color:#f4f7f8;border-color:rgba(255,255,255,.17)}
+.accion-secundaria:hover{background:rgba(255,255,255,.15)}
+.accion-secundaria svg{width:16px;height:16px}
+.cabecera-panel{
+  padding:23px 23px 19px;border-radius:15px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(8px)
+}
+.cabecera-panel-rubro{color:#a6b5c0;font-size:10px;letter-spacing:1.7px;font-weight:850}
+.cabecera-panel-sello{display:flex;align-items:center;gap:10px;color:#fff;font-size:17px;font-weight:750;margin:20px 0 9px}
+.sello-punto{height:10px;width:10px;background:#6fcf9d;border:2px solid #dafbe8;border-radius:50%}
+.cabecera-panel p{color:#b5c4ce;font-size:12px;line-height:1.6;margin:0 0 16px}
+.cabecera-panel-pie{
+  padding-top:13px;border-top:1px solid rgba(255,255,255,.13);
+  color:#ffc0a5;font-size:11px;line-height:1.6;min-height:32px
+}
+.cabecera-panel-pie.actualizacion-fallida{color:#ffd39d}
+
+/* Resumen ejecutivo: tarjetas limpias, cifras inequívocas */
+.seccion-indicadores-ejecutivos{margin:0 0 39px}
+.linea-seccion,.titulo-panorama{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:0 0 17px}
+.seccion-numero{display:block;font-size:10px;font-weight:850;letter-spacing:1.6px;color:var(--milac-naranja-fuerte);line-height:1.5}
+.linea-seccion h2,.titulo-panorama h2{font-size:24px;font-weight:760;margin:5px 0 0;line-height:1.3}
+.seccion-descripcion{font-size:12px;color:var(--milac-muted)}
+.indicadores-ejecutivos{margin:0 0 16px;gap:15px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.indicador-ejecutivo{
+  position:relative;overflow:hidden;
+  min-height:176px;padding:22px 23px 20px;gap:0;border:1px solid var(--milac-linea);
+  background:#fff;border-radius:16px;box-shadow:var(--milac-sombra)
+}
+.indicador-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:19px}
+.indicador-ejecutivo .indicador-cabecera>span:first-child{font-size:12px;font-weight:750;color:#5c6c78;line-height:1.5}
+.indicador-icono{
+  width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;
+  border-radius:11px;background:#fff0e9;color:var(--milac-naranja-fuerte)
+}
+.indicador-icono svg{width:19px;height:19px}
+.indicador-ejecutivo strong{font-size:35px;line-height:1.16;color:#1b2a35;letter-spacing:-1.1px;margin:0;font-weight:800}
+.indicador-ejecutivo strong.indicador-fecha{font-size:26px;line-height:1.4}
+.indicador-ejecutivo .indicador-fraccion{font-size:17px;color:#95a0a9;font-weight:550;letter-spacing:0}
+.indicador-ejecutivo small{margin-top:9px;font-size:11px;line-height:1.6;color:#84919a}
+.indicador-base{position:absolute;bottom:0;left:0;right:0;height:3px;background:#f2c2af}
+.indicador-ejecutivo:nth-child(2) .indicador-base{background:#e97845}
+.indicador-ejecutivo:nth-child(3) .indicador-base{background:#8ca5b5}
+.indicador-ejecutivo:nth-child(4) .indicador-base{background:#c8d4da}
+.lecturas-ejecutivas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.lectura-directiva{
+  background:#fff;border:1px solid var(--milac-linea);border-radius:15px;
+  min-height:144px;padding:21px 24px;box-shadow:0 6px 18px rgba(24,38,48,.035)
+}
+.lectura-directiva.lectura-destacada{background:#fff9f6;border-color:#f3dbcf}
+.lectura-kicker{font-size:10px;letter-spacing:1.4px;font-weight:850;color:#758391;display:flex;align-items:center;gap:9px;margin-bottom:15px}
+.lectura-destacada .lectura-kicker{color:#b8512b}
+.lectura-punto{height:7px;width:7px;background:#ed703f;border-radius:50%}
+.lectura-directiva>strong{display:block;font-size:17px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.lectura-directiva p{font-size:12px;color:#72808b;line-height:1.6;margin:8px 0 0}
+.lectura-numero{font-weight:800;font-size:26px;letter-spacing:-.8px;line-height:1.35}
+.lectura-numero span{font-weight:600;font-size:12px;color:#758592;letter-spacing:0}
+
+/* Conversaciones con fichas de alta legibilidad */
+.seccion-panorama{margin:0 0 33px;scroll-margin-top:24px}
+.titulo-panorama{margin-bottom:17px}
+.titulo-panorama .muted{margin:7px 0 0;line-height:1.6;font-size:12px;max-width:750px;color:#74828d}
+.enlace-panorama{
+  flex-shrink:0;display:inline-flex;gap:10px;align-items:center;padding:11px 14px;
+  border:1px solid #d9e2e8;border-radius:10px;background:#fff;
+  color:#263d4c;font-size:12px;font-weight:800;text-decoration:none
+}
+.enlace-panorama:hover{background:#fceee7;border-color:#efc5b0;color:#9f4c27}
+.filtros-panorama{
+  background:#fff;padding:19px 21px;gap:13px;
+  border:1px solid var(--milac-linea);border-radius:15px;margin:0 0 17px;
+  display:flex;align-items:flex-end;box-shadow:0 7px 20px rgba(24,38,48,.035)
+}
+.filtros-panorama .filtro-grupo{flex:1 1 200px;min-width:160px}
+.filtros-panorama .filtro-grupo label{font-size:10px;font-weight:850;letter-spacing:1.25px;color:#87949e;margin:0 0 8px}
+.filtros-panorama .filtro-grupo select{
+  display:block;width:100%;min-width:0;min-height:43px;
+  padding:10px 12px;border:1px solid #dce4e9;
+  background:#f9fafb;color:#263847;font-size:12px;border-radius:9px
+}
+.filtros-panorama .filtro-aplicar{
+  min-height:43px;padding:11px 19px;display:inline-flex;gap:12px;
+  border-radius:9px;border:0;background:#243644;color:#fff;font-size:12px;font-weight:800
+}
+.filtro-aplicar:hover{background:#334b5d}
+.filtro-limpiar{font-size:12px;color:#98543a;font-weight:700;text-decoration:none;align-self:center}
+.cabecera-carrusel{margin:20px 1px 14px;color:#647582;font-size:12px}
+.cantidad-grupos-vista{display:flex;align-items:center;gap:10px;font-weight:750;color:#344854}
+.cantidad-grupos-circulo{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#e9edf0;font-weight:850;color:#354755}
+.cabecera-carrusel-pista{font-size:11px;color:#82919c}
+.lista-grupos-directivos{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch}
+.lista-grupos-directivos>.tarjeta-directiva{
+  position:relative;overflow:hidden;background:#fff;border:1px solid #e0e6eb;
+  border-radius:18px;padding:0;min-height:505px;
+  box-shadow:var(--milac-sombra);transform:none;transition:box-shadow .2s,border-color .2s
+}
+.lista-grupos-directivos>.tarjeta-directiva:hover{transform:none;box-shadow:0 14px 35px rgba(27,45,57,.115);border-color:#d6dfe5}
+.tarjeta-acento{position:absolute;top:0;left:0;right:0;height:4px;background:var(--milac-naranja)}
+.tarjeta-directiva-1 .tarjeta-acento{background:#a4b7c5}
+.tarjeta-directiva-2 .tarjeta-acento{background:#d9a07e}
+.tarjeta-directiva-3 .tarjeta-acento{background:#728da0}
+.tarjeta-directiva-4 .tarjeta-acento{background:#bcc8d0}
+.tarjeta-directiva-5 .tarjeta-acento{background:#cf8561}
+.tarjeta-directiva-principal{padding:25px 24px 17px;gap:13px;align-items:flex-start}
+.icono-tarjeta{
+  width:49px;height:49px;flex:0 0 49px;border-radius:14px;
+  display:grid;place-items:center;background:#fdefe9;color:#ce613b;font-size:0
+}
+.icono-tarjeta svg{width:25px;height:25px}
+.tarjeta-directiva-1 .icono-tarjeta,.tarjeta-directiva-3 .icono-tarjeta{background:#eef3f6;color:#4d7083}
+.tarjeta-directiva-4 .icono-tarjeta{background:#f0f3f6;color:#697e8d}
+.titulo-tarjeta{padding-top:1px}
+.titulo-tarjeta h3{font-size:17px;line-height:1.35;letter-spacing:-.45px;color:#1b303d;font-weight:800;margin:0 0 10px}
+.titulo-tarjeta p{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;line-height:1.4;color:#78858e;margin:0}
+.punto-actividad{height:7px;width:7px;flex:0 0 7px;border-radius:50%;background:#bac5cd}
+.punto-actividad.con-actividad{background:#52ad7b}
+.tarjeta-etiquetas{display:flex;align-items:flex-end;flex-direction:column;gap:6px;flex-shrink:0}
+.etiqueta-cantidad{
+  padding:6px 9px;border-radius:7px;background:#f3f5f7;color:#526371;
+  font-size:10px;font-weight:800;white-space:nowrap
+}
+.etiqueta-ensayo{padding:5px 9px;font-size:10px;border-radius:6px;font-weight:750;color:#886c50}
+.tarjeta-contexto{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px 12px;
+  margin:0 24px 0;padding:13px 15px;
+  background:#f6f8fa;border:1px solid #ebeff2;border-radius:10px
+}
+.tarjeta-contexto span{font-size:11px;color:#70818c}
+.tarjeta-contexto strong{font-size:11px;color:#394b57;font-weight:750}
+.encabezado-carrusel-mensajes{margin:19px 24px 9px;min-height:36px;align-items:center}
+.encabezado-carrusel-mensajes>div:first-child{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.subtitulo-mensajes{font-size:10px;font-weight:850;letter-spacing:1.35px;color:#3b4f5c}
+.contador-mensajes{font-size:10px;color:#8c9aa4;font-weight:650}
+.controles-carrusel-mensajes button{
+  width:31px;height:31px;border-radius:9px;border:1px solid #dfe6ea;
+  background:#f7f9fa;color:#536573;font-size:16px
+}
+.controles-carrusel-mensajes button:hover{background:#ffede5;color:#b94f29;border-color:#f1c7b5}
+.tarjeta-directiva .fragmentos-grupo.carrusel-mensajes-grupo{
+  margin:0 24px 20px;padding:3px 5px 3px 1px;gap:9px;
+  max-height:284px;min-height:130px;scrollbar-color:#b9c6ce #f0f3f5
+}
+.tarjeta-directiva .fragmento-grupo{
+  padding:14px 16px;border:1px solid #e5ebef;border-radius:12px;
+  background:#f9fbfc;box-shadow:none;
+  transition:border-color .18s,background .18s
+}
+.tarjeta-directiva .fragmento-grupo:hover{border-color:#edc8b7;background:#fffaf7}
+.fragmento-datos{align-items:center}
+.fragmento-remitente{font-size:11px;font-weight:800;color:#344d5a;display:inline-flex;gap:8px;align-items:center}
+.indicador-remitente{width:7px;height:7px;border:1px solid #ee8b64;border-radius:50%;background:#ffb590;flex:0 0 7px}
+.fragmento-datos time{font-size:10px;font-weight:650;color:#93a0a9}
+.tarjeta-directiva .fragmento-grupo p{
+  font-size:13px;line-height:1.65;color:#3c4d58;margin:9px 0 0;
+  -webkit-line-clamp:4
+}
+.estado-vacio-grupo{min-height:118px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#91a0ab;text-align:center}
+.estado-vacio-icono{font-size:27px;line-height:1}
+.sin-mensajes-grupo{margin:0;padding:0;font-size:12px;max-width:260px}
+.tarjeta-directiva>.pie-tarjeta-directiva{
+  margin-top:auto;padding:18px 24px;border-top:1px solid #edf0f3;
+  background:#fcfdfe;gap:12px
+}
+.pie-tarjeta-directiva>span{font-size:11px;color:#8b99a2}
+.pie-tarjeta-directiva a{
+  font-size:12px;color:#b75530;font-weight:850;
+  display:inline-flex;gap:11px;align-items:center
+}
+.pie-tarjeta-directiva a:hover{color:#8f3d1c}
+.nota-interpretacion{background:#edf1f4;border-color:#dee5ea;padding:24px 27px}
+.nota-interpretacion h2{font-weight:760;color:#253945}
+.nota-interpretacion p{color:#627580}
+.nota-interpretacion>span{color:#7c8c98}
+
+/* Navegación, botones y controles accesibles */
+:where(.accion-primaria,.accion-secundaria,.filtro-aplicar,.enlace-panorama,.barra-corporativa .nav,.filtros-panorama select):focus-visible{
+  outline:3px solid #ed9b72;outline-offset:3px
+}
+@media(max-width:1460px){
+  .indicadores-ejecutivos{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lista-grupos-directivos{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1200px){
+  .shell{grid-template-columns:224px minmax(0,1fr)}
+  .shell>main{padding-left:25px;padding-right:25px}
+  .cabecera-ejecutiva{grid-template-columns:1fr;gap:15px}
+  .cabecera-panel{max-width:440px}
+  .lecturas-ejecutivas{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lista-grupos-directivos{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:800px){
+  .shell{display:block}
+  .shell>.barra-corporativa{height:auto;min-height:0;position:relative;padding:13px 18px}
+  .marca-corporativa{border:0;padding:0 0 11px;display:flex;flex-direction:row;gap:9px;align-items:center}
+  .marca-texto{font-size:15px}
+  .marca-separador{width:2px;height:25px;margin:0 6px}
+  .marca-producto{font-size:15px}
+  .marca-producto small{font-size:9px}
+  .logotipo-milac{max-height:36px;max-width:134px}
+  .barra-corporativa .etiqueta-menu,.barra-corporativa .nota-marca{display:none}
+  .barra-corporativa .navigation{display:flex;flex-direction:row;overflow-x:auto;gap:5px;margin:5px 0 0;padding-bottom:4px}
+  .barra-corporativa .nav{white-space:nowrap;flex:0 0 auto;padding:9px 12px;font-size:12px}
+  .barra-corporativa .nav svg{width:15px;height:15px;flex-basis:15px}
+  .shell>main{padding:0 18px 40px}
+  .barra-superior{height:52px;margin-bottom:18px}
+  .etiqueta-corporativa{display:none}
+  .cabecera-ejecutiva{padding:28px 21px;border-radius:15px;min-height:0;gap:20px}
+  .cabecera-ejecutiva h1{font-size:31px}
+  .cabecera-etiqueta{font-size:9px;letter-spacing:1.3px}
+  .indicadores-ejecutivos{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .indicador-ejecutivo{min-height:148px;padding:16px}
+  .indicador-cabecera{margin-bottom:12px}
+  .indicador-icono{width:31px;height:31px;flex-basis:31px}
+  .indicador-icono svg{width:16px;height:16px}
+  .indicador-ejecutivo strong{font-size:30px}
+  .indicador-ejecutivo strong.indicador-fecha{font-size:19px}
+  .lecturas-ejecutivas{grid-template-columns:1fr}
+  .lectura-directiva{min-height:110px;padding:17px}
+  .linea-seccion,.titulo-panorama{align-items:flex-start;flex-direction:column}
+  .filtros-panorama{display:grid;grid-template-columns:1fr;gap:12px;padding:16px}
+  .filtros-panorama .filtro-grupo{min-width:0}
+  .filtros-panorama .filtro-aplicar{justify-content:center;width:100%}
+  .cabecera-carrusel-pista{display:none}
+  .lista-grupos-directivos{grid-template-columns:1fr}
+  .tarjeta-directiva-principal{padding:19px 16px 14px}
+  .tarjeta-contexto{margin:0 16px;padding:11px}
+  .encabezado-carrusel-mensajes{margin:17px 16px 8px}
+  .tarjeta-directiva .fragmentos-grupo.carrusel-mensajes-grupo{margin:0 16px 15px;max-height:275px}
+  .tarjeta-directiva>.pie-tarjeta-directiva{padding:16px}
+  .tarjeta-etiquetas{align-items:flex-end}
+}
+@media(max-width:450px){
+  .cabecera-ejecutiva h1{font-size:27px}
+  .cabecera-panel{padding:17px}
+  .cabecera-acciones{display:grid;grid-template-columns:1fr}
+  .indicador-ejecutivo .indicador-cabecera>span:first-child{font-size:11px}
+  .indicador-ejecutivo strong{font-size:26px}
+  .tarjeta-directiva-principal{flex-wrap:wrap}
+  .tarjeta-etiquetas{margin-left:62px;flex-direction:row}
+  .tarjeta-contexto{align-items:flex-start;flex-direction:column}
+}
+@media(prefers-reduced-motion:reduce){
+  .barra-corporativa .nav,.accion-primaria,.accion-secundaria,.tarjeta-directiva .fragmento-grupo{transition:none}
+}
