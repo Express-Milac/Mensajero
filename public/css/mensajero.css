@@ -239,3 +239,76 @@
   .carrusel-grupos-vertical{max-height:65vh}
   .fragmentos-grupo{display:flex;flex-direction:column}
 }
+
+/* Un carrusel de mensajes POR GRUPO. La lista de grupos no se desplaza
+   dentro de un carrusel común: usa el scroll natural de la página. */
+.lista-grupos-directivos{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:18px;
+}
+.lista-grupos-directivos>.tarjeta-directiva{
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  scroll-snap-align:none;
+}
+.encabezado-carrusel-mensajes{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:17px 0 9px;
+  color:#4c675c;
+  font-size:12px;
+  font-weight:700;
+}
+.controles-carrusel-mensajes{display:flex;gap:6px}
+.controles-carrusel-mensajes button{
+  display:inline-grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  border:1px solid #cbdcd1;
+  color:#275748;
+  background:#f4f9f5;
+  cursor:pointer;
+  font-size:17px;
+}
+.controles-carrusel-mensajes button:hover{background:#e5f2e9}
+.controles-carrusel-mensajes button:focus-visible,
+.carrusel-mensajes-grupo:focus-visible{
+  outline:2px solid #397259;
+  outline-offset:3px;
+}
+.tarjeta-directiva .fragmentos-grupo.carrusel-mensajes-grupo{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scroll-snap-type:y proximity;
+  scrollbar-width:thin;
+  scrollbar-color:#93b3a0 #e8f1ea;
+  max-height:310px;
+  min-height:100px;
+  margin:0 0 15px;
+  padding:4px 8px 4px 2px;
+}
+.carrusel-mensajes-grupo>.fragmento-grupo{
+  flex:0 0 auto;
+  width:100%;
+  scroll-snap-align:start;
+}
+.tarjeta-directiva>.pie-tarjeta-directiva{margin-top:auto}
+@media(max-width:1180px){
+  .lista-grupos-directivos{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:700px){
+  .lista-grupos-directivos{gap:12px}
+  .tarjeta-directiva .fragmentos-grupo.carrusel-mensajes-grupo{max-height:270px}
+}
