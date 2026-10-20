@@ -164,3 +164,39 @@
  .panorama-claro .catalogo-tarjeta-pie form{width:100%}
  .panorama-claro .catalogo-ver-conversacion,.panorama-claro .catalogo-control{justify-content:center;width:100%}
 }
+
+/* Gestor real de visibilidad: prioridad a las decisiones por grupo. */
+.panorama-claro .gestor-metricas{grid-template-columns:repeat(4,minmax(0,1fr))}
+.panorama-claro .gestor-etiquetas{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.panorama-claro .gestor-etiquetas .catalogo-estado{white-space:nowrap}
+.panorama-claro .catalogo-ayuda-gestor{
+  margin:0 0 16px;padding:16px 19px;color:#536b7e;font-size:12px;line-height:1.7;
+  border:1px solid #cbdfe8;border-left:4px solid #2489dc;border-radius:11px;
+  background:#f3f9fd
+}
+.panorama-claro .catalogo-ayuda-gestor strong{color:#264a64}
+.panorama-claro .gestor-control-vista{
+  border:0;background:#fa7727;color:#1b2f43;padding:11px 14px;
+  font-weight:800;white-space:nowrap
+}
+.panorama-claro .gestor-control-vista.secundario{
+  border:1px solid #e8b89d;background:#fff2e8;color:#b75220
+}
+.panorama-claro .gestor-control-vista:hover{filter:brightness(.96)}
+.panorama-claro .gestor-permiso-requerido{
+  font-size:11px;color:#8497a7;font-weight:650
+}
+.panorama-claro .catalogo-tarjeta-pie{align-items:center}
+.panorama-claro .catalogo-tarjeta-pie form{margin:0}
+@media(max-width:1350px){
+  .panorama-claro .gestor-metricas{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .panorama-claro .catalogo-tarjeta-encabezado .gestor-etiquetas{margin-left:60px;align-items:flex-start}
+  .panorama-claro .catalogo-tarjeta-pie{flex-direction:column;align-items:stretch}
+  .panorama-claro .catalogo-tarjeta-pie form{width:100%}
+  .panorama-claro .gestor-control-vista{width:100%;justify-content:center}
+}
+@media(max-width:430px){
+  .panorama-claro .gestor-metricas{grid-template-columns:1fr}
+}
