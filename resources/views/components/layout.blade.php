@@ -9,7 +9,7 @@
     @if(request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo'))
         <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
     @endif
-    @if(request()->routeIs('grupos.indice', 'mensajes.grupo'))
+    @if(request()->routeIs('grupos.indice', 'mensajes.indice', 'mensajes.grupo'))
         <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     @endif
 </head>
