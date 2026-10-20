@@ -197,8 +197,16 @@ class MultimediaRecolectorSqlServerTest extends TestCase
                 ->assertHeader('Content-Type', 'application/octet-stream')
                 ->assertHeader('X-Content-Type-Options', 'nosniff');
 
+            $this->get('/mensajes/grupos/'.$chat->id)
+                ->assertOk()
+                ->assertSee('Conversación registrada')
+                ->assertSee('Descargar archivo privado')
+                ->assertSee($rutaVer, false);
+
             $this->get('/mensajes/eventos/'.$archivo->evento_crudo_id)
                 ->assertOk()
+                ->assertSee('Mensaje original')
+                ->assertSee('Identificadores y verificación SHA-256')
                 ->assertSee('Descargar archivo privado')
                 ->assertSee($rutaVer, false);
 
