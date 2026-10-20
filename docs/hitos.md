@@ -16,22 +16,33 @@ defecto. La normalización automática continúa desactivada.
 | Descubrimiento y selección de grupos | Administración y lista permitida implementadas | Ensayo con grupos de prueba reales y exclusión de chats ajenos |
 | Recolector WhatsApp autohospedado | Servicio preparado en el proyecto; existe riesgo del cliente no oficial | Certificar conexión y recepción continua con número secundario, no principal |
 | Almacenamiento durable de fotos, videos, audios y documentos | Recolector y validación de captura implementados | Confirmar montaje de volumen común y descarga real representativa |
-| Consulta por grupo y evidencia individual | Vistas protegidas implementadas y probadas previamente | Revisar operación visual con grupos de ensayo |
-| Visualizar / descargar multimedia privada | **Código integrado el 20/10/2026; pruebas nuevas pendientes de ejecutar en Windows** | Ejecutar batería de integración conjunta y revisar visualmente |
+| Consulta por grupo y evidencia individual | Vistas protegidas y prueba SQL Server aprobadas; nuevos filtros de tipo de mensaje y fecha integrados, aún no validados en Windows | Revisar filtros y navegación en navegador local |
+| Visualizar / descargar multimedia privada | **Validación funcional aprobada en Windows: 2 pruebas / 43 aserciones**, incluyendo revocación; falta revisión visual y captura real | Verificar en navegador local con archivo de prueba y recolector |
 | Inicio de sesión MILAC | Frontera preparada, integración corporativa pendiente | Autorización efectiva antes de acceso por red/producción |
 | Supervisión/conciliación | Diagnóstico SQL probado; pendientes históricos detectados | Clasificar 40 avisos atrasados antes de despacho masivo, agregar inspección Redis |
 
-### Siguiente validación agrupada
+### Próximo paso de validación funcional
 
-Ejecutar en Windows sobre `mensajero_test` las suites:
-`MultimediaRecolectorSqlServerTest`,
-`VistaMensajesSqlServerTest`, `ConsultaEvidenciaAccesoTest`,
-lint y Pint de archivos modificados; después verificar manualmente la
-pantalla de evidencia local con un archivo ficticio.
+La descarga multimedia fue certificada en el POC mediante **2 pruebas y
+43 aserciones**. La siguiente batería se centra únicamente en el
+incremento de filtros del historial, sin repetir Redis ni multimedia:
 
-**No se necesitan más ensayos de Redis por evento para desbloquear esta
-revisión.** No activar normalización global ni despachar los 40 avisos
-históricos sin resolver su procedencia.
+```powershell
+git pull origin codex/raw-foundation-no-auth
+vendor\bin\pint --test app\Http\Controllers\Mensajes\ControladorMensajes.php tests\Integracion\VistaMensajesSqlServerTest.php
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+```
+
+Luego abrir `http://127.0.0.1:8000/mensajes` solo desde equipo local
+con bandera de consulta POC explícita, `APP_ENV=local` y base
+`mensajero_test`. No usar proxy ni túnel externo sin login.
+Si no hay binarios de multimedia almacenados, las vistas de los archivos
+no pueden verificarse visualmente todavía.
+
+**No se necesitan más ensayos Redis por evento para este avance.**
+No activar normalización global ni despachar los 40 avisos históricos
+sin clasificar su procedencia.
+
 
 ## Criterios para considerar lista la fase 1
 
