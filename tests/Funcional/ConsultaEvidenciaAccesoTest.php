@@ -17,6 +17,8 @@ class ConsultaEvidenciaAccesoTest extends TestCase
         $this->get('/grupos')->assertForbidden();
         $this->patch('/grupos/10020/visibilidad', ['es_visible_tablero' => 0])->assertForbidden();
         $this->get('/mensajes')->assertForbidden();
+        $this->get('/mensajes/remitentes')->assertForbidden();
+        $this->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])->assertForbidden();
         $this->get('/mensajes/actualizacion')->assertForbidden();
         $this->get('/mensajes/tecnico')->assertForbidden();
         $this->get('/mensajes/grupos/10020')->assertForbidden();
@@ -59,6 +61,25 @@ class ConsultaEvidenciaAccesoTest extends TestCase
 
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
             ->patch('/grupos/99999/visibilidad', ['es_visible_tablero' => 0])
+            ->assertForbidden();
+    }
+
+    public function test_edicion_de_remitentes_necesita_permiso_explicito_y_no_admite_red(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+            'mensajero.gestion_local_remitentes_habilitada' => false,
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])
+            ->assertForbidden();
+
+        config(['mensajero.gestion_local_remitentes_habilitada' => true]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])
             ->assertForbidden();
     }
 
