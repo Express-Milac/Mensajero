@@ -336,6 +336,68 @@ class VistaMensajesSqlServerTest extends TestCase
         }
     }
 
+    public function test_gestor_oculta_y_muestra_grupo_sin_desactivar_captura_ni_borrar_evidencia(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            config([
+                'mensajero.gestion_local_grupos_habilitada' => true,
+                'mensajero.autenticacion.modo' => 'deshabilitado',
+                'mensajero.consulta_local_sin_autenticacion' => true,
+            ]);
+
+            $sufijo = bin2hex(random_bytes(6));
+            $conexion = ConexionWhatsapp::query()->create([
+                'clave_conexion' => 'visibilidad-'.$sufijo,
+                'proveedor' => 'recolector_whatsapp',
+                'estado' => 'conectado',
+            ]);
+            $grupo = ChatMonitoreado::query()->create([
+                'conexion_id' => $conexion->id,
+                'id_chat_proveedor' => 'visibilidad-'.$sufijo.'@g.us',
+                'nombre_grupo' => 'Grupo de visibilidad '.$sufijo,
+                'tipo_chat' => 'grupo',
+                'es_monitoreado' => true,
+                'es_activo' => true,
+            ]);
+
+            $this->assertTrue($grupo->fresh()->es_visible_tablero);
+            $this->get('/tablero')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
+            $this->get('/mensajes')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
+
+            $this->patch('/grupos/'.$grupo->id.'/visibilidad', [
+                'es_visible_tablero' => 0,
+            ])->assertRedirect();
+
+            $this->assertFalse($grupo->fresh()->es_visible_tablero);
+            $this->assertTrue($grupo->fresh()->es_monitoreado);
+            $this->get('/tablero')->assertOk()->assertDontSee('Grupo de visibilidad '.$sufijo);
+            $this->get('/mensajes')->assertOk()->assertDontSee('Grupo de visibilidad '.$sufijo);
+            $this->get('/grupos?visibilidad=ocultos')
+                ->assertOk()
+                ->assertSee('Grupo de visibilidad '.$sufijo)
+                ->assertSee('Oculto del tablero');
+            $this->get('/mensajes/grupos/'.$grupo->id)->assertOk();
+
+            $this->patch('/grupos/'.$grupo->id.'/visibilidad', [
+                'es_visible_tablero' => 1,
+            ])->assertRedirect();
+
+            $this->assertTrue($grupo->fresh()->es_visible_tablero);
+            $this->assertTrue($grupo->fresh()->es_monitoreado);
+            $this->get('/tablero')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
+            $this->assertSame(
+                2,
+                DB::table('mensajero_auditoria_visibilidad_grupos')
+                    ->where('chat_monitoreado_id', $grupo->id)
+                    ->count(),
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_un_grupo_no_autorizado_no_expone_evidencia_previamente_capturada(): void
     {
         DB::beginTransaction();
