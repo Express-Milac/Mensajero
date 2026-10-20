@@ -123,6 +123,7 @@ final class ControladorMensajes extends Controller
         $muestra = $identificadores === []
             ? collect()
             : EventoCrudoWhatsapp::query()
+                ->with('mensaje.remitente')
                 ->whereIn('chat_monitoreado_id', $identificadores)
                 ->where('tipo_evento', 'mensaje')
                 ->whereBetween('recibido_en', [
