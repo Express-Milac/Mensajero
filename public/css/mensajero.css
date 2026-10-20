@@ -19,7 +19,9 @@
 .breadcrumbs a{text-decoration:none}
 .filter-row{display:flex;align-items:end;flex-wrap:wrap;gap:12px}
 .filter-row label{margin:0 0 7px}
-.filter-row select{min-width:215px;border:1px solid #ccd8d1;background:white;border-radius:9px;padding:12px;font:inherit}
+.filter-row select{min-width:175px;border:1px solid #ccd8d1;background:white;border-radius:9px;padding:12px;font:inherit}
+.filter-row input[type=date]{min-width:160px;border:1px solid #ccd8d1;background:white;border-radius:9px;padding:12px;font:inherit;max-width:100%}
+.filter-row select:focus-visible,.filter-row input[type=date]:focus-visible{outline:2px solid #315f4e;outline-offset:2px}
 .filter-row a{font-size:13px;padding:12px}
 .integrity-warning{background:#fff5df;color:#72531b}
 .integrity-warning p{margin:7px 0}
@@ -44,7 +46,7 @@
 .evidence-metadata dd{margin:0;font-size:13px;overflow-wrap:anywhere}
 .raw-json{margin:20px 0 0;max-height:540px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#142f31;color:#e4f0ea;padding:20px;border-radius:13px;font-size:12px;line-height:1.55}
 @media(max-width:1150px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:800px){.metric-grid{grid-template-columns:1fr 1fr}.metric{padding:16px}.metric strong{font-size:28px}.section-heading,.evidence-banner,.event-header{display:block}.event-header time{display:block;margin-top:12px}.evidence-metadata{grid-template-columns:1fr}.event-card{padding:18px}.event-footer a{margin-left:0}.filter-row{display:block}.filter-row select,.filter-row button{width:100%;margin-top:10px}}
+@media(max-width:800px){.metric-grid{grid-template-columns:1fr 1fr}.metric{padding:16px}.metric strong{font-size:28px}.section-heading,.evidence-banner,.event-header{display:block}.event-header time{display:block;margin-top:12px}.evidence-metadata{grid-template-columns:1fr}.event-card{padding:18px}.event-footer a{margin-left:0}.filter-row{display:block}.filter-row select,.filter-row input[type=date],.filter-row button{width:100%;margin-top:10px}}
 @media(max-width:440px){.metric-grid{grid-template-columns:1fr}}
 
 
