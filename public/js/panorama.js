@@ -263,8 +263,9 @@
             }
 
             const documento = new DOMParser().parseFromString(await respuesta.text(), 'text/html');
-            if (!documento.querySelector('[data-panorama-indicadores]') ||
-                !documento.querySelector('[data-panorama-tarjetas]')) {
+            if (!documento.querySelector('[data-panorama-tarjetas]') ||
+                (document.querySelector('[data-panorama-indicadores]') &&
+                 !documento.querySelector('[data-panorama-indicadores]'))) {
                 throw new Error('Respuesta de actualización no válida.');
             }
 
