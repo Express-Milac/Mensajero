@@ -11,6 +11,8 @@ use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use JsonException;
 
@@ -29,7 +31,7 @@ final class ControladorMensajes extends Controller
      * El navegador consulta periódicamente este fragmento, sin recargar
      * la página y sin exponer rutas ni datos adicionales.
      */
-    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer): \Illuminate\Http\Response
+    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer): Response
     {
         return response()
             ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer))
@@ -94,7 +96,7 @@ final class ControladorMensajes extends Controller
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $this->etiquetaRemitente($evento),
-                    'texto' => \Illuminate\Support\Str::limit($this->resumen($evento, $extraer), 190),
+                    'texto' => Str::limit($this->resumen($evento, $extraer), 190),
                     'fecha' => $evento->recibido_en,
                 ])->all(),
                 // No inferir que un grupo sea de ensayo por su nombre.
@@ -119,8 +121,7 @@ final class ControladorMensajes extends Controller
                 (string) ($a['grupo']->nombre_interno ?: $a['grupo']->nombre_grupo ?: ''),
                 (string) ($b['grupo']->nombre_interno ?: $b['grupo']->nombre_grupo ?: ''),
             )),
-            default => $visibles->sort(fn (array $a, array $b): int =>
-                ($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0)),
+            default => $visibles->sort(fn (array $a, array $b): int => ($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0)),
         };
 
         return [
