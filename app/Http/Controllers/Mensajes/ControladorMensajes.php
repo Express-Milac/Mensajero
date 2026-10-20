@@ -7,6 +7,7 @@ use App\Models\ChatMonitoreado;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
+use App\Services\Mensajes\AnalizarPanoramaContenido;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
@@ -22,19 +23,19 @@ final class ControladorMensajes extends Controller
      * Panorama directivo: actividad y contenido verificable de cada grupo.
      * No presenta señales técnicas como indicadores de negocio.
      */
-    public function indice(Request $request, ExtraerContenidoWhatsapp $extraer): View
+    public function indice(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): View
     {
-        return view('mensajes.indice', $this->datosPanorama($request, $extraer));
+        return view('mensajes.indice', $this->datosPanorama($request, $extraer, $analizador));
     }
 
     /**
      * El navegador consulta periódicamente este fragmento, sin recargar
      * la página y sin exponer rutas ni datos adicionales.
      */
-    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer): Response
+    public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): Response
     {
         return response()
-            ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer))
+            ->view('mensajes.partes.panorama-dinamico', $this->datosPanorama($request, $extraer, $analizador))
             ->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('X-Content-Type-Options', 'nosniff');
     }
@@ -42,7 +43,7 @@ final class ControladorMensajes extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function datosPanorama(Request $request, ExtraerContenidoWhatsapp $extraer): array
+    private function datosPanorama(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador): array
     {
         $opciones = $request->validate([
             'actividad' => ['nullable', 'in:todos,hoy,sin_actividad'],
@@ -104,6 +105,27 @@ final class ControladorMensajes extends Controller
             ];
         });
 
+        // Muestra acotada de hoy, solo de grupos autorizados: no dispara
+        // normalización ni procesa los avisos antiguos del buzón.
+        $muestra = $identificadores === []
+            ? collect()
+            : EventoCrudoWhatsapp::query()
+                ->whereIn('chat_monitoreado_id', $identificadores)
+                ->where('tipo_evento', 'mensaje')
+                ->whereBetween('recibido_en', [
+                    $inicioDia->format('Y-m-d H:i:s.u'),
+                    $finDia->format('Y-m-d H:i:s.u'),
+                ])
+                ->orderByDesc('recibido_en')
+                ->orderByDesc('id')
+                ->limit(300)
+                ->get();
+
+        $analisis = $analizador->ejecutar($muestra, $extraer);
+        $nombresGrupos = $grupos->mapWithKeys(fn (ChatMonitoreado $grupo): array => [
+            $grupo->id => $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre'),
+        ])->all();
+
         $cantidadConActividad = $tarjetas->filter(fn (array $fila): bool => $fila['hoy'] > 0)->count();
         $mensajesHoy = $tarjetas->sum('hoy');
         $ultimaParticipacion = $tarjetas->pluck('ultima')->filter()->sortDesc()->first();
@@ -139,6 +161,8 @@ final class ControladorMensajes extends Controller
             'grupoMasActivo' => $grupoMasActivo,
             'grupoMasReciente' => $grupoMasReciente,
             'gruposSinActividadHoy' => $tarjetas->count() - $cantidadConActividad,
+            'analisis' => $analisis,
+            'nombresGrupos' => $nombresGrupos,
             'actividad' => $actividad,
             'orden' => $orden,
         ];
