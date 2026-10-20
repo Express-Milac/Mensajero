@@ -21,7 +21,7 @@
     // Búsqueda deliberadamente acotada a los mensajes visibles de cada
     // tarjeta. No consulta ni expone JSON completo ni grupos no autorizados.
     function normalizar(valor) {
-        return String(valor ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+        return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     }
 
     function aplicarBusqueda() {
