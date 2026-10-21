@@ -212,8 +212,8 @@
                             if (anteriorY === undefined) {
                                 elemento.animate(
                                     [
-                                        { opacity: 0, transform: 'translateY(-20px) scale(.98)' },
-                                        { opacity: 1, transform: 'translateY(0) scale(1)' },
+                                        { opacity: 0, transform: 'translateY(-20px) scale(.98)', backgroundColor: '#fff0e1' },
+                                        { opacity: 1, transform: 'translateY(0) scale(1)', backgroundColor: 'transparent' },
                                     ],
                                     { duration: 360, easing: 'cubic-bezier(.2,.75,.25,1)' },
                                 );
@@ -403,6 +403,12 @@
             if (!canal && reintento === null) void conectarTiempoReal();
         }
     });
+
+    // Respaldo cada 60 s si un aviso se pierde durante una falla transitoria;
+    // el flujo normal es inmediato mediante SSE, nunca por sondeo de 12 s.
+    window.setInterval(() => {
+        if (document.visibilityState === 'visible') programarRevision();
+    }, 60000);
 
     void comprobar();
     void conectarTiempoReal();
