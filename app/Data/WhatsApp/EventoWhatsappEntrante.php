@@ -20,6 +20,9 @@ final readonly class EventoWhatsappEntrante
         public ?string $remitenteProveedorId = null,
         public ?string $mensajeCitadoProveedorId = null,
         public ?string $mensajeObjetivoProveedorId = null,
+        public ?string $nombreRemitente = null,
+        public ?string $fuenteNombreRemitente = null,
+        public ?string $telefonoRemitente = null,
     ) {}
 
     public function hashContenidoSha256(): string
