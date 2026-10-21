@@ -156,7 +156,9 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee($contenido, false)
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
-                ->assertDontSee('<!doctype html>', false);
+                ->assertDontSee('<!doctype html>', false)
+                ->assertDontSee('css/interfaz-unificada.css', false)
+                ->assertDontSee('<body', false);
 
             // Symfony puede reordenar las directivas del encabezado.
             // Verificar su conjunto, no la serialización de su orden.
