@@ -215,3 +215,89 @@
 .panorama-claro .catalogo-tarjeta-cuerpo>.centro-ver-evidencia{display:inline-block;margin:12px 0}
 @media(max-width:1080px){.panorama-claro .identificacion-contenido{grid-template-columns:1fr}}
 @media(max-width:450px){.panorama-claro .identificacion-formulario button{align-self:stretch}}
+
+
+/* Gestión de grupos compacta: sin modificar las tarjetas de remitentes. */
+.panorama-claro .gestor-seccion .catalogo-titulo{margin-bottom:12px}
+.panorama-claro .gestor-seccion .catalogo-filtros{margin-bottom:12px}
+.panorama-claro .gestor-seccion .catalogo-filtros label{margin-bottom:5px}
+.panorama-claro .gestor-seccion .catalogo-filtros input,
+.panorama-claro .gestor-seccion .catalogo-filtros select{min-height:37px}
+.panorama-claro .gestor-metricas{gap:10px;margin-bottom:16px}
+.panorama-claro .gestor-metricas article{padding:12px 14px;border-radius:11px}
+.panorama-claro .gestor-metricas .catalogo-metrica-icono{width:34px;height:34px;flex-basis:34px;border-radius:9px}
+.panorama-claro .gestor-aviso{font-size:11px;line-height:1.45;padding:10px 13px;margin-bottom:10px}
+.panorama-claro .gestor-aclaracion{margin:0 0 11px;padding:9px 13px;border:1px solid #d9e6f1;border-radius:9px;background:#f4f8fc;color:#577188;font-size:11px;line-height:1.5}
+.panorama-claro .gestor-aclaracion strong{color:#234c6b}
+
+.panorama-claro .gestor-lista{border:1px solid #e0e8f0;border-radius:13px;background:#fff;overflow:hidden;box-shadow:0 4px 20px #19395508}
+.panorama-claro .gestor-cabecera-lista,
+.panorama-claro .gestor-fila{
+ display:grid;grid-template-columns:minmax(220px,2.5fr) minmax(145px,1.1fr) minmax(106px,1fr) minmax(142px,1.1fr) minmax(110px,.9fr);
+ column-gap:14px;align-items:center
+}
+.panorama-claro .gestor-cabecera-lista{padding:12px 17px;background:#f6f9fc;color:#6b8298;font-size:10px;font-weight:800;letter-spacing:.035em;border-bottom:1px solid #e8edf2}
+.panorama-claro .gestor-fila{padding:10px 17px;border-bottom:1px solid #eaf0f4;transition:background-color .18s}
+.panorama-claro .gestor-fila:last-child{border-bottom:0}
+.panorama-claro .gestor-fila:hover{background:#fafcfe}
+.panorama-claro .gestor-fila.gestor-guardando{background:#fffaf5}
+.panorama-claro .gestor-identidad{display:flex;align-items:center;gap:10px;min-width:0}
+.panorama-claro .gestor-avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:9px;background:#fff0e5;color:#e8732c}
+.panorama-claro .gestor-avatar svg{width:18px;height:18px}
+.panorama-claro .gestor-identidad-texto{min-width:0}
+.panorama-claro .gestor-identidad h3{margin:0 0 3px;color:#1b3959;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panorama-claro .gestor-identidad-texto>span{display:block;color:#8090a0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panorama-claro .gestor-columna{min-width:0;font-size:11px;color:#4d657d}
+.panorama-claro .gestor-fecha time{font-size:11px;color:#385470}
+.panorama-claro .gestor-indicador-captura{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap}
+.panorama-claro .gestor-indicador-captura::before{content:"";width:6px;height:6px;background:currentColor;border-radius:50%}
+.panorama-claro .gestor-indicador-captura.activa{background:#e4f6ec;color:#16744d}
+.panorama-claro .gestor-indicador-captura.inactiva{background:#f0f3f6;color:#68798a}
+.panorama-claro .gestor-form-visibilidad{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0}
+.panorama-claro .gestor-interruptor{display:inline-flex;align-items:center;gap:9px;margin:0;cursor:pointer;min-height:36px}
+.panorama-claro .gestor-interruptor input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.panorama-claro .gestor-pista-switch{position:relative;display:inline-block;width:37px;height:21px;flex:0 0 37px;background:#ccd7e1;border-radius:999px;transition:background .16s ease}
+.panorama-claro .gestor-pista-switch::before{content:"";position:absolute;left:3px;top:3px;width:15px;height:15px;border-radius:50%;background:white;box-shadow:0 1px 3px #16375335;transition:transform .16s ease}
+.panorama-claro .gestor-interruptor input:checked+.gestor-pista-switch{background:#f4772e}
+.panorama-claro .gestor-interruptor input:checked+.gestor-pista-switch::before{transform:translateX(16px)}
+.panorama-claro .gestor-interruptor input:focus-visible+.gestor-pista-switch{outline:3px solid #ffb88b;outline-offset:3px}
+.panorama-claro .gestor-interruptor input:disabled+.gestor-pista-switch{opacity:.5;cursor:wait}
+.panorama-claro .gestor-texto-switch{font-size:11px;font-weight:800;color:#2e506f}
+.panorama-claro .gestor-estado-guardado{font-size:10px;color:#197650;min-width:0}
+.panorama-claro .gestor-estado-guardado[hidden]{display:none}
+.panorama-claro .gestor-estado-guardado.gestor-error{color:#aa4336}
+.panorama-claro .gestor-ver-grupo{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:8px;text-decoration:none;font-size:10px;font-weight:800;color:#be5b20;background:#fff1e5;white-space:nowrap}
+.panorama-claro .gestor-ver-grupo:hover{background:#ffe3ce}
+.panorama-claro .gestor-sin-conversacion,.panorama-claro .gestor-lectura-visibilidad{font-size:10px;color:#7c8e9e}
+.panorama-claro .gestor-detalles{grid-column:1/-1;margin:5px 0 0;border-top:1px dashed #ecf1f5;padding-top:7px;font-size:10px;color:#6e8397}
+.panorama-claro .gestor-detalles summary{display:inline-block;cursor:pointer;font-weight:700;color:#62809a}
+.panorama-claro .gestor-detalles dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:11px 0}
+.panorama-claro .gestor-detalles dt{color:#7c91a3}
+.panorama-claro .gestor-detalles dd{margin:3px 0 0;color:#2b506d;overflow-wrap:anywhere}
+.panorama-claro .gestor-form-captura{display:flex;align-items:center;gap:10px;padding:7px 0}
+.panorama-claro .gestor-form-captura small{color:#697f92;font-size:10px}
+.panorama-claro .gestor-etiqueta-movil{display:none}
+
+@media(max-width:1100px){
+ .panorama-claro .gestor-cabecera-lista,
+ .panorama-claro .gestor-fila{grid-template-columns:minmax(180px,2.3fr) minmax(108px,1fr) minmax(98px,.9fr) minmax(125px,1fr) minmax(105px,.9fr);gap:9px}
+ .panorama-claro .gestor-fila{padding:10px}
+ .panorama-claro .gestor-cabecera-lista{padding:10px}
+}
+@media(max-width:820px){
+ .panorama-claro .gestor-cabecera-lista{display:none}
+ .panorama-claro .gestor-fila{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 14px;padding:15px}
+ .panorama-claro .gestor-identidad{grid-column:1/-1}
+ .panorama-claro .gestor-etiqueta-movil{display:block;font-size:10px;color:#8598a8;margin-bottom:4px}
+ .panorama-claro .gestor-detalles dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .panorama-claro .gestor-columna-switch{grid-column:1/2}
+ .panorama-claro .gestor-acciones-fila{grid-column:2/3}
+}
+@media(max-width:480px){
+ .panorama-claro .gestor-metricas{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .panorama-claro .gestor-detalles dl{grid-template-columns:1fr}
+ .panorama-claro .gestor-form-captura{flex-direction:column;align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+ .panorama-claro .gestor-fila,.panorama-claro .gestor-pista-switch,.panorama-claro .gestor-pista-switch::before{transition:none}
+}
