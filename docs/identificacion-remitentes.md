@@ -115,3 +115,68 @@ forma definitiva requiere un directorio corporativo de identidades
 y evidencias comprobadas, no solo coincidencia de nombre de perfil.
 
 No abrir colas ni despachar los 40 avisos históricos pendientes.
+
+## Captura del nombre y del celular directamente desde el recolector
+
+A partir del cambio del 21/10/2026, los mensajes **nuevos** de grupos
+autorizados transportan opcionalmente
+`nombre_remitente`, `fuente_nombre_remitente` y
+`telefono_remitente`. Baileys utiliza los nombres aportados por su
+flujo `contacts.upsert`, `contacts.update` o
+`messaging-history.set`, además del `pushName` del mensaje. Cuando
+no existe nombre guardado, se usa el nombre de perfil si está presente;
+ambos se marcan con fuentes diferentes.
+
+La migración
+`database/migrations/2026_10_21_000001_identificar_remitentes_en_eventos.php`
+agrega tres columnas anulables en SQL Server al evento crudo:
+`nombre_remitente` (120), `fuente_nombre_remitente` (16) y
+`telefono_remitente` (20). La pasarela firmada admite los campos sin
+exigirlos a integraciones previas y valida longitudes, procedencia y
+formato de número. No se modifica la carga JSON original, su SHA-256
+ni su deduplicación.
+
+Mensajero muestra el nombre y el celular cuando ambos están presentes
+en el tablero, en conversaciones, en el detalle del mensaje y en el
+directorio. El nombre corporativo asignado manualmente mantiene la
+máxima prioridad. Los mensajes históricos no se reescriben.
+
+### Orden de despliegue en pruebas
+
+**Primero Laravel y SQL Server; después el recolector**. Antes de
+ejecutar la migración verifica que la conexión SQL se llame
+`mensajero_test`:
+
+```powershell
+git pull origin codex/raw-foundation-no-auth
+php artisan tinker --execute="echo config('database.connections.sqlsrv.database');"
+
+# Solo si la salida es mensajero_test:
+php artisan migrate --path=database/migrations/2026_10_21_000001_identificar_remitentes_en_eventos.php --force
+
+vendor\bin\pint --test app\Data\WhatsApp\EventoWhatsappEntrante.php app\Http\Controllers\Pasarela\ControladorEntradaPasarela.php app\Services\Capture\CapturarEventoWhatsappEntrante.php app\Services\Mensajes\IdentificarRemitente.php tests\Unidad\IdentificarRemitenteTest.php tests\Integracion\SemanticaRecolectorSqlServerTest.php
+
+vendor\bin\phpunit --filter IdentificarRemitenteTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter SemanticaRecolectorSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter IdentificacionRemitentesSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
+```
+
+Luego, desde `recolector-whatsapp`:
+
+```powershell
+npm run verificar
+npm run pruebas
+```
+
+Solo después de pruebas aprobadas, reinicia **la única** instancia
+del recolector de ensayo mediante su mecanismo normal. No crear una
+segunda sesión, no usar el número principal de la empresa ni
+despachar los 40 avisos históricos. Un mensaje de un participante
+conocido servirá para verificar qué entrega realmente WhatsApp.
+
+Nota: `syncFullHistory: false` limita la información de contactos
+que puede suministrar la sesión. Ni Baileys ni Mensajero garantizan
+que el nombre guardado o el número de todos los participantes esté
+disponible. Si falta, no se inventa: el directorio permite asignar un
+nombre interno con permisos controlados.
