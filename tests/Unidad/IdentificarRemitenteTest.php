@@ -46,6 +46,41 @@ final class IdentificarRemitenteTest extends TestCase
         $this->assertSame('Persona sin identificar', $identificador->nombre($lid));
     }
 
+    public function test_prioriza_nombre_y_celular_enviados_por_el_recolector_sin_modificar_json(): void
+    {
+        $crudo = '{"key":{"participant":"99332211@lid"},"message":{"conversation":"Entregado"}}';
+        $evento = new EventoCrudoWhatsapp([
+            'conexion_id' => 10,
+            'id_remitente_proveedor' => '99332211@lid',
+            'contenido' => $crudo,
+            'nombre_remitente' => 'Rosa - Operaciones',
+            'fuente_nombre_remitente' => 'contacto',
+            'telefono_remitente' => '5214611234567',
+        ]);
+
+        $identificador = new IdentificarRemitente;
+
+        $this->assertSame('Rosa - Operaciones', $identificador->nombreWhatsapp($evento));
+        $this->assertSame('Rosa - Operaciones', $identificador->nombre($evento));
+        $this->assertSame('5214611234567', $identificador->telefono($evento));
+        $this->assertSame($crudo, $evento->contenido);
+    }
+
+    public function test_nombre_de_perfil_prevalece_si_no_hay_agenda_pero_el_celular_no_se_infiere_de_lid(): void
+    {
+        $evento = new EventoCrudoWhatsapp([
+            'conexion_id' => 10,
+            'id_remitente_proveedor' => '99332211@lid',
+            'contenido' => '{"key":{"participant":"99332211@lid"},"message":{"conversation":"Hola"}}',
+            'nombre_remitente' => 'Perfil Laura',
+            'fuente_nombre_remitente' => 'perfil',
+        ]);
+
+        $identificador = new IdentificarRemitente;
+        $this->assertSame('Perfil Laura', $identificador->nombre($evento));
+        $this->assertNull($identificador->telefono($evento));
+    }
+
     public function test_utiliza_telefono_asociado_a_lid_solo_si_la_clave_lo_confirma(): void
     {
         $evento = new EventoCrudoWhatsapp([
