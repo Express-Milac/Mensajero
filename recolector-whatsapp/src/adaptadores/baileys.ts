@@ -240,6 +240,8 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     let candidatosGrupo = 0;
     let normalizadosGrupo = 0;
     let edicionesCifradas = 0;
+    let remitentesConNombre = 0;
+    let remitentesConTelefono = 0;
 
     for (const mensaje of mensajes) {
       try {
@@ -265,6 +267,12 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         if (normalizado !== null) {
           normalizadosGrupo += 1;
           await this.completarTelefonoLocalSiExiste(normalizado);
+          if (normalizado.nombreRemitente) {
+            remitentesConNombre += 1;
+          }
+          if (normalizado.telefonoRemitente) {
+            remitentesConTelefono += 1;
+          }
           await this.guardarContextoEdicionSiCorresponde(mensaje, normalizado);
           await this.manejadores.alMensaje(normalizado);
         }
@@ -280,6 +288,8 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         candidatos_grupo: candidatosGrupo,
         normalizados_grupo: normalizadosGrupo,
         ediciones_cifradas: edicionesCifradas,
+        remitentes_con_nombre: remitentesConNombre,
+        remitentes_con_telefono: remitentesConTelefono,
       },
       'Lote de mensajes de WhatsApp procesado.',
     );
