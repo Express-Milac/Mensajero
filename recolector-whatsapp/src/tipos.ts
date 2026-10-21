@@ -25,6 +25,9 @@ export interface MensajeProveedor {
   eventoExternoId: string | null;
   mensajeProveedorId: string | null;
   remitenteProveedorId: string | null;
+  nombreRemitente?: string | null;
+  fuenteNombreRemitente?: 'contacto' | 'perfil' | null;
+  telefonoRemitente?: string | null;
   mensajeCitadoProveedorId: string | null;
   mensajeObjetivoProveedorId: string | null;
   contenidoCrudo: string;
