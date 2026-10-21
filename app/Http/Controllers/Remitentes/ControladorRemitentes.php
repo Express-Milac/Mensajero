@@ -67,6 +67,8 @@ final class ControladorRemitentes extends Controller
                 'nombre' => $identificador->nombre($evento),
                 'nombre_asignado' => $identificador->nombreAsignado($evento),
                 'nombre_whatsapp' => $identificador->nombreWhatsapp($evento),
+                'telefono' => $identificador->telefono($evento),
+                'fuente_nombre' => $evento->fuente_nombre_remitente,
                 'mensajes' => (int) $fila->mensajes,
             ];
         }
@@ -85,6 +87,8 @@ final class ControladorRemitentes extends Controller
             'registro' => $registro,
             'nombre' => $identificador->nombre($registro),
             'nombreWhatsapp' => $identificador->nombreWhatsapp($registro),
+            'telefono' => $identificador->telefono($registro),
+            'fuenteNombre' => $registro->fuente_nombre_remitente,
             'nombreAsignado' => $identificador->nombreAsignado($registro),
         ]);
     }
