@@ -29,7 +29,7 @@
                 <span class="marca-producto">Mensajero <small>Conversaciones y seguimiento</small></span>
             </a>
             <p class="eyebrow etiqueta-menu">MENSAJERO MILAC</p>
-            @php($puedeConsultar = config('mensajero.autenticacion.modo') !== 'deshabilitado' || (app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
+            @php($puedeConsultar = (config('mensajero.autenticacion.modo') === 'local' && auth()->check()) || (config('mensajero.autenticacion.modo') === 'deshabilitado' && app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion', false) && in_array(request()->ip(), ['127.0.0.1', '::1'], true)))
             <nav class="navigation">
                 @if($puedeConsultar)
                     <a class="nav {{ request()->routeIs('tablero') ? 'active' : '' }}" href="{{ route('tablero') }}" @if(request()->routeIs('tablero')) aria-current="page" @endif>
