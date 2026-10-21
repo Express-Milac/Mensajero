@@ -44,8 +44,8 @@
             </div>
             <button type="submit" class="filtro-aplicar">Aplicar</button>
             <div class="centro-modos" role="group" aria-label="Disposición de tarjetas">
-                <button type="button" class="centro-modo activo" data-modo-tarjetas="cuadricula" aria-pressed="true" title="Vista de cuadrícula">▦</button>
-                <button type="button" class="centro-modo" data-modo-tarjetas="lista" aria-pressed="false" title="Vista de lista">☷</button>
+                <button type="button" class="centro-modo" data-modo-tarjetas="cuadricula" aria-pressed="false" title="Vista de cuadrícula">▦</button>
+                <button type="button" class="centro-modo activo" data-modo-tarjetas="lista" aria-pressed="true" title="Vista de lista">☷</button>
             </div>
             @if($actividad !== 'todos' || $orden !== 'recientes')
                 <a class="filtro-limpiar" href="{{ route('mensajes.indice') }}">Restablecer</a>
