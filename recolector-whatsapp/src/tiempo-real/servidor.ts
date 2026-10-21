@@ -37,7 +37,7 @@ export async function iniciarServidorTiempoReal(
   puerto: number,
   logger: Registrador,
 ): Promise<Server> {
-  if (!Number.isInteger(puerto) || puerto < 1024 || puerto > 65535) {
+  if (!Number.isInteger(puerto) || (puerto !== 0 && puerto < 1024) || puerto > 65535) {
     throw new Error('Puerto de tiempo real inválido.');
   }
 
@@ -111,9 +111,9 @@ export async function iniciarServidorTiempoReal(
         const aviso: unknown = JSON.parse(cuerpo);
         if (typeof aviso !== 'object' || aviso === null) throw new Error('Aviso inválido.');
         const datos = aviso as Record<string, unknown>;
-        if (!Number.isSafeInteger(datos.grupo_id) || Number(datos.grupo_id) < 1 ||
-            !Number.isSafeInteger(datos.evento_id) || Number(datos.evento_id) < 1 ||
-            !Number.isInteger(datos.marca_tiempo) ||
+        if (typeof datos.grupo_id !== 'number' || !Number.isSafeInteger(datos.grupo_id) || datos.grupo_id < 1 ||
+            typeof datos.evento_id !== 'number' || !Number.isSafeInteger(datos.evento_id) || datos.evento_id < 1 ||
+            typeof datos.marca_tiempo !== 'number' || !Number.isInteger(datos.marca_tiempo) ||
             Math.abs(Math.floor(Date.now() / 1000) - Number(datos.marca_tiempo)) > 60) {
           throw new Error('Datos o vigencia de aviso inválidos.');
         }
