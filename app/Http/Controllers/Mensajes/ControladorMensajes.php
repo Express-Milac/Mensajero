@@ -110,6 +110,7 @@ final class ControladorMensajes extends Controller
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $identificador->nombre($evento),
+                    'telefono_remitente' => $identificador->telefono($evento),
                     'tiene_remitente' => is_string($evento->id_remitente_proveedor) && $evento->id_remitente_proveedor !== '',
                     'texto' => Str::limit($this->resumen($evento, $extraer), 190),
                     'fecha' => $evento->recibido_en,
@@ -287,6 +288,7 @@ final class ControladorMensajes extends Controller
             'evento' => $evento,
             'resumen' => $this->resumen($evento, $extraer),
             'remitente' => $identificador->nombre($evento),
+            'telefono_remitente' => $identificador->telefono($evento),
         ]);
 
         $periodosConexion = PeriodoIntegridadWhatsapp::query()
@@ -324,8 +326,9 @@ final class ControladorMensajes extends Controller
 
         $identificador->precargar(collect([$registro]));
         $remitente = $identificador->nombre($registro);
+        $telefonoRemitente = $identificador->telefono($registro);
 
-        return view('mensajes.evento', compact('registro', 'resumen', 'contenido', 'truncado', 'remitente'));
+        return view('mensajes.evento', compact('registro', 'resumen', 'contenido', 'truncado', 'remitente', 'telefonoRemitente'));
     }
 
     private function resumen(EventoCrudoWhatsapp $evento, ExtraerContenidoWhatsapp $extraer): string
