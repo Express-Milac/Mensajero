@@ -142,3 +142,45 @@ pendientes que no tienen estos campos siguen siendo aceptadas.
 No reiniciar para rescatar mensajes de producción ni alterar el
 buzón histórico. Los mensajes ya conservados siguen intactos; este
 cambio **no es un proceso retroactivo de descubrimiento de números**.
+
+
+## Diagnóstico no destructivo de la lista de grupos autorizados
+
+Si SQL Server indica que un grupo está autorizado, pero
+`datos/cola/pendientes` no recibe ningún mensaje y el grupo
+no está en `datos/chats-autorizados.json`, **no edites la caché**
+ni ejecutes `diagnosticar-cola` o `drenar-cola`. Esos dos últimos
+comandos envían trabajos; el drenaje además elimina los confirmados.
+
+Desde la **raíz de Mensajero**, define temporalmente el identificador
+del grupo objetivo obtenido directamente de la BD de prueba:
+
+```powershell
+$env:MENSAJERO_JID_DIAGNOSTICO = (php artisan tinker --execute="echo \App\Models\ChatMonitoreado::find(10020)?->id_chat_proveedor;").Trim()
+Push-Location .\recolector-whatsapp
+try {
+    npm run verificar
+    npm run diagnosticar-autorizaciones
+} finally {
+    Pop-Location
+    Remove-Item Env:\MENSAJERO_JID_DIAGNOSTICO -ErrorAction SilentlyContinue
+}
+```
+
+Este comando firma una **consulta de solo lectura** al endpoint
+`/api/pasarela/v1/chats-autorizados` y la compara con la caché
+del recolector. Solo imprime presencia booleana, cantidades, coincidencia
+y host, sin nombres, JID, claves o contactos. No inicia WhatsApp,
+no modifica permisos, no entrega ni confirma tareas de la cola.
+
+Interpretación:
+- `grupo_en_servidor=true` y `grupo_en_cache=false`: la caché
+  está retrasada respecto a la respuesta HTTP; investigar el ciclo
+  de autorizaciones o su ruta real en el proceso.
+- `grupo_en_servidor=false` pero BD autorizada: la instancia HTTP
+  podría consultar otra base o configuración; verificar URL/servidor
+  antes de modificar registros.
+- `consulta_laravel=fallida`: revisar el estado HTTP y la conectividad
+  hacia Laravel o la firma de la pasarela.
+- Ambas presencias `true`: investigar recepción desde WhatsApp,
+  sus reconexiones y filtros por fecha.
