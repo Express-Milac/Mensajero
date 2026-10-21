@@ -7,6 +7,7 @@
     "postinstall": "node scripts/aplicar-parche-baileys.mjs",
     "desarrollo": "tsx src/principal.ts",
     "diagnosticar-cola": "tsx src/diagnosticar-cola.ts",
+    "diagnosticar-autorizaciones": "tsx src/diagnosticar-autorizaciones.ts",
     "drenar-cola": "tsx src/drenar-cola.ts",
     "verificar": "tsc --noEmit",
     "construir": "tsc",
