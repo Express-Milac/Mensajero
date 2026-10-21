@@ -36,6 +36,11 @@
             const solicitado = interruptor.checked;
             if (solicitado === guardado || interruptor.disabled) return;
 
+            // FormData se construye antes de deshabilitar el interruptor.
+            // Se fija explícitamente el valor para evitar que el hidden 0 prevalezca.
+            const datosEnvio = new FormData(formulario);
+            datosEnvio.set('es_visible_tablero', solicitado ? '1' : '0');
+
             mostrar(solicitado);
             interruptor.disabled = true;
             fila.classList.add('gestor-guardando');
@@ -51,7 +56,7 @@
                         Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
-                    body: new FormData(formulario),
+                    body: datosEnvio,
                 });
 
                 const datos = await respuesta.json().catch(() => null);
