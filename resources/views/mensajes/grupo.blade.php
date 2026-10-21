@@ -108,6 +108,9 @@
                 <div class="mensaje-burbuja">
                     <div class="mensaje-cabecera">
                         <strong class="mensaje-autor">{{ $fila['remitente'] }}</strong>
+                        @if($fila['telefono_remitente'] && ! str_starts_with($fila['remitente'], 'Teléfono +'))
+                            <span class="telefono-participante">+{{ $fila['telefono_remitente'] }}</span>
+                        @endif
                         <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $fechaLocal?->format('H:i:s') ?? 'Sin hora' }}</time>
                     </div>
                     @if($registro->tipo_evento !== 'mensaje')
