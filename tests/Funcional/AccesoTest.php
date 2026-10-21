@@ -44,7 +44,14 @@ class AccesoTest extends TestCase
         config(['mensajero.autenticacion.modo' => 'local']);
         $this->get('/tablero')->assertRedirect('/acceso');
         $this->get('/estado')->assertRedirect('/acceso');
-        $this->get('/acceso')->assertOk()->assertSee('Entrar al sistema');
+        $this->get('/acceso')
+            ->assertOk()
+            ->assertSee('Entrar al sistema')
+            ->assertSee('Mensajero MILAC')
+            ->assertSee('css/panorama-claro.css')
+            ->assertSee('css/catalogo-grupos.css')
+            ->assertSee('css/interfaz-unificada.css')
+            ->assertSee('class="panorama-claro pagina-acceso"', false);
     }
 
     public function test_visualizador_local_lee_tablero_pero_no_diagnostico(): void
