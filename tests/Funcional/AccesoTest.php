@@ -20,10 +20,14 @@ class AccesoTest extends TestCase
         return $usuario;
     }
 
-    public function test_autenticacion_deshabilitada_permite_tablero_interno_sin_usuario(): void
+    public function test_autenticacion_deshabilitada_exige_permisos_de_consulta_y_no_expone_el_tablero(): void
     {
-        config(['mensajero.autenticacion.modo' => 'deshabilitado']);
-        $this->get('/tablero')->assertOk()->assertSee('Acceso interno temporal')->assertSee('Preparando conexión');
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => false,
+        ]);
+
+        $this->get('/tablero')->assertForbidden();
         $this->get('/acceso')->assertRedirect('/tablero');
     }
 
@@ -56,13 +60,14 @@ class AccesoTest extends TestCase
             ->assertDontSee('Remitentes');
     }
 
-    public function test_visualizador_local_lee_tablero_pero_no_diagnostico(): void
+    public function test_visualizador_local_no_puede_abrir_apartado_tecnico(): void
     {
         config(['mensajero.autenticacion.modo' => 'local']);
         $this->actingAs($this->usuario(Rol::Visualizador));
-        $this->get('/tablero')->assertOk()->assertSee('Preparando conexión');
+        $this->get('/mensajes/tecnico')->assertForbidden();
         $this->get('/estado')->assertForbidden();
         $this->assertFalse(Gate::allows('revisar-eventos'));
+        $this->assertFalse(Gate::allows('administrar'));
     }
 
     public function test_supervisor_local_puede_revisar_pero_no_administrar(): void
