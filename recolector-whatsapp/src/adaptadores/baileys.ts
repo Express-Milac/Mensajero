@@ -9,6 +9,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
 import { AlmacenContextoEdicionesDurable } from '../ediciones/almacen-contexto-ediciones-durable.js';
+import { IdentidadesRecolector } from '../identidad-remitente.js';
 import {
   descifrarEdicionCifradaWhatsapp,
   esEdicionCifradaWhatsapp,
@@ -40,6 +41,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
   private recepcionConfirmada = false;
   private readonly rutaAutorizados: string;
   private readonly almacenContextoEdiciones: AlmacenContextoEdicionesDurable;
+  private readonly identidades = new IdentidadesRecolector();
 
   public constructor(
     private readonly rutaSesion: string,
@@ -136,6 +138,19 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
     socket.ev.on('connection.update', (actualizacion) => {
       void this.manejarActualizacionConexion(actualizacion, secuencia);
+    });
+
+    // Los nombres guardados y los de perfil pueden estar en el flujo de
+    // contactos, no necesariamente en el evento de mensaje.
+    // El cache es efímero: nunca exportamos toda la agenda ni chats ajenos.
+    socket.ev.on('contacts.upsert', (contactos) => {
+      this.identidades.registrarContactos(contactos);
+    });
+    socket.ev.on('contacts.update', (contactos) => {
+      this.identidades.registrarContactos(contactos);
+    });
+    socket.ev.on('messaging-history.set', (datos) => {
+      this.identidades.registrarContactos(datos.contacts);
     });
 
     socket.ev.on('messages.upsert', (evento) => {
@@ -394,8 +409,11 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       ?? mensaje.key?.participantAlt
       ?? null;
 
+    const identidad = this.identidades.resolver(valor, remitenteProveedorId);
+
     return {
       chatId,
+      ...identidad,
       tipoEvento: semantica.tipoEvento,
       tipoMensaje: semantica.tipoMensaje,
       eventoExternoId: mensaje.key?.id ?? null,
