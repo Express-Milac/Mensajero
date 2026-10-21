@@ -6,14 +6,12 @@
     <meta name="theme-color" content="#ffffff">
     <title>{{ $title ?? 'Mensajero' }} · Express MILAC</title>
     <link rel="stylesheet" href="{{ asset('css/mensajero.css') }}?v={{ filemtime(public_path('css/mensajero.css')) }}">
-    @if(request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*'))
-        <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
-    @endif
-    @if(request()->routeIs('grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*'))
-        <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
-    @endif
+    {{-- Un solo sistema visual para todas las páginas: no depende de enumerar rutas. --}}
+    <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/interfaz-unificada.css') }}?v={{ filemtime(public_path('css/interfaz-unificada.css')) }}">
 </head>
-<body class="{{ request()->routeIs('tablero', 'grupos.indice', 'mensajes.indice', 'mensajes.grupo', 'remitentes.*') ? 'panorama-claro' : '' }}">
+<body class="panorama-claro {{ request()->routeIs('acceso') ? 'pagina-acceso' : '' }} {{ request()->routeIs('mensajes.evento') ? 'pagina-evidencia' : '' }} {{ request()->routeIs('mensajes.tecnico') ? 'pagina-tecnica' : '' }}">
     <div class="shell">
         <aside class="barra-corporativa" aria-label="Navegación principal">
             <a class="brand marca-corporativa" href="{{ route('tablero') }}" aria-label="Express MILAC, Mensajero, inicio">
