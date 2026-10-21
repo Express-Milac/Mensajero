@@ -40,6 +40,14 @@ return [
     // Asignación manual de nombres: permiso independiente, solo POC local.
     'gestion_local_remitentes_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_REMITENTES_HABILITADA', false),
 
+    // SSE entregado desde el recolector a través de un puerto local.
+    // En producción publicar mediante proxy HTTPS y configurar URL pública.
+    'tiempo_real' => [
+        'habilitado' => filter_var(env('MENSAJERO_TIEMPO_REAL_HABILITADO', env('APP_ENV', 'production') === 'local'), FILTER_VALIDATE_BOOLEAN),
+        'url_publica' => env('MENSAJERO_TIEMPO_REAL_URL', 'http://127.0.0.1:8765'),
+        'puerto_local' => (int) env('MENSAJERO_TIEMPO_REAL_PUERTO', 8765),
+    ],
+
     'normalizacion' => [
         // No procesar datos históricos hasta aprobar integración SQL Server.
         'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
