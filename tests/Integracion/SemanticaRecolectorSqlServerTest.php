@@ -45,6 +45,9 @@ class SemanticaRecolectorSqlServerTest extends TestCase
                 'evento_externo_id' => $idObjetivo,
                 'mensaje_proveedor_id' => $idObjetivo,
                 'id_remitente_proveedor' => $remitente,
+                'nombre_remitente' => 'Rosa - Operaciones',
+                'fuente_nombre_remitente' => 'contacto',
+                'telefono_remitente' => '521000000000',
                 'contenido_crudo' => '{"conversation":"texto original"}',
             ]);
 
@@ -124,10 +127,20 @@ class SemanticaRecolectorSqlServerTest extends TestCase
                 $eventosObjetivo->pluck('tipo_mensaje')->all(),
             );
             $this->assertSame($remitente, $eventosObjetivo[0]->id_remitente_proveedor);
+            $this->assertSame('Rosa - Operaciones', $eventosObjetivo[0]->nombre_remitente);
+            $this->assertSame('contacto', $eventosObjetivo[0]->fuente_nombre_remitente);
+            $this->assertSame('521000000000', $eventosObjetivo[0]->telefono_remitente);
+            $this->assertSame('{"conversation":"texto original"}', $eventosObjetivo[0]->contenido);
+            $this->assertSame(
+                hash('sha256', '{"conversation":"texto original"}'),
+                $eventosObjetivo[0]->hash_contenido_sha256,
+            );
             $this->assertSame($idObjetivo, $eventosObjetivo[1]->id_mensaje_objetivo_proveedor);
             $this->assertSame($idObjetivo, $eventosObjetivo[2]->id_mensaje_objetivo_proveedor);
             $this->assertSame($idObjetivo, $eventosObjetivo[3]->id_mensaje_objetivo_proveedor);
             $this->assertSame('v3-recolector', $eventosObjetivo[1]->version_contrato);
+            $this->assertNull($eventosObjetivo[1]->nombre_remitente);
+            $this->assertNull($eventosObjetivo[1]->telefono_remitente);
 
             $respuestaGuardada = EventoCrudoWhatsapp::query()
                 ->where('conexion_id', $conexion->id)
