@@ -39,8 +39,11 @@ Route::middleware('mensajero.acceso')->group(function () {
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
         Route::get('/mensajes', [ControladorMensajes::class, 'conversaciones'])
             ->name('mensajes.indice');
+        Route::get('/mensajes/credencial-tiempo-real', [ControladorMensajes::class, 'credencialTiempoReal'])
+            ->middleware('throttle:30,1')
+            ->name('mensajes.credencial.tiempo-real');
         Route::get('/mensajes/actualizacion', [ControladorMensajes::class, 'actualizacion'])
-            ->middleware('throttle:15,1')
+            ->middleware('throttle:240,1')
             ->name('mensajes.actualizacion');
         Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
             ->name('remitentes.indice');
