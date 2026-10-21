@@ -281,9 +281,13 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('class="panorama-claro pagina-evidencia', false)
                 ->assertSee('Contenido del mensaje')
                 ->assertSee('OCULTO EN LA VISTA')
+                // El número legítimo puede mostrarse como identificación
+                // en una página autorizada, pero nunca el JID íntegro
+                // ni secretos de la evidencia original.
+                ->assertSee('Teléfono +5219990000000')
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
-                ->assertDontSee('5219990000000', false)
+                ->assertDontSee('5219990000000@s.whatsapp.net', false)
                 ->assertDontSee($contenido, false);
 
             $crudoGuardado = EventoCrudoWhatsapp::query()->findOrFail($captura->eventoCrudoId);
