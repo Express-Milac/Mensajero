@@ -7,6 +7,10 @@ use App\Models\ChatMonitoreado;
 use App\Models\ContactoWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
+use App\Jobs\AnalizarMensajeGeminiTrabajo;
+use App\Services\IA\PoliticaEnvioGemini;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -20,7 +24,7 @@ final class NormalizarEventoWhatsapp
 
     public function ejecutar(int $eventoCrudoId): string
     {
-        return DB::transaction(function () use ($eventoCrudoId): string {
+        $resultado = DB::transaction(function () use ($eventoCrudoId): string {
             $evento = EventoCrudoWhatsapp::query()
                 ->whereKey($eventoCrudoId)
                 ->lockForUpdate()
@@ -154,5 +158,32 @@ final class NormalizarEventoWhatsapp
 
             return 'normalizado';
         }, 3);
+
+        // Desacoplado del COMMIT: una caída de Gemini o Redis nunca
+        // revierte la normalización, la evidencia ni la captura del recolector.
+        if ($resultado === 'normalizado' && config('mensajero.ia.ejecucion_automatica') === true) {
+            try {
+                $proyeccion = MensajeWhatsapp::query()
+                    ->where('evento_crudo_id', $eventoCrudoId)
+                    ->first(['id', 'chat_monitoreado_id', 'tipo_mensaje', 'recibido_en']);
+
+                if ($proyeccion !== null && $proyeccion->tipo_mensaje === 'texto' &&
+                    $proyeccion->recibido_en !== null &&
+                    app(PoliticaEnvioGemini::class)->autoriza(
+                        (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
+                    )) {
+                    AnalizarMensajeGeminiTrabajo::dispatch((int) $proyeccion->id);
+                }
+            } catch (Throwable $error) {
+                // El comando mensajero:analizar-gemini permite recuperar una
+                // publicación fallida sin volver a capturar mensajes.
+                Log::warning('No se pudo publicar trabajo de IA; el mensaje normalizado permanece intacto.', [
+                    'evento_crudo_id' => $eventoCrudoId,
+                    'tipo_error' => get_class($error),
+                ]);
+            }
+        }
+
+        return $resultado;
     }
 }
