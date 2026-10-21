@@ -8,6 +8,7 @@ use App\Services\Grupos\CambiarVisibilidadTablero;
 use App\Services\Monitoreo\CambiarMonitoreoChat;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -101,7 +102,7 @@ class ControladorGrupos extends Controller
         Request $request,
         int $chat,
         CambiarVisibilidadTablero $cambiarVisibilidad,
-    ): RedirectResponse {
+    ): RedirectResponse|JsonResponse {
         $datos = $request->validate([
             'es_visible_tablero' => ['required', 'boolean'],
         ]);
@@ -114,12 +115,22 @@ class ControladorGrupos extends Controller
             is_numeric($actorId) ? (int) $actorId : null,
         );
 
-        return back()->with(
-            'estado',
-            $actualizado->es_visible_tablero
-                ? 'El grupo vuelve a aparecer en el tablero. La captura no cambió.'
-                : 'El grupo ya no se muestra en el tablero. La captura continúa sin cambios.',
-        );
+        $mensaje = $actualizado->es_visible_tablero
+            ? 'Grupo visible en el tablero. La captura no cambió.'
+            : 'Grupo oculto del tablero. La captura continúa sin cambios.';
+
+        if ($request->expectsJson()) {
+            return response()
+                ->json([
+                    'ok' => true,
+                    'grupo_id' => (int) $actualizado->id,
+                    'es_visible_tablero' => (bool) $actualizado->es_visible_tablero,
+                    'mensaje' => $mensaje,
+                ])
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        }
+
+        return back()->with('estado', $mensaje);
     }
 
     public function actualizarMonitoreo(
