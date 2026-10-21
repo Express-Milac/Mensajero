@@ -109,7 +109,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
                 ->assertDontSee('carrusel-grupos-vertical', false)
                 ->assertSee('js/panorama.js')
-                ->assertSee('data-panorama-url');
+                ->assertSee('data-panorama-url')
+                ->assertSee('css/interfaz-unificada.css')
+                ->assertSee('css/panorama-claro.css')
+                ->assertSee('class="panorama-claro', false);
 
             // La actualización entrega solo los fragmentos, sin revelar
             // secretos ni renderizar un documento HTML completo.
@@ -168,6 +171,7 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Conversaciones recientes')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
+                ->assertSee('css/interfaz-unificada.css')
                 ->assertDontSee('Temas clave del día');
 
             $this->get('/grupos?estado=monitoreados&origen=recolector')
@@ -176,7 +180,8 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Administrar visibilidad')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Ver conversación')
-                ->assertSee('Acceso controlado');
+                ->assertSee('Acceso controlado')
+                ->assertSee('css/interfaz-unificada.css');
 
             $this->get('/grupos?estado=no_monitoreados')
                 ->assertOk()
@@ -210,6 +215,7 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('mensaje-burbuja', false)
                 ->assertSee('separador-fecha', false)
                 ->assertSee('Registro de conectividad')
+                ->assertSee('css/interfaz-unificada.css')
                 ->assertSee('1 intervalo registrado')
                 ->assertSee('Desconexión de WhatsApp')
                 ->assertSee('Estado «Capturado»')
@@ -242,7 +248,11 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Vista protegida del contenido crudo')
                 ->assertSee('Identificadores y verificación SHA-256')
                 ->assertSee('detalle-tecnico', false)
-                ->assertSee('Mensaje original')
+                ->assertSee('pagina-detalle-evidencia', false)
+                ->assertSee('css/interfaz-unificada.css')
+                ->assertSee('css/panorama-claro.css')
+                ->assertSee('class="panorama-claro pagina-evidencia', false)
+                ->assertSee('Contenido del mensaje')
                 ->assertSee('OCULTO EN LA VISTA')
                 ->assertDontSee($secretoPrueba, false)
                 ->assertDontSee($identificadorPrivado, false)
