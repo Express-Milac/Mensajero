@@ -80,8 +80,16 @@ class IdentificacionRemitentesSqlServerTest extends TestCase
 
             $this->get('/tablero')->assertOk()->assertSee('Laura WhatsApp');
             $this->get('/mensajes/grupos/'.$grupo->id)->assertOk()->assertSee('Laura WhatsApp');
-            $this->get('/mensajes/remitentes')->assertOk()->assertSee('Laura WhatsApp');
-            $this->get('/mensajes/remitentes/eventos/'.$evento->id)->assertOk()->assertSee('Laura WhatsApp');
+            $this->get('/mensajes/remitentes')
+                ->assertOk()
+                ->assertSee('Laura WhatsApp')
+                ->assertSee('css/interfaz-unificada.css')
+                ->assertSee('css/panorama-claro.css');
+            $this->get('/mensajes/remitentes/eventos/'.$evento->id)
+                ->assertOk()
+                ->assertSee('Laura WhatsApp')
+                ->assertSee('css/interfaz-unificada.css')
+                ->assertSee('css/catalogo-grupos.css');
 
             $this->patch('/mensajes/remitentes/eventos/'.$evento->id, [
                 'nombre_interno' => 'Laura Martínez — Tráfico',
