@@ -66,10 +66,14 @@ export class IdentidadesRecolector {
       const nombreGuardado = nombreSeguro(contacto.name);
       const nombrePerfil = nombreSeguro(contacto.verifiedName)
         ?? nombreSeguro(contacto.notify);
-      const nombre = nombreGuardado ?? nombrePerfil ?? anterior?.nombre ?? null;
-      const fuente = nombreGuardado !== null ? 'contacto'
-        : nombrePerfil !== null ? 'perfil'
-          : anterior?.fuente ?? null;
+      const conservaNombreGuardado = anterior?.fuente === 'contacto' && anterior.nombre !== null;
+      const nombre = nombreGuardado
+        ?? (conservaNombreGuardado ? anterior.nombre : null)
+        ?? nombrePerfil
+        ?? anterior?.nombre
+        ?? null;
+      const fuente = nombreGuardado !== null || conservaNombreGuardado ? 'contacto'
+        : nombrePerfil !== null ? 'perfil' : anterior?.fuente ?? null;
       const telefono = telefonoDeJid(id)
         ?? telefonoDeJid(contacto.phoneNumber)
         ?? anterior?.telefono ?? null;
