@@ -47,7 +47,7 @@
                             <div class="centro-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($mensaje['remitente'], -2, 2, 'UTF-8'), 'UTF-8') }}</div>
                             <div class="centro-mensaje-cuerpo">
                                 <div class="fragmento-datos">
-                                    <span class="fragmento-remitente">{{ $mensaje['remitente'] }}</span>
+                                    <span class="fragmento-remitente">{{ $mensaje['remitente'] }}@if($mensaje['telefono_remitente'] && ! str_starts_with($mensaje['remitente'], 'Teléfono +')) <small class="telefono-participante">+{{ $mensaje['telefono_remitente'] }}</small>@endif</span>
                                     <time datetime="{{ $mensaje['fecha']?->toIso8601String() }}">{{ $mensaje['fecha']?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin fecha' }}</time>
                                 </div>
                                 <p>{{ $mensaje['texto'] }}</p>
