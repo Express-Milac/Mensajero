@@ -20,6 +20,9 @@
                 <span class="etiqueta-tipo-mensaje">{{ ucfirst($registro->tipo_evento) }} · {{ $registro->tipo_mensaje ?: 'Tipo sin clasificar' }}</span>
                 <h2>Contenido del mensaje</h2>
                 <p class="detalle-remitente">{{ $remitente }}</p>
+                @if($telefonoRemitente && ! str_starts_with($remitente, 'Teléfono +'))
+                    <p class="telefono-participante">Celular registrado: +{{ $telefonoRemitente }}</p>
+                @endif
                 @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
                     <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $registro->id) }}">Identificar o corregir nombre de esta persona →</a>
                 @endif
