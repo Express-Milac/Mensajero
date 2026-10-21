@@ -10,6 +10,22 @@ return [
     'modelo_gemini' => env('MODELO_GEMINI'),
     'clave_api_gemini' => env('CLAVE_API_GEMINI'),
 
+    // Fase 2: circuito separado de la captura. Cerrado por defecto.
+    'ia' => [
+        'habilitada' => filter_var(env('IA_HABILITADA', false), FILTER_VALIDATE_BOOLEAN),
+        'envio_autorizado' => filter_var(env('MENSAJERO_IA_ENVIO_AUTORIZADO', false), FILTER_VALIDATE_BOOLEAN),
+        'servicio_pagado_confirmado' => filter_var(env('MENSAJERO_IA_SERVICIO_PAGADO_CONFIRMADO', false), FILTER_VALIDATE_BOOLEAN),
+        'ejecucion_automatica' => filter_var(env('MENSAJERO_IA_EJECUCION_AUTOMATICA', false), FILTER_VALIDATE_BOOLEAN),
+        'grupos_autorizados' => array_values(array_unique(array_filter(
+            array_map('intval', explode(',', (string) env('MENSAJERO_IA_GRUPOS_AUTORIZADOS', ''))),
+            static fn (int $id): bool => $id > 0
+        ))),
+        'fecha_inicio' => env('MENSAJERO_IA_FECHA_INICIO', ''),
+        'modelo' => env('MODELO_GEMINI', 'gemini-3.5-flash-lite'),
+        'clave_api' => env('CLAVE_API_GEMINI', ''),
+        'cola' => env('MENSAJERO_COLA_IA', 'mensajero_ia'),
+    ],
+
     'meta_whatsapp' => [
         'version_graph' => env('META_WHATSAPP_GRAPH_VERSION', 'v26.0'),
         'secreto_aplicacion' => env('META_WHATSAPP_APP_SECRET'),
