@@ -58,6 +58,8 @@ final class IdentificarRemitente
             return $interno;
         }
 
+        // Datos firmados recibidos del recolector y guardados sin cambiar
+        // el JSON original. El nombre de agenda prevalece sobre pushName.
         $nombre = $this->nombreWhatsapp($evento);
         if ($nombre !== null) {
             return $nombre;
@@ -74,16 +76,9 @@ final class IdentificarRemitente
 
         // Solo un JID telefónico auténtico permite presentar el número.
         // Nunca suponer que un identificador LID es un teléfono.
-        if (preg_match('/^([0-9]{8,15})@s\\.whatsapp\\.net$/D', $id, $coincidencias) === 1) {
-            return 'Teléfono +'.$coincidencias[1];
-        }
-
-        // Baileys puede adjuntar el teléfono alternativo a un LID.
-        // Se utiliza únicamente si aparece en la misma clave del
-        // mensaje y la clave principal corresponde a este remitente.
-        $telefonoAlternativo = $this->telefonoAlternativo($evento, $id);
-        if ($telefonoAlternativo !== null) {
-            return 'Teléfono +'.$telefonoAlternativo;
+        $telefono = $this->telefono($evento);
+        if ($telefono !== null) {
+            return 'Teléfono +'.$telefono;
         }
 
         return 'Persona sin identificar';
@@ -101,6 +96,11 @@ final class IdentificarRemitente
 
     public function nombreWhatsapp(EventoCrudoWhatsapp $evento): ?string
     {
+        $nombreEnviado = $evento->nombre_remitente;
+        if (is_string($nombreEnviado) && trim($nombreEnviado) !== '') {
+            return mb_substr(trim($nombreEnviado), 0, 120);
+        }
+
         try {
             $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
@@ -120,6 +120,25 @@ final class IdentificarRemitente
         }
 
         return mb_substr(trim($nombre), 0, 120);
+    }
+
+    public function telefono(EventoCrudoWhatsapp $evento): ?string
+    {
+        $telefono = $evento->telefono_remitente;
+        if (is_string($telefono) && preg_match('/^[0-9]{8,15}$/D', $telefono) === 1) {
+            return $telefono;
+        }
+
+        $identificador = $evento->id_remitente_proveedor;
+        if (is_string($identificador) === false || trim($identificador) === '') {
+            return null;
+        }
+
+        if (preg_match('/^([0-9]{8,15})@s\\.whatsapp\\.net$/D', $identificador, $coincidencias) === 1) {
+            return $coincidencias[1];
+        }
+
+        return $this->telefonoAlternativo($evento, $identificador);
     }
 
     private function telefonoAlternativo(EventoCrudoWhatsapp $evento, string $identificador): ?string
