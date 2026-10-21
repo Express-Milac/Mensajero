@@ -9,7 +9,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
 import { AlmacenContextoEdicionesDurable } from '../ediciones/almacen-contexto-ediciones-durable.js';
-import { IdentidadesRecolector } from '../identidad-remitente.js';
+import { IdentidadesRecolector, telefonoDeJid } from '../identidad-remitente.js';
 import {
   descifrarEdicionCifradaWhatsapp,
   esEdicionCifradaWhatsapp,
@@ -264,6 +264,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
 
         if (normalizado !== null) {
           normalizadosGrupo += 1;
+          await this.completarTelefonoLocalSiExiste(normalizado);
           await this.guardarContextoEdicionSiCorresponde(mensaje, normalizado);
           await this.manejadores.alMensaje(normalizado);
         }
@@ -592,6 +593,43 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       recibidoEn: fechaIsoDesdeMarca(mensaje.messageTimestamp),
       multimedia: null,
     };
+  }
+
+  /**
+   * Consulta solo mapeos LID/PN que el propio socket haya aprendido.
+   * Es una capacidad opcional según la versión fijada de Baileys:
+   * nunca consulta un servicio externo para averiguar un número.
+   */
+  private async completarTelefonoLocalSiExiste(mensaje: MensajeProveedor): Promise<void> {
+    const lid = mensaje.remitenteProveedorId;
+    if (mensaje.telefonoRemitente !== null && mensaje.telefonoRemitente !== undefined) {
+      return;
+    }
+    if (!lid?.endsWith('@lid') || !await this.chatAutorizado(mensaje.chatId)) {
+      return;
+    }
+
+    type MapeoDisponible = {
+      getPNForLID?: (jid: string) => Promise<string | null> | string | null;
+    };
+    const socket = this.socket as unknown as {
+      signalRepository?: { lidMapping?: MapeoDisponible };
+    } | null;
+    const mapeo = socket?.signalRepository?.lidMapping;
+
+    if (typeof mapeo?.getPNForLID !== 'function') {
+      return;
+    }
+
+    try {
+      const pn = await mapeo.getPNForLID(lid);
+      const numero = telefonoDeJid(pn);
+      if (numero !== null) {
+        mensaje.telefonoRemitente = numero;
+      }
+    } catch {
+      // El mapeo local es optativo y nunca debe bloquear la captura.
+    }
   }
 
   private async guardarContextoEdicionSiCorresponde(
