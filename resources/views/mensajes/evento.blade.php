@@ -1,23 +1,24 @@
-<x-layout title="Detalle de evidencia">
+<x-layout title="Detalle del mensaje">
+    <div class="pagina-detalle-evidencia">
     <nav class="breadcrumbs" aria-label="Ruta de navegación">
-        <a href="{{ route('mensajes.indice') }}">Mensajes originales</a>
+        <a href="{{ route('mensajes.indice') }}">Conversaciones</a>
         <span>/</span>
-        <a href="{{ route('mensajes.grupo', $registro->chat_monitoreado_id) }}">Grupo #{{ $registro->chat_monitoreado_id }}</a>
+        <a href="{{ route('mensajes.grupo', $registro->chat_monitoreado_id) }}">{{ $registro->chat?->nombre_interno ?: ($registro->chat?->nombre_grupo ?: 'Grupo #'.$registro->chat_monitoreado_id) }}</a>
         <span>/</span>
         <span>Evento #{{ $registro->id }}</span>
     </nav>
 
     <section class="intro compact">
-        <p class="eyebrow">CONSULTA DE EVIDENCIA · SOLO LECTURA</p>
+        <p class="eyebrow">MENSAJERO MILAC / CONVERSACIONES / EVIDENCIA</p>
         <h1>Detalle del mensaje</h1>
-        <p class="muted">Evento #{{ $registro->id }}. La evidencia íntegra se conserva en SQL Server, con datos técnicos disponibles para su verificación.</p>
+        <p class="muted">Consulta el contenido, la persona que lo envió y su fecha. La evidencia original permanece protegida y los detalles técnicos están disponibles al final.</p>
     </section>
 
     <section class="card detalle-mensaje" aria-label="Mensaje y remitente">
         <div class="detalle-mensaje-encabezado">
             <div>
                 <span class="etiqueta-tipo-mensaje">{{ ucfirst($registro->tipo_evento) }} · {{ $registro->tipo_mensaje ?: 'Tipo sin clasificar' }}</span>
-                <h2>Mensaje original</h2>
+                <h2>Contenido del mensaje</h2>
                 <p class="detalle-remitente">{{ $remitente }}</p>
                 @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
                     <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $registro->id) }}">Identificar o corregir nombre de esta persona →</a>
@@ -32,7 +33,7 @@
             } }}</span>
         </div>
         <p class="detalle-contenido">{{ $resumen }}</p>
-        <p class="detalle-nota">Este contenido es una representación de consulta; los registros de origen no se modifican.</p>
+        <p class="detalle-nota">Mensaje #{{ $registro->id }} · Vista de lectura, sin modificaciones sobre la evidencia original.</p>
     </section>
 
     @if($registro->archivo)
@@ -54,9 +55,9 @@
     @endif
 
     <section class="card evidence-section seccion-trazabilidad">
-        <p class="eyebrow">TRAZABILIDAD</p>
-        <h2>Información de la evidencia</h2>
-        <p class="muted">Los datos de auditoría y el contenido crudo protegido están disponibles cuando se necesiten, sin ocupar la lectura principal.</p>
+        <p class="eyebrow">INFORMACIÓN ADICIONAL</p>
+        <h2>Trazabilidad del mensaje</h2>
+        <p class="muted">Estos datos sirven para verificaciones y auditorías. No cambian el mensaje ni su autor.</p>
 
         <details class="detalle-tecnico">
             <summary>Identificadores y verificación SHA-256</summary>
@@ -82,4 +83,5 @@
             <pre class="raw-json">{{ $contenido }}</pre>
         </details>
     </section>
+    </div>
 </x-layout>
