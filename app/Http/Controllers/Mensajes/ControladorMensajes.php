@@ -9,10 +9,12 @@ use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Mensajes\AnalizarPanoramaContenido;
 use App\Services\Mensajes\IdentificarRemitente;
+use App\Services\Mensajes\NotificadorTiempoReal;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -39,8 +41,26 @@ final class ControladorMensajes extends Controller
     }
 
     /**
-     * El navegador consulta periódicamente este fragmento, sin recargar
-     * la página y sin exponer rutas ni datos adicionales.
+     * Credencial efímera únicamente para recibir avisos de cambios, sin contenido.
+     * La autorización de los mensajes sigue verificándose en cada GET a Laravel.
+     */
+    public function credencialTiempoReal(NotificadorTiempoReal $notificador): JsonResponse
+    {
+        if (! $notificador->habilitado()) {
+            return response()->json(['mensaje' => 'Tiempo real no habilitado.'], 503);
+        }
+
+        try {
+            return response()->json($notificador->credencial())
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        } catch (\RuntimeException $error) {
+            return response()->json(['mensaje' => $error->getMessage()], 503);
+        }
+    }
+
+    /**
+     * Fragmento actualizado únicamente cuando llega un aviso nuevo,
+     * se restablece la conexión o vuelve a mostrarse la pestaña.
      */
     public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): Response
     {
