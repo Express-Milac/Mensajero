@@ -36,10 +36,6 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
                         <span>Centro de mando</span>
                     </a>
-                    <a class="nav {{ request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}" @if(request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento')) aria-current="page" @endif>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.5-.8L4 20l1.8-5A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h7"/></svg>
-                        <span>Conversaciones</span>
-                    </a>
                     <a class="nav {{ request()->routeIs('remitentes.*') ? 'active' : '' }}" href="{{ route('remitentes.indice') }}" @if(request()->routeIs('remitentes.*')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
                         <span>Remitentes</span>
@@ -49,11 +45,7 @@
                         <span>Gestor de grupos</span>
                     </a>
                     <span class="centro-menu-separador" aria-hidden="true"></span>
-                    <span class="centro-menu-subtitulo">ACCESOS DEL TABLERO</span>
-                    <a class="nav" href="{{ route('tablero') }}#temas-clave"><span class="centro-nav-icono" aria-hidden="true">▤</span><span>Temas clave</span></a>
-                    <a class="nav" href="{{ route('tablero') }}#acuerdos-explicitos"><span class="centro-nav-icono" aria-hidden="true">✓</span><span>Posibles acuerdos</span></a>
-                    <a class="nav" href="{{ route('tablero') }}#menciones-revision"><span class="centro-nav-icono" aria-hidden="true">⚑</span><span>Menciones para revisar</span></a>
-                    @if(config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar'))
+                                        @if(config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar'))
                         <span class="centro-menu-separador" aria-hidden="true"></span>
                         <a class="nav {{ request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.tecnico') }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg>
