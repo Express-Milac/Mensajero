@@ -1,6 +1,12 @@
 <x-layout title="Diagnóstico técnico">
+    <div class="pagina-diagnostico">
+    <nav class="breadcrumbs" aria-label="Ruta de navegación">
+        <a href="{{ route('tablero') }}">Mensajero MILAC</a>
+        <span>/</span>
+        <span>Diagnóstico técnico</span>
+    </nav>
     <section class="intro compact">
-        <p class="eyebrow">APARTADO TÉCNICO · ACCESO DE ADMINISTRACIÓN</p>
+        <p class="eyebrow">MENSAJERO MILAC / APARTADO TÉCNICO</p>
         <h1>Diagnóstico técnico</h1>
         <p class="muted">Indicadores de almacenamiento, integridad y normalización, independientes del panorama directivo. Solo lectura.</p>
     </section>
@@ -72,4 +78,5 @@
             @endforeach
         </div>
     @endif
+    </div>
 </x-layout>
