@@ -24,6 +24,8 @@
             <div class="catalogo-tarjeta-cuerpo">
                 <p><span>Nombre disponible de WhatsApp</span><strong>{{ $nombreWhatsapp ?? 'No informado' }}</strong></p>
                 <p><span>Nombre interno asignado</span><strong>{{ $nombreAsignado ?? 'Sin asignar' }}</strong></p>
+                <p><span>Teléfono del remitente</span><strong>{{ $telefono ? '+'.$telefono : 'WhatsApp no proporcionó un número verificable' }}</strong></p>
+                <p><span>Origen del nombre recibido</span><strong>{{ $fuenteNombre === 'contacto' ? 'Agenda del recolector' : ($fuenteNombre === 'perfil' ? 'Perfil de WhatsApp' : 'No informado') }}</strong></p>
                 <p><span>Último mensaje consultado</span><strong>{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</strong></p>
                 <a class="centro-ver-evidencia" href="{{ route('mensajes.evento', $registro->id) }}">Consultar evidencia original ↗</a>
             </div>
