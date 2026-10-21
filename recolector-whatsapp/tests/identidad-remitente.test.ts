@@ -30,6 +30,12 @@ test('extrae telefono del participante alternativo solo si la clave esta vincula
 
   assert.equal(identidades.resolver({ key: clave }, id).telefonoRemitente, '5214611234567');
   assert.equal(
+    identidades.resolver({
+      key: { participant: id, participantPn: '5214611234567@s.whatsapp.net' },
+    }, id).telefonoRemitente,
+    '5214611234567',
+  );
+  assert.equal(
     identidades.resolver({ key: { ...clave, participant: 'otra-persona@lid' } }, id).telefonoRemitente,
     null,
   );
