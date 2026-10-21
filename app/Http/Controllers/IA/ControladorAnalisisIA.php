@@ -41,7 +41,7 @@ final class ControladorAnalisisIA extends Controller
                 ->where('chat_monitoreado_id', $registro->chat_monitoreado_id)
                 ->whereIn('id', $ids)
                 ->get(['id', 'evento_crudo_id'])
-                ->sortBy(fn ($mensaje): int => array_search($mensaje->id, $ids, true));
+                ->sortBy(fn ($mensaje): int => (int) array_search((int) $mensaje->id, $ids, true));
 
             $filas[] = ['registro' => $registro, 'fuentes' => $fuentes];
         }
