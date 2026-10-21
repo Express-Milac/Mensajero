@@ -24,6 +24,15 @@ la cola de Redis ni modificar los mensajes:
 
 NUNCA tratar `@lid` como número telefónico ni inventar la identidad.
 
+La identificación telefónica en las páginas de mensajes es **solo para
+usuarios autorizados**: se muestra `Teléfono +...` cuando hay un número
+aportado por WhatsApp y todavía no hay un nombre disponible. No implica
+exponer el identificador técnico completo `...@s.whatsapp.net`: la vista
+protegida de JSON crudo sigue ocultando los identificadores internos y los
+secretos, y las rutas continúan sujetas a `mensajero.consulta_evidencia`.
+La prueba `VistaMensajesSqlServerTest` verifica las dos cosas de manera
+independiente.
+
 ## Identificar o corregir un nombre
 
 Nueva sección **Remitentes** en menú, ruta
