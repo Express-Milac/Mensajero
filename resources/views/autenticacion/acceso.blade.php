@@ -1,8 +1,8 @@
 <x-layout title="Acceso">
     <section class="login card">
-        <p class="eyebrow">BIENVENIDO A MENSAJERO</p>
-        <h1>La operación,<br>con contexto.</h1>
-        <p class="muted">Accede al centro de información operativa.</p>
+        <p class="eyebrow">EXPRESS MILAC · ACCESO AUTORIZADO</p>
+        <h1>Mensajero MILAC</h1>
+        <p class="muted">Consulta de conversaciones, seguimiento e información de grupos autorizados.</p>
         <form method="post" action="{{ route('acceso.iniciar') }}">
             @csrf
             <label for="email">Correo electrónico</label>
