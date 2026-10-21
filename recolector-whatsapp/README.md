@@ -95,3 +95,50 @@ de aprobar conectividad, almacenamiento y políticas de acceso.
 
 Este POC no se considera fuente directiva hasta aprobar pruebas de carga,
 reinicios, desconexión, recuperación y reconciliación.
+
+## Identificación de remitentes: nombre de contacto y celular
+
+El recolector ahora conserva **por mensaje autorizado** la identidad que
+WhatsApp realmente hace disponible, en tres campos opcionales:
+
+- `nombre_remitente`: nombre de la agenda de contactos de la sesión
+  vinculada, o nombre de perfil (`pushName`) si no hay nombre guardado.
+- `fuente_nombre_remitente`: `contacto` o `perfil` para diferenciar el
+  origen de ese nombre.
+- `telefono_remitente`: número solo cuando se observa un JID telefónico
+  (`@s.whatsapp.net`) o una correspondencia en el mismo mensaje entre
+  `participant` y `participantAlt`/`participantPn` de WhatsApp.
+
+El adaptador escucha `contacts.upsert`, `contacts.update` y
+`messaging-history.set` para los contactos que WhatsApp proporcione.
+Mantiene una caché temporal acotada; **no envía la agenda completa
+a Laravel**, ni consulta los chats ajenos, ni instala servicios adicionales.
+Los datos se mandan solo con los mensajes de **grupos autorizados**.
+
+Con identificadores privados `@lid`, el número puede ser desconocido.
+Los dígitos de un LID **nunca son tratados como celular**.
+El nombre del perfil no equivale a verificación de identidad empresarial.
+Si WhatsApp no proporciona nombre o número fiable, Mensajero indicará
+«Persona sin identificar» y permitirá asignar nombre interno.
+
+La integración conserva `contenido_crudo` y su SHA-256 originales,
+utiliza el flujo firmado/durable actual y es retrocompatible: las tareas
+pendientes que no tienen estos campos siguen siendo aceptadas.
+
+### Activación segura en el entorno local de ensayo
+
+1. Actualizar Laravel y aplicar **primero** la migración
+   `2026_10_21_000001_identificar_remitentes_en_eventos.php`
+   únicamente en `mensajero_test`.
+2. Ejecutar `npm run verificar` y
+   `npm run pruebas` en `recolector-whatsapp`.
+3. Detener **ordenadamente la instancia actual** del recolector de
+   pruebas y volver a iniciarla con el comando habitual
+   `npm run desarrollo`. No abrir una segunda sesión o instancia.
+4. Enviar un mensaje sintético desde un participante conocido del
+   grupo de pruebas autorizado, y revisar su remitente en el
+   historial y directorio de Mensajero.
+
+No reiniciar para rescatar mensajes de producción ni alterar el
+buzón histórico. Los mensajes ya conservados siguen intactos; este
+cambio **no es un proceso retroactivo de descubrimiento de números**.
