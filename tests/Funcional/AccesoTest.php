@@ -51,7 +51,9 @@ class AccesoTest extends TestCase
             ->assertSee('css/panorama-claro.css')
             ->assertSee('css/catalogo-grupos.css')
             ->assertSee('css/interfaz-unificada.css')
-            ->assertSee('class="panorama-claro pagina-acceso"', false);
+            ->assertSee('class="panorama-claro pagina-acceso"', false)
+            ->assertDontSee('Gestor de grupos')
+            ->assertDontSee('Remitentes');
     }
 
     public function test_visualizador_local_lee_tablero_pero_no_diagnostico(): void
