@@ -45,6 +45,8 @@
                     </div>
                     <div class="catalogo-tarjeta-cuerpo">
                         <p><span>Último grupo</span><strong>{{ $fila['evento']->chat?->nombre_interno ?: ($fila['evento']->chat?->nombre_grupo ?: 'Grupo sin nombre') }}</strong></p>
+                        <p><span>Celular disponible</span><strong>{{ $fila['telefono'] ? '+'.$fila['telefono'] : 'No informado por WhatsApp' }}</strong></p>
+                        <p><span>Origen del nombre</span><strong>{{ $fila['nombre_asignado'] ? 'Asignación MILAC' : ($fila['fuente_nombre'] === 'contacto' ? 'Agenda del recolector' : ($fila['nombre_whatsapp'] ? 'Perfil de WhatsApp' : 'Sin información')) }}</strong></p>
                         <p><span>Mensajes registrados</span><strong>{{ number_format($fila['mensajes']) }}</strong></p>
                         <p><span>Última participación</span><strong>{{ $fila['evento']->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? 'Sin fecha' }}</strong></p>
                     </div>
