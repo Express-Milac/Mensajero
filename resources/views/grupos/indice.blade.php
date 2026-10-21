@@ -17,12 +17,12 @@
 
     <section class="catalogo-metricas gestor-metricas" aria-label="Resumen de visibilidad">
         <article><span class="catalogo-metrica-icono">♧</span><div><span>Grupos detectados</span><strong>{{ number_format($estadisticas['descubiertos']) }}</strong><small>Registrados en el sistema</small></div></article>
-        <article><span class="catalogo-metrica-icono naranja">✓</span><div><span>Visibles y monitoreados</span><strong>{{ number_format($estadisticas['visibles']) }}</strong><small>Aparecen en el tablero</small></div></article>
-        <article><span class="catalogo-metrica-icono gris">○</span><div><span>Ocultos del tablero</span><strong>{{ number_format($estadisticas['ocultos']) }}</strong><small>Pueden seguir capturando</small></div></article>
+        <article><span class="catalogo-metrica-icono naranja">✓</span><div><span>Visibles y monitoreados</span><strong data-gestor-contador="visibles">{{ number_format($estadisticas['visibles']) }}</strong><small>Aparecen en el tablero</small></div></article>
+        <article><span class="catalogo-metrica-icono gris">○</span><div><span>Ocultos del tablero</span><strong data-gestor-contador="ocultos">{{ number_format($estadisticas['ocultos']) }}</strong><small>Pueden seguir capturando</small></div></article>
         <article><span class="catalogo-metrica-icono gris">♧</span><div><span>Captura autorizada</span><strong>{{ number_format($estadisticas['autorizados']) }}</strong><small>Independiente de su visibilidad</small></div></article>
     </section>
 
-    <section class="catalogo-seccion" aria-label="Listado y administración de grupos">
+    <section class="catalogo-seccion gestor-seccion" aria-label="Listado y administración de grupos">
         <div class="catalogo-titulo">
             <div><h2>Administrar visibilidad</h2><p>{{ number_format($grupos->total()) }} {{ $grupos->total() === 1 ? 'grupo coincide' : 'grupos coinciden' }} con los filtros seleccionados. Los cambios se guardan individualmente.</p></div>
             <span class="catalogo-seguridad"><span aria-hidden="true">●</span> Acceso controlado</span>
@@ -64,73 +64,103 @@
         </form>
 
         @if(config('mensajero.autenticacion.modo') === 'deshabilitado' && ! $puedeCambiarVista)
-            <div class="catalogo-aviso" role="note"><strong>Gestión protegida:</strong> solo puedes consultar grupos. La opción de mostrar u ocultar necesita activación explícita para desarrollo local. Autorizar capturas requiere un administrador autenticado.</div>
+            <div class="catalogo-aviso gestor-aviso" role="note"><strong>Gestión protegida:</strong> solo puedes consultar grupos. La opción de mostrar u ocultar necesita activación explícita para desarrollo local. Autorizar capturas requiere un administrador autenticado.</div>
         @elseif(config('mensajero.autenticacion.modo') === 'deshabilitado')
             <div class="catalogo-aviso" role="note"><strong>Gestión local temporal habilitada:</strong> puedes mostrar u ocultar grupos uno por uno. No puedes modificar qué grupos captura WhatsApp. Desactiva el permiso local al terminar las pruebas.</div>
         @endif
 
-        <div class="catalogo-ayuda-gestor" role="note"><strong>Dos decisiones diferentes:</strong> «Mostrar en tablero» solo cambia la presentación. «Autorizar monitoreo» permite capturar mensajes; no se modifica al ocultar un grupo. Ningún registro histórico se elimina.</div>
-        <div class="catalogo-tarjetas">
+        <p class="gestor-aclaracion" role="note">
+            <strong>Visibilidad:</strong> el interruptor solo muestra u oculta el grupo en el tablero. No modifica la autorización de captura ni elimina mensajes.
+        </p>
+
+        <div class="gestor-lista" aria-label="Grupos de WhatsApp registrados">
+            <div class="gestor-cabecera-lista" aria-hidden="true">
+                <span>Grupo</span>
+                <span>Última detección</span>
+                <span>Captura</span>
+                <span>En el tablero</span>
+                <span>Acciones</span>
+            </div>
             @forelse($grupos as $grupo)
-                @php($autorizado = $grupo->es_activo && $grupo->es_monitoreado)
+                @php($autorizado = (bool) ($grupo->es_activo && $grupo->es_monitoreado))
                 @php($tituloGrupo = $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre'))
-                <article class="catalogo-tarjeta">
-                    <div class="catalogo-tarjeta-encabezado">
-                        <span class="catalogo-grupo-icono" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2 20v-2a6 6 0 0 1 12 0v2H2zm13-6a5 5 0 0 1 6 5v1"/></svg>
+                <article class="gestor-fila" data-grupo-id="{{ $grupo->id }}" data-captura-autorizada="{{ $autorizado ? '1' : '0' }}">
+                    <div class="gestor-identidad">
+                        <span class="gestor-avatar" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2 20v-2a6 6 0 0 1 12 0v2H2zm13-6a5 5 0 0 1 6 5v1"/></svg>
                         </span>
-                        <div class="catalogo-grupo-titulo">
-                            <h3>{{ $tituloGrupo }}</h3>
-                            <span>{{ $grupo->nombre_interno && $grupo->nombre_grupo && $grupo->nombre_interno !== $grupo->nombre_grupo ? $grupo->nombre_grupo : 'Grupo de WhatsApp' }}</span>
-                        </div>
-                        <div class="gestor-etiquetas">
-                            <span class="catalogo-estado {{ $grupo->es_visible_tablero ? 'activo' : 'inactivo' }}">{{ ! $grupo->es_visible_tablero ? 'Oculto del tablero' : ($autorizado ? 'Visible en tablero' : 'Visible si se autoriza captura') }}</span>
-                            <span class="catalogo-estado {{ $autorizado ? 'activo' : 'neutral' }}">{{ $autorizado ? 'Captura habilitada' : 'Captura no habilitada' }}</span>
-                            @if(! $grupo->es_activo)<span class="catalogo-estado inactivo">Grupo inactivo</span>@endif
+                        <div class="gestor-identidad-texto">
+                            <h3 title="{{ $tituloGrupo }}">{{ $tituloGrupo }}</h3>
+                            <span>{{ $grupo->conexion?->proveedor === 'recolector_whatsapp' ? 'WhatsApp del recolector' : 'Otra conexión' }}@if(! $grupo->es_activo) · Inactivo @endif</span>
                         </div>
                     </div>
-                    <div class="catalogo-tarjeta-cuerpo">
-                        <p><span>Origen</span><strong>{{ $grupo->conexion?->proveedor === 'recolector_whatsapp' ? 'WhatsApp del recolector' : 'Otra conexión' }}</strong></p>
-                        <p><span>Última detección</span><strong>{{ $grupo->visto_ultima_vez_en?->timezone(config('app.timezone'))->format('d/m/Y · H:i') ?? 'Sin fecha registrada' }}</strong></p>
-                        <details class="catalogo-detalles">
-                            <summary>Detalles de identificación</summary>
-                            <dl>
-                                <div><dt>Identificador interno</dt><dd>{{ $grupo->id }}</dd></div>
-                                <div><dt>Identificador de WhatsApp</dt><dd>{{ $grupo->id_chat_proveedor }}</dd></div>
-                                <div><dt>Conexión</dt><dd>{{ $grupo->conexion?->nombre_visible ?: ($grupo->conexion?->clave_conexion ?: 'No identificada') }}</dd></div>
-                                <div><dt>Versión de autorización</dt><dd>{{ $grupo->version_autorizacion }}</dd></div>
-                            </dl>
-                        </details>
+
+                    <div class="gestor-columna gestor-fecha">
+                        <span class="gestor-etiqueta-movil">Última detección</span>
+                        <time>{{ $grupo->visto_ultima_vez_en?->timezone(config('app.timezone'))->format('d/m/Y · H:i') ?? 'Sin fecha registrada' }}</time>
                     </div>
-                    <div class="catalogo-tarjeta-pie">
-                        @if($autorizado)
-                            <a class="catalogo-ver-conversacion" href="{{ route('mensajes.grupo', $grupo->id) }}">Ver conversación <span aria-hidden="true">↗</span></a>
-                        @else
-                            <span class="catalogo-sin-conversacion">Sin consulta de mensajes habilitada</span>
-                        @endif
+
+                    <div class="gestor-columna gestor-captura">
+                        <span class="gestor-etiqueta-movil">Captura</span>
+                        <span class="gestor-indicador-captura {{ $autorizado ? 'activa' : 'inactiva' }}">{{ $autorizado ? 'Habilitada' : 'No habilitada' }}</span>
+                    </div>
+
+                    <div class="gestor-columna gestor-columna-switch">
+                        <span class="gestor-etiqueta-movil">En el tablero</span>
                         @if($puedeCambiarVista)
-                            <form method="post" action="{{ route('grupos.visibilidad.actualizar', $grupo->id) }}" data-confirmar-gestion="{{ $grupo->es_visible_tablero ? 'Ocultar este grupo del tablero sin detener su captura?' : 'Mostrar este grupo en el tablero?' }}">
+                            <form class="gestor-form-visibilidad" method="post" action="{{ route('grupos.visibilidad.actualizar', $grupo->id) }}" data-gestor-visibilidad>
                                 @csrf
                                 @method('PATCH')
-                                <input type="hidden" name="es_visible_tablero" value="{{ $grupo->es_visible_tablero ? '0' : '1' }}">
-                                <button type="submit" class="catalogo-control gestor-control-vista {{ $grupo->es_visible_tablero ? 'secundario' : '' }}">
-                                    {{ $grupo->es_visible_tablero ? 'Ocultar del tablero' : 'Mostrar en tablero' }}
-                                </button>
+                                <input type="hidden" name="es_visible_tablero" value="0">
+                                <label class="gestor-interruptor" for="visibilidad-grupo-{{ $grupo->id }}">
+                                    <input id="visibilidad-grupo-{{ $grupo->id }}"
+                                           type="checkbox"
+                                           role="switch"
+                                           name="es_visible_tablero"
+                                           value="1"
+                                           data-switch-visibilidad
+                                           aria-label="Mostrar {{ $tituloGrupo }} en el tablero"
+                                           @checked($grupo->es_visible_tablero)>
+                                    <span class="gestor-pista-switch" aria-hidden="true"></span>
+                                    <span class="gestor-texto-switch" data-etiqueta-visibilidad>{{ $grupo->es_visible_tablero ? 'Visible' : 'Oculto' }}</span>
+                                </label>
+                                <noscript><button type="submit">Guardar visibilidad</button></noscript>
+                                <span class="gestor-estado-guardado" data-estado-guardado role="status" aria-live="polite"></span>
                             </form>
                         @else
-                            <span class="gestor-permiso-requerido">Gestión restringida</span>
+                            <span class="gestor-lectura-visibilidad">{{ $grupo->es_visible_tablero ? 'Visible' : 'Oculto' }} · Solo lectura</span>
                         @endif
+                    </div>
+
+                    <div class="gestor-columna gestor-acciones-fila">
+                        @if($autorizado)
+                            <a href="{{ route('mensajes.grupo', $grupo->id) }}" class="gestor-ver-grupo">Conversación <span aria-hidden="true">↗</span></a>
+                        @else
+                            <span class="gestor-sin-conversacion">Sin acceso</span>
+                        @endif
+                    </div>
+
+                    <details class="gestor-detalles">
+                        <summary>Detalles del grupo</summary>
+                        <dl>
+                            <div><dt>Identificador interno</dt><dd>{{ $grupo->id }}</dd></div>
+                            <div><dt>Identificador de WhatsApp</dt><dd>{{ $grupo->id_chat_proveedor }}</dd></div>
+                            <div><dt>Conexión</dt><dd>{{ $grupo->conexion?->nombre_visible ?: ($grupo->conexion?->clave_conexion ?: 'No identificada') }}</dd></div>
+                            <div><dt>Versión de autorización</dt><dd>{{ $grupo->version_autorizacion }}</dd></div>
+                        </dl>
                         @can('administrar')
-                            <form method="post" action="{{ route('grupos.monitoreo.actualizar', $grupo->id) }}">
+                            <form method="post" action="{{ route('grupos.monitoreo.actualizar', $grupo->id) }}" class="gestor-form-captura">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="es_monitoreado" value="{{ $grupo->es_monitoreado ? '0' : '1' }}">
-                                <button type="submit" class="catalogo-control {{ $grupo->es_monitoreado ? 'secundario' : '' }}" @disabled(! $grupo->es_activo && ! $grupo->es_monitoreado)>
-                                    {{ $grupo->es_monitoreado ? 'Detener monitoreo' : 'Autorizar monitoreo' }}
+                                <button type="submit" class="catalogo-control {{ $grupo->es_monitoreado ? 'secundario' : '' }}"
+                                        @disabled(! $grupo->es_activo && ! $grupo->es_monitoreado)>
+                                    {{ $grupo->es_monitoreado ? 'Detener captura' : 'Autorizar captura' }}
                                 </button>
+                                <small>Administración avanzada: cambia qué grupos captura WhatsApp.</small>
                             </form>
                         @endcan
-                    </div>
+                    </details>
                 </article>
             @empty
                 <section class="catalogo-vacio"><h3>No hay grupos para este filtro</h3><p>Prueba otra búsqueda o cambia los criterios.</p></section>
