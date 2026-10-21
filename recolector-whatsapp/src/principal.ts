@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { Server } from 'node:http';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 import { AdaptadorBaileys } from './adaptadores/baileys.js';
@@ -18,6 +19,7 @@ import {
   type TareaDescargaMultimediaDurable,
 } from './multimedia/cola-descarga-multimedia-durable.js';
 import type { EstadoConexion, MensajeProveedor } from './tipos.js';
+import { iniciarServidorTiempoReal } from './tiempo-real/servidor.js';
 
 const configuracion = cargarConfiguracion();
 const logger = pino({ level: configuracion.nivelRegistro });
@@ -45,6 +47,7 @@ let conectadoAlgunaVez = false;
 let estadoActual: EstadoConexion = 'desconectado';
 let desconexionDesde: string | null = null;
 let inicioOperacionMs = 0;
+let servidorTiempoReal: Server | null = null;
 
 async function obtenerInicioOperacion(): Promise<number> {
   await mkdir(configuracion.rutaDatos, { recursive: true });
@@ -398,6 +401,18 @@ async function iniciar(): Promise<void> {
     registrarError(error, 'Mensajero no respondió al inicio; se usará la última lista permitida guardada.');
   }
 
+  const puertoTiempoReal = Number(process.env.MENSAJERO_TIEMPO_REAL_PUERTO || 8765);
+  try {
+    servidorTiempoReal = await iniciarServidorTiempoReal(
+      configuracion.secreto,
+      new URL(configuracion.mensajeroUrl).origin,
+      puertoTiempoReal,
+      logger,
+    );
+  } catch (error) {
+    logger.error({ error }, 'No se pudo iniciar el canal SSE; la captura continuará.');
+  }
+
   void bombearCola();
   void cicloDescargasMultimedia();
   void cicloAutorizaciones();
@@ -513,6 +528,11 @@ async function cerrar(senal: string): Promise<void> {
   cerrando = true;
   logger.info({ senal }, 'Cerrando recolector de WhatsApp.');
   await encolarEstado('desconectado', { motivo: `proceso_${senal.toLowerCase()}` });
+  if (servidorTiempoReal) {
+    servidorTiempoReal.closeAllConnections();
+    servidorTiempoReal.close();
+    servidorTiempoReal = null;
+  }
   await adaptador.detener();
   await monitor.cerrar();
   logger.info(
