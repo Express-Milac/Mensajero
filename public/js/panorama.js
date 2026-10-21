@@ -19,7 +19,7 @@
     const campoBusqueda = document.querySelector('[data-buscar-conversaciones]');
     const resultadoBusqueda = document.querySelector('[data-resultado-busqueda]');
     const botonesModo = Array.from(document.querySelectorAll('[data-modo-tarjetas]'));
-    let modoActual = 'cuadricula';
+    let modoActual = 'lista';
     let consultando = false;
     const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
