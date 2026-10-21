@@ -1,5 +1,5 @@
 <x-layout title="Mensajero MILAC">
-    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-panorama-intervalo="12000">
+    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-credencial-tiempo-real="{{ route('mensajes.credencial.tiempo-real', [], false) }}">
         <div class="centro-hero-texto">
             <span class="centro-hero-marca">EXPRESS MILAC</span>
             <h1>Mensajero <span>MILAC</span></h1>
@@ -7,9 +7,6 @@
             <div class="centro-estado" id="estado-actualizacion" role="status" aria-live="polite">Comprobando mensajes...</div>
         </div>
         <div class="centro-hero-imagen" role="img" aria-label="Tractocamión de carga de Express MILAC representado en una ilustración"></div>
-        <div class="centro-hero-herramientas">
-            <button type="button" class="centro-actualizar" data-actualizar-manual aria-label="Consultar mensajes nuevos ahora">↻ Actualizar ahora</button>
-        </div>
     </section>
 
     @include('mensajes.partes.panorama-indicadores')
