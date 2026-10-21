@@ -3,10 +3,12 @@
 namespace Tests\Integracion;
 
 use App\Data\WhatsApp\EventoWhatsappEntrante;
+use App\Enums\Rol;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
+use App\Models\Usuario;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +28,29 @@ class VistaMensajesSqlServerTest extends TestCase
             'mensajero.autenticacion.modo' => 'deshabilitado',
             'mensajero.consulta_local_sin_autenticacion' => true,
         ]);
+    }
+
+    public function test_el_diagnostico_administrativo_tiene_el_mismo_tema_claro_y_permiso_de_acceso(): void
+    {
+        config(['mensajero.autenticacion.modo' => 'local']);
+
+        $administrador = new Usuario([
+            'nombre' => 'Administrador de prueba',
+            'email' => 'visual@example.test',
+        ]);
+        $administrador->id = 150;
+        $administrador->rol = Rol::Administrador;
+
+        $this->actingAs($administrador)
+            ->get('/mensajes/tecnico')
+            ->assertOk()
+            ->assertSee('Diagnóstico técnico')
+            ->assertSee('pagina-diagnostico', false)
+            ->assertSee('css/panorama-claro.css')
+            ->assertSee('css/catalogo-grupos.css')
+            ->assertSee('css/interfaz-unificada.css')
+            ->assertSee('class="panorama-claro pagina-tecnica"', false)
+            ->assertSee('MENSAJES NORMALIZADOS');
     }
 
     public function test_consulta_local_muestra_grupo_y_evidencia_escapada_sin_normalizar_ni_modificar_datos(): void
