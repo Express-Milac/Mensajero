@@ -158,7 +158,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
       this.identidades.registrarContactos(contactos);
     });
     socket.ev.on('messaging-history.set', (datos) => {
-      this.identidades.registrarContactos(datos.contacts);
+      this.identidades.registrarContactos(datos.contacts ?? []);
     });
 
     socket.ev.on('messages.upsert', (evento) => {
