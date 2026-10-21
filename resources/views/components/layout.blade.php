@@ -11,7 +11,12 @@
     <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/interfaz-unificada.css') }}?v={{ filemtime(public_path('css/interfaz-unificada.css')) }}">
 </head>
-<body class="panorama-claro {{ request()->routeIs('acceso') ? 'pagina-acceso' : '' }} {{ request()->routeIs('mensajes.evento') ? 'pagina-evidencia' : '' }} {{ request()->routeIs('mensajes.tecnico') ? 'pagina-tecnica' : '' }}">
+<body @class([
+    'panorama-claro',
+    'pagina-acceso' => request()->routeIs('acceso'),
+    'pagina-evidencia' => request()->routeIs('mensajes.evento'),
+    'pagina-tecnica' => request()->routeIs('mensajes.tecnico'),
+])>
     <div class="shell">
         <aside class="barra-corporativa" aria-label="Navegación principal">
             <a class="brand marca-corporativa" href="{{ route('tablero') }}" aria-label="Express MILAC, Mensajero, inicio">
