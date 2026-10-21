@@ -3,7 +3,7 @@
         <span class="cantidad-grupos-vista"><span class="cantidad-grupos-circulo">{{ $tarjetas->count() }}</span> grupos en esta vista</span>
         <span class="cabecera-carrusel-pista">Cada grupo conserva su carrusel vertical de mensajes</span>
     </div>
-    <div class="lista-grupos-directivos centro-lista-grupos" aria-label="Grupos con carruseles independientes">
+    <div class="lista-grupos-directivos centro-lista-grupos modo-lista" aria-label="Grupos con carruseles independientes">
         @forelse($tarjetas as $tarjeta)
             @php($grupo = $tarjeta['grupo'])
             @php($nombreGrupo = $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre'))
