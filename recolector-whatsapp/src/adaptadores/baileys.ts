@@ -73,6 +73,14 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
     }));
 
     await this.manejadores.alGrupos(descubiertos);
+
+    // Metadata de participantes únicamente para grupos previamente
+    // autorizados. No sincronizar la agenda de grupos ajenos.
+    for (const [jid, grupo] of Object.entries(grupos)) {
+      if (await this.chatAutorizado(jid)) {
+        this.identidades.registrarContactos(grupo.participants ?? []);
+      }
+    }
   }
 
   public reconstruirMensaje(contenidoCrudo: string): MensajeProveedor | null {
