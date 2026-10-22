@@ -38,17 +38,38 @@ final class ProcesarAnalisisGemini
             return 'duplicado';
         }
 
-        $fecha = $mensaje->recibido_en->utc()->format('Y-m-d H:i:s.u');
-        $anteriores = MensajeWhatsapp::query()
+        // En el piloto se transmite EXCLUSIVAMENTE el mensaje objetivo.
+        // Los mensajes anteriores del mismo grupo pueden contener datos de
+        // terceros y no se deben enviar como contexto de forma implícita.
+        $consultaContexto = MensajeWhatsapp::query()
             ->where('chat_monitoreado_id', $mensaje->chat_monitoreado_id)
             ->where('estado_captura', 'normalizado')
-            ->where('tipo_mensaje', 'texto')
-            ->where(function ($consulta) use ($fecha, $mensajeId): void {
-                $consulta->where('recibido_en', '<', $fecha)
-                    ->orWhere(function ($empate) use ($fecha, $mensajeId): void {
-                        $empate->where('recibido_en', '=', $fecha)->where('id', '<=', $mensajeId);
-                    });
-            })
+            ->where('tipo_mensaje', 'texto');
+
+        if (config('mensajero.ia.solo_mensaje_objetivo', true) !== false) {
+            $consultaContexto->whereKey($mensajeId);
+        } else {
+            // Incluso si se autoriza el contexto, nunca consultar mensajes
+            // previos a la fecha de consentimiento explícito de Gemini.
+            $inicio = $this->politica->fechaInicio();
+            if ($inicio === null) {
+                return 'no_elegible';
+            }
+
+            $fechaInicio = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+            $fecha = $mensaje->recibido_en->utc()->format('Y-m-d H:i:s.u');
+
+            $consultaContexto
+                ->where('recibido_en', '>=', $fechaInicio)
+                ->where(function ($consulta) use ($fecha, $mensajeId): void {
+                    $consulta->where('recibido_en', '<', $fecha)
+                        ->orWhere(function ($empate) use ($fecha, $mensajeId): void {
+                            $empate->where('recibido_en', '=', $fecha)->where('id', '<=', $mensajeId);
+                        });
+                });
+        }
+
+        $anteriores = $consultaContexto
             ->orderByDesc('recibido_en')->orderByDesc('id')
             ->limit(6)
             ->get(['id', 'contenido_texto']);
