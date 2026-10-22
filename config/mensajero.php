@@ -16,6 +16,8 @@ return [
         'envio_autorizado' => filter_var(env('MENSAJERO_IA_ENVIO_AUTORIZADO', false), FILTER_VALIDATE_BOOLEAN),
         'servicio_pagado_confirmado' => filter_var(env('MENSAJERO_IA_SERVICIO_PAGADO_CONFIRMADO', false), FILTER_VALIDATE_BOOLEAN),
         'ejecucion_automatica' => filter_var(env('MENSAJERO_IA_EJECUCION_AUTOMATICA', false), FILTER_VALIDATE_BOOLEAN),
+        // Piloto: nunca incluir conversaciones anteriores por defecto.
+        'solo_mensaje_objetivo' => filter_var(env('MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO', true), FILTER_VALIDATE_BOOLEAN),
         'grupos_autorizados' => array_values(array_unique(array_filter(
             array_map('intval', explode(',', (string) env('MENSAJERO_IA_GRUPOS_AUTORIZADOS', ''))),
             static fn (int $id): bool => $id > 0
