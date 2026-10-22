@@ -727,3 +727,14 @@ No usar `--aplicar`, no modificar estados, no publicar trabajos Redis,
 no reiniciar colas ni activar procesamiento general por este hallazgo.
 La clasificación tampoco valida por sí sola que sea seguro normalizar
 todo el historial.
+
+
+## Actualización 22/10/2026 — Enlace automático opcional con Gemini
+
+La documentación anterior representa el incremento inicial de normalización. Desde la fase 2, al terminar correctamente la transacción de normalización, el proceso puede publicar **un trabajo adicional** AnalizarMensajeGeminiTrabajo en la cola aislada **mensajero_ia** si MENSAJERO_IA_EJECUCION_AUTOMATICA=true y la política autoriza grupo, tipo texto y fecha. Esta publicación sucede después del commit SQL Server, **no** dentro de la transacción original.
+
+La ejecución real de WhatsApp #74 → Redis → Gemini → SQL Server y vista IA se validó el 22/10/2026 (9 pruebas GeminiContratoTest, 19 aserciones). El modo automático continuo aún requiere activar .env local, mantener programador y trabajadores supervisados y revisar garantías pendientes.
+
+**Riesgo conocido:** si falla Redis al publicar IA después del commit de normalización, el mensaje queda conservado pero esa publicación IA puede perderse hasta recuperación manual explícita. No hay aún buzón transaccional de IA independiente; se requiere para producción. Las entregas repetidas pueden dar lugar a más de una petición facturable a Google aunque SQL admita un solo registro resultado por mensaje.
+
+Para la operación continua, privacidad, corte de fechas y separación de colas, ver [Operación permanente Gemini](operacion-gemini-permanente.md).
