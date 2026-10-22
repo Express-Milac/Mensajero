@@ -8,10 +8,7 @@ param(
     # Uso interno exclusivo para ventanas del lanzador.
     [ValidateSet('', 'web', 'programador', 'normalizador', 'gemini', 'recolector')]
     [string] $Servicio = '',
-    [string] $Marca = '',
-
-    # Permite levantar captura sin IA si se desautoriza Gemini.
-    [switch] $SinGemini
+    [string] $Marca = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -208,10 +205,8 @@ function ValidarConfiguracion {
     foreach ($programa in @('php.exe', 'npm.cmd', 'wsl.exe', 'powershell.exe')) {
         if (-not (Get-Command $programa -ErrorAction SilentlyContinue)) { throw ("No se encuentra " + $programa) }
     }
-    if (-not $SinGemini) {
-        $certificado = Join-Path $env:LOCALAPPDATA 'Mensajero\certificados\cacert.pem'
-        if (-not (Test-Path -LiteralPath $certificado)) { throw 'Falta el certificado CA HTTPS de Gemini.' }
-    }
+    $certificado = Join-Path $env:LOCALAPPDATA 'Mensajero\certificados\cacert.pem'
+    if (-not (Test-Path -LiteralPath $certificado)) { throw 'Falta el certificado CA HTTPS de Gemini.' }
 
     LimpiarVariablesTemporales
     Set-Location $raiz
@@ -225,13 +220,11 @@ function ValidarConfiguracion {
     if ($configuracion.normalizacion -ne $true) {
         throw 'MENSAJERO_NORMALIZACION_HABILITADA no esta activada en .env.'
     }
-    if (-not $SinGemini) {
-        if ($configuracion.ia -ne $true -or $configuracion.automatica -ne $true) {
-            throw 'La politica Gemini o la ejecucion automatica no estan autorizadas en .env.'
-        }
-        if ((@($configuracion.grupos) | Measure-Object).Count -ne 1 -or [int] $configuracion.grupos[0] -ne 10020) {
-            throw 'El piloto solo permite que Gemini procese el grupo 10020.'
-        }
+    if ($configuracion.ia -ne $true -or $configuracion.automatica -ne $true) {
+        throw 'La politica Gemini o la ejecucion automatica no estan autorizadas en .env.'
+    }
+    if ((@($configuracion.grupos) | Measure-Object).Count -ne 1 -or [int] $configuracion.grupos[0] -ne 10020) {
+        throw 'El piloto solo permite que Gemini procese el grupo 10020.'
     }
     $programacion = (& php artisan schedule:list | Out-String)
     if ($LASTEXITCODE -ne 0 -or -not $programacion.Contains('mensajero:despachar-buzon')) {
@@ -301,7 +294,7 @@ try {
                 AbrirServicio 'web' $nuevos
                 AbrirServicio 'programador' $nuevos
                 AbrirServicio 'normalizador' $nuevos
-                if (-not $SinGemini) { AbrirServicio 'gemini' $nuevos }
+                AbrirServicio 'gemini' $nuevos
                 AbrirServicio 'recolector' $nuevos
             } catch {
                 Write-Warning 'Hubo un fallo durante el inicio. Se cierran solo los servicios iniciados por este lanzador.'
