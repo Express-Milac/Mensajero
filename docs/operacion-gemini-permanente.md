@@ -30,7 +30,7 @@ php artisan test --filter=GeminiContratoTest
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\activar-gemini.ps1 -GrupoId 10020
 ~~~
 
-El script exige confirmación y clave oculta; escribe **solo en .env local**, ignorado por Git, y crea respaldo local .env.backup. Aislar permisos de lectura de ambos archivos, mantenerlos fuera de repositorios y copias compartidas. **No** sube secretos a GitHub ni llama a Google durante la activación. Respeta la fecha de corte preexistente si es válida, evitando saltarse mensajes pendientes por un reinicio.
+El script exige confirmación y clave oculta; escribe **solo en .env local**, ignorado por Git, y crea respaldo local .env.backup. Aislar permisos de lectura de ambos archivos, mantenerlos fuera de repositorios y copias compartidas. **No** sube secretos a GitHub ni llama a Google durante la activación. Por defecto fija la fecha de corte **al momento de activación**, para NO transmitir mensajes históricos del piloto. Si se reactiva tras una parada y se autoriza analizar trabajos anteriores, usar -ConservarCorte deliberadamente tras revisar la cola y las fechas.
 
 Configuración esperada (valores de ejemplo sin secretos):
 
