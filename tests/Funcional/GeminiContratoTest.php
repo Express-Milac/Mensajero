@@ -2,18 +2,34 @@
 
 namespace Tests\Funcional;
 
+use App\Jobs\AnalizarMensajeGeminiTrabajo;
 use App\Services\IA\ClienteGemini;
 use App\Services\IA\PoliticaEnvioGemini;
 use App\Services\IA\PrepararContextoGemini;
 use App\Services\IA\ValidarResultadoGemini;
 use DateTimeImmutable;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Tests\TestCase;
 
 final class GeminiContratoTest extends TestCase
 {
+    public function test_el_trabajo_gemini_puede_despacharse_sin_usar_redis_real(): void
+    {
+        Bus::fake();
+        config()->set('mensajero.ia.cola', 'mensajero_ia');
+
+        AnalizarMensajeGeminiTrabajo::dispatch(73);
+
+        Bus::assertDispatched(AnalizarMensajeGeminiTrabajo::class, function (AnalizarMensajeGeminiTrabajo $trabajo): bool {
+            return $trabajo->mensajeId === 73
+                && $trabajo->connection === 'redis'
+                && $trabajo->queue === 'mensajero_ia';
+        });
+    }
+
     public function test_el_piloto_rechaza_publicar_sin_mensaje_explicito(): void
     {
         $this->artisan('mensajero:analizar-gemini', [
