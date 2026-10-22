@@ -12,6 +12,23 @@ El script **scripts/mensajero-local.ps1** administra con una sola orden:
 
 El lanzador abre **cinco ventanas identificadas**: web, programador, normalizador, gemini y recolector. Redis queda en WSL. Los procesos se mantienen en ejecución mientras el equipo y las ventanas sigan activos.
 
+## Verificación previa de sintaxis (sin activar servicios)
+
+Antes del primer arranque en Windows PowerShell, verificar con el parser local:
+
+~~~powershell
+$errores = @()
+$tokens = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+    (Resolve-Path .\scripts\mensajero-local.ps1).Path,
+    [ref]$tokens,
+    [ref]$errores
+) | Out-Null
+if ($errores.Count -gt 0) { $errores; throw 'Lanzador con errores de sintaxis.' }
+~~~
+
+El código fue integrado en GitHub, pero **no se ha ejecutado aún en el Windows del operador**; esta comprobación es obligatoria antes del primer arranque.
+
 ## Comando único para iniciar
 
 Desde la raíz del repositorio:
