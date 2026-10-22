@@ -18,6 +18,20 @@ Rama opcional autorizada: mensaje nuevo normalizado → **cola mensajero_ia** �
 
 La captura **no espera** a Gemini. Pegatinas descartadas; multimedia en almacenamiento privado externo a SQL Server. Gemini no envía mensajes por WhatsApp ni modifica los originales.
 
+## Un comando para levantar todos los servicios (Windows, entorno local)
+
+Después de configurar Redis en WSL, Laravel, el recolector y Gemini, ejecutar desde la raíz:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\mensajero-local.ps1
+~~~
+
+También existen las acciones **-Accion estado** y **-Accion detener**. El lanzador abre cinco ventanas (web, programador, normalizador, Gemini y recolector), comprueba que Redis responda y **evita duplicar instancias anteriores**. No habilita IA si no está autorizada en .env y no reinicia sesiones WhatsApp ajenas.
+
+**La primera vez**, detener las terminales del lanzamiento manual anterior con Ctrl+C; el script no mata procesos ajenos. No sobrevive a reinicio/suspensión Windows y no sustituye al administrador de servicios del servidor.
+
+Guía y limitaciones: [Arranque local unificado](docs/arranque-local-unificado.md).
+
 ## Activar Gemini de forma continua
 
 Para habilitar la prueba automática de forma **persistente** solo en el grupo de ensayo **10020**, revisar y ejecutar el instalador PowerShell en el equipo que va a operar Mensajero (tras autorización de MILAC para transmitir datos a Google y facturar su uso):
