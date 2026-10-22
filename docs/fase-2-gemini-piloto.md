@@ -43,6 +43,7 @@ MENSAJERO_IA_GRUPOS_AUTORIZADOS=10020
 MENSAJERO_IA_FECHA_INICIO=2026-10-21T20:00:00-06:00
 MENSAJERO_COLA_IA=mensajero_ia
 MENSAJERO_IA_EJECUCION_AUTOMATICA=false
+MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO=true
 CLAVE_API_GEMINI=
 \`\`\`
 
@@ -69,6 +70,7 @@ IA_HABILITADA=true
 MENSAJERO_IA_ENVIO_AUTORIZADO=true
 MENSAJERO_IA_SERVICIO_PAGADO_CONFIRMADO=true
 MENSAJERO_IA_EJECUCION_AUTOMATICA=false
+MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO=true
 \`\`\`
 
 Limpiar configuración, mantener Redis operativo, iniciar en una terminal dedicada:
@@ -80,12 +82,21 @@ php artisan queue:work redis --queue=mensajero_ia --tries=3 --timeout=45
 En otra terminal:
 
 \`\`\`powershell
-php artisan mensajero:analizar-gemini --grupo=10020 --limite=2 --aplicar
+php artisan mensajero:analizar-gemini --grupo=10020 --mensaje-id=<ID_DE_UN_MENSAJE_FICTICIO_NUEVO> --limite=1 --aplicar
 \`\`\`
 
 Ver resultados en \`http://127.0.0.1:8000/mensajes/ia\`. Cada evento cita enlaces a evidencia original de MILAC. \`--aplicar\` encola trabajos; la comunicación externa sucede en el trabajador \`mensajero_ia\`, no en la terminal que publica.
 
 Solo después de comprobar que las pruebas, reintentos e idempotencia funcionan, se puede evaluar \`MENSAJERO_IA_EJECUCION_AUTOMATICA=true\`. Este ajuste despacha nuevos mensajes recién normalizados, nunca mensajes anteriores a la fecha de corte. El comando manual permite recuperar publicaciones fallidas.
+
+### Regla de privacidad para el primer ensayo integral
+
+- **No usar los mensajes históricos #25 y #70**: su procedencia operativa no está confirmada como ficticia.
+- Capturar un mensaje nuevo **100 % ficticio** dentro de un grupo de pruebas autorizado; localizar su ID interno tras normalizarse y seleccionarlo con `--mensaje-id=ID`.
+- El comando exige `--mensaje-id` cuando lleva `--aplicar`, para que el operador elija exactamente qué enviar.
+- `MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO=true` (predeterminado) impide transmitir los mensajes anteriores del grupo como contexto; nunca cambiar esta bandera a false sin aprobar explícitamente los datos y la fecha de corte.
+- El trabajador IA debe iniciar con una configuración SSL que verifique una autoridad certificadora válida (en Windows puede proporcionarse un `cacert.pem` verificado a través de `curl.cainfo` y `openssl.cafile`); **nunca usar `verify=false`**.
+- La clave Google puede compartir cuota y facturación con otros proyectos: limitar la prueba a un solo mensaje.
 
 ## Condiciones para producción
 
