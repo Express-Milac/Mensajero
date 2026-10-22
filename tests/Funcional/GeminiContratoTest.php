@@ -134,6 +134,27 @@ final class GeminiContratoTest extends TestCase
         });
     }
 
+    public function test_codigo_401_informa_razon_google_sin_exponer_credenciales(): void
+    {
+        config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
+        config()->set('mensajero.ia.clave_api', 'clave-ficticia-no-funcional');
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'error' => [
+                    'status' => 'UNAUTHENTICATED',
+                    'message' => 'No registrar esta clave: clave-ficticia-no-funcional',
+                    'details' => [['reason' => 'API_KEY_SERVICE_BLOCKED']],
+                ],
+            ], 401),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('HTTP 401; estado UNAUTHENTICATED; razón API_KEY_SERVICE_BLOCKED');
+
+        (new ClienteGemini)->analizar([['id' => 74, 'texto' => 'Solo un mensaje ficticio.', 'tipo' => 'texto']]);
+    }
+
     public function test_una_respuesta_incompleta_no_se_acepta(): void
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
