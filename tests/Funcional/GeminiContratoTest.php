@@ -155,6 +155,22 @@ final class GeminiContratoTest extends TestCase
         (new ClienteGemini)->analizar([['id' => 74, 'texto' => 'Solo un mensaje ficticio.', 'tipo' => 'texto']]);
     }
 
+    public function test_diagnostico_gemini_rechaza_parametros_invalidos_sin_acceder_a_google(): void
+    {
+        Http::fake();
+
+        $this->artisan('mensajero:estado-gemini', [
+            '--grupo' => '0',
+        ])->assertExitCode(1);
+
+        $this->artisan('mensajero:estado-gemini', [
+            '--grupo' => '10020',
+            '--limite' => '21',
+        ])->assertExitCode(1);
+
+        Http::assertNothingSent();
+    }
+
     public function test_una_respuesta_incompleta_no_se_acepta(): void
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
