@@ -92,6 +92,32 @@ php artisan queue:failed
 
 La variable de configuración por sí sola **no demuestra** que el trabajador esté encendido. Supervisar procesos, estados de Redis, mensajes nuevos y filas SQL Server. No imprimir config('mensajero.ia') completa: contiene la clave API.
 
+
+## Diagnóstico de mensajes sin análisis (22/10/2026)
+
+Si los WhatsApp aparecen en el tablero pero /mensajes/ia no agrega tarjetas, **no asumir que Gemini está caído**: la interfaz lista solo pendiente_revision, mientras los mensajes clasificados sin_evento quedan ocultos. El diagnóstico de solo lectura distingue esos estados:
+
+~~~powershell
+php artisan mensajero:estado-gemini --grupo=10020 --limite=10
+php artisan schedule:list
+php artisan queue:failed
+~~~
+
+El comando de estado **no llama Google, no publica trabajos y no imprime textos ni claves**. Informa habilitación/autorización, fecha de corte, total de analizados con y sin evento, textos normalizados desde el corte aún sin resultado IA y tres colas Redis (pendientes, reservados, retrasados). También lista los ID recientes y sus estados. La vista /mensajes/ia ahora muestra un resumen similar para grupos autorizados, sin pretender certificar la salud de los trabajadores.
+
+**Causa muy común:** se activó IA en .env después de que ya se había iniciado el trabajador de normalización. Los trabajadores queue:work de Laravel conservan la configuración cargada al inicio: aunque Gemini y su trabajador estén encendidos, el normalizador antiguo puede seguir leyendo MENSAJERO_IA_EJECUCION_AUTOMATICA=false y no publicar ningún trabajo. En esa situación, detener **solo** el trabajador de normalización con Ctrl+C e iniciarlo nuevamente en una **nueva** terminal:
+
+~~~powershell
+php artisan queue:work redis --queue=mensajero_normalizacion --sleep=2 --tries=5 --timeout=60
+~~~
+
+No levantar un segundo trabajador si el primero sigue vivo. Revisar también si php artisan schedule:list incluye mensajero:despachar-buzon; si no aparece, reiniciar el programador Laravel con la configuración actual. El worker Gemini de la cola mensajero_ia se mantiene separado y puede seguir encendido.
+
+**Los mensajes que ya se normalizaron con el normalizador antiguo no se publicarán retrospectivamente** cuando ese trabajador se reinicie. **No retrasar la fecha de corte ni reenviar automáticamente históricos**: recuperar un ID único y autorizado solo después de revisar su elegibilidad, contenido y límites de consumo. Para probar el circuito automático, usar un mensaje **nuevo y ficticio**, posterior al reinicio, y observar su ID y estado con el diagnóstico sin ejecutar manualmente el comando aplicar.
+
+El resumen de la vista no es un latido de trabajador; para afirmar 24/7 falta implementar heartbeat y supervisión real de servicios.
+
+
 ## Suspender sin perder mensajes
 
 1. Detener el trabajador IA y desactivar su inicio automático.
