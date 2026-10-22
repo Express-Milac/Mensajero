@@ -1,5 +1,28 @@
 # Registro de validación
 
+## 22/10/2026 — Primer evento Gemini desde WhatsApp real hasta interfaz
+
+Datos reportados de la ejecución local del operador, grupo de pruebas **10020** y mensaje **#74** (texto ficticio, unidad TEST-01):
+
+| Paso | Evidencia observada |
+|---|---|
+| Grupo de WhatsApp | «Mensajero milac Prueba», grupo activo y monitoreado |
+| Captura y normalización SQL Server | #74, recibido 17:20:57 UTC, texto consultable |
+| Encolado Redis de Gemini | AnalizarMensajeGeminiTrabajo publicado al usar un mensaje seleccionado |
+| Despacho | Laravel Dispatchable corregido; test añadido |
+| HTTPS Google | CA verificada en Windows; prueba de conectividad y respuesta real completada |
+| Generación | Gemini **gemini-3.5-flash-lite**, evento «incidencia» |
+| Persistencia SQL Server | mensajero_analisis_operativos_ia, mensaje_whatsapp_id=74, **pendiente_revision** |
+| Vista | /mensajes/ia mostró evento y referencia al mensaje #74 |
+| Tokens | **223 entrada / 84 salida** |
+| Pruebas contrato | **9 pruebas y 19 aserciones aprobadas** |
+
+Una solicitud previa generó HTTP 401, registrada a las 11:25:20 hora local; tras mejorar el diagnóstico, el reintento a las 11:40:37 finalizó **DONE**. El error anterior ya no es el resultado vigente del mensaje #74.
+
+**Alcance de la evidencia:** éxito del recorrido **manual** con un mensaje sintético. Se integraron después scripts de activación persistente en .env y de trabajador continuo, **aún sin validación de ejecución desatendida en el equipo del operador ni certificación productiva**. Los cambios de scripts/documentación en GitHub no prueban por sí mismos que la instalación local esté activada. Faltan supervisión 24/7, alertas, topes de consumo, idempotencia de solicitudes externas y aprobación humana.
+
+Referencias: [Fase 2](fase-2-gemini-piloto.md), [Operación permanente](operacion-gemini-permanente.md) e [Instrucciones de Gemini](canalizacion-ia.md).
+
 ## 16/10/2026 — recolector WhatsApp dedicado aprobado localmente
 
 Validación ejecutada en Windows con PHP 8.4.7, Microsoft SQL Server 2022 Developer desechable en Docker sobre `mensajero_test`, Node.js y npm locales.
