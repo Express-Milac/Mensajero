@@ -76,7 +76,28 @@ final class ClienteGemini
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.$modelo.':generateContent', $solicitud);
 
         if (! $respuesta->successful()) {
-            throw new RuntimeException('Gemini rechazó la solicitud (HTTP '.$respuesta->status().').');
+            // Registrar únicamente códigos técnicos de Google, sin incluir
+            // cuerpo, instrucciones, credenciales, contenido ni metadatos.
+            $estado = $respuesta->json('error.status');
+            $estado = is_string($estado) && preg_match('/\\A[A-Z][A-Z0-9_]{1,79}\\z/D', $estado)
+                ? $estado : 'NO_DISPONIBLE';
+
+            $razon = 'NO_DISPONIBLE';
+            $detalles = $respuesta->json('error.details', []);
+            if (is_array($detalles)) {
+                foreach ($detalles as $detalle) {
+                    $candidato = is_array($detalle) ? ($detalle['reason'] ?? null) : null;
+                    if (is_string($candidato) && preg_match('/\\A[A-Z][A-Z0-9_]{1,79}\\z/D', $candidato)) {
+                        $razon = $candidato;
+                        break;
+                    }
+                }
+            }
+
+            throw new RuntimeException(sprintf(
+                'Gemini rechazó la solicitud (HTTP %d; estado %s; razón %s).',
+                $respuesta->status(), $estado, $razon
+            ));
         }
 
         if ($respuesta->json('candidates.0.finishReason') !== 'STOP') {
