@@ -5,10 +5,11 @@ namespace App\Jobs;
 use App\Services\IA\ProcesarAnalisisGemini;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
 {
-    use Queueable;
+    use Dispatchable, Queueable;
 
     public int $tries = 3;
 
