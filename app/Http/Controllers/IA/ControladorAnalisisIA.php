@@ -4,18 +4,51 @@ namespace App\Http\Controllers\IA;
 
 use App\Http\Controllers\Controller;
 use App\Models\MensajeWhatsapp;
+use App\Services\IA\PoliticaEnvioGemini;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 final class ControladorAnalisisIA extends Controller
 {
-    public function indice(): View
+    public function indice(PoliticaEnvioGemini $politica): View
     {
         $permitidos = (array) config('mensajero.ia.grupos_autorizados', []);
         $analisis = null;
+        // Esta vista distingue entre resultado sin evento y ausencia de resultado.
+        // La configuracion no demuestra que el trabajador siga encendido.
+        $actividadIA = [
+            'configurada' => $politica->configuracionCompleta(),
+            'automatica' => config('mensajero.ia.ejecucion_automatica') === true,
+            'resultados' => 0,
+            'sin_evento' => 0,
+            'sin_resultado' => null,
+            'ultimo_analisis' => null,
+        ];
 
         if ($permitidos !== [] && Schema::hasTable('mensajero_analisis_operativos_ia')) {
+            $base = DB::table('mensajero_analisis_operativos_ia')
+                ->whereIn('chat_monitoreado_id', $permitidos);
+            $actividadIA['resultados'] = (clone $base)->count();
+            $actividadIA['sin_evento'] = (clone $base)->where('estado', 'sin_evento')->count();
+            $actividadIA['ultimo_analisis'] = (clone $base)->max('creado_en');
+
+            $inicio = $politica->fechaInicio();
+            if ($inicio !== null) {
+                $fechaUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+                $actividadIA['sin_resultado'] = DB::table('mensajero_mensajes_whatsapp as m')
+                    ->whereIn('m.chat_monitoreado_id', $permitidos)
+                    ->where('m.estado_captura', 'normalizado')
+                    ->where('m.tipo_mensaje', 'texto')
+                    ->where('m.recibido_en', '>=', $fechaUtc)
+                    ->whereNotExists(function ($consulta): void {
+                        $consulta->selectRaw('1')
+                            ->from('mensajero_analisis_operativos_ia as a')
+                            ->whereColumn('a.mensaje_whatsapp_id', 'm.id');
+                    })
+                    ->count();
+            }
+
             $analisis = DB::table('mensajero_analisis_operativos_ia as a')
                 ->join('mensajero_chats_monitoreados as g', 'g.id', '=', 'a.chat_monitoreado_id')
                 ->whereIn('a.chat_monitoreado_id', $permitidos)
@@ -46,6 +79,6 @@ final class ControladorAnalisisIA extends Controller
             $filas[] = ['registro' => $registro, 'fuentes' => $fuentes];
         }
 
-        return view('ia.indice', compact('filas', 'analisis'));
+        return view('ia.indice', compact('filas', 'analisis', 'actividadIA'));
     }
 }
