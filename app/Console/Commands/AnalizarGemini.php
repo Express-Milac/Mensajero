@@ -15,6 +15,7 @@ final class AnalizarGemini extends Command
     protected $signature = 'mensajero:analizar-gemini
         {--grupo=10020 : Identificador interno del grupo autorizado}
         {--limite=2 : Máximo de mensajes nuevos a seleccionar (1-5)}
+        {--mensaje-id= : Mensaje exacto a analizar (obligatorio para aplicar durante el piloto)}
         {--aplicar : Publicar trabajos en Redis; sin esta opción solo previsualiza}';
 
     protected $description = 'Previsualiza o solicita interpretación Gemini de mensajes nuevos en un grupo permitido.';
@@ -23,10 +24,18 @@ final class AnalizarGemini extends Command
     {
         $grupoId = filter_var($this->option('grupo'), FILTER_VALIDATE_INT);
         $limite = filter_var($this->option('limite'), FILTER_VALIDATE_INT);
+        $mensajeIdSolicitado = $this->option('mensaje-id');
+        $mensajeId = $mensajeIdSolicitado === null ? null : filter_var($mensajeIdSolicitado, FILTER_VALIDATE_INT);
 
         if ($grupoId === false || $grupoId < 1 ||
-            $limite === false || $limite < 1 || $limite > 5) {
+            $limite === false || $limite < 1 || $limite > 5 ||
+            ($mensajeIdSolicitado !== null && ($mensajeId === false || $mensajeId < 1))) {
             $this->error('El grupo debe ser un entero y el límite debe estar entre 1 y 5.');
+            return self::FAILURE;
+        }
+
+        if ($this->option('aplicar') && $mensajeId === null) {
+            $this->error('Para el piloto debes indicar --mensaje-id=ID y evitar enviar varios mensajes a Google.');
             return self::FAILURE;
         }
 
@@ -54,7 +63,7 @@ final class AnalizarGemini extends Command
 
         $fechaUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
 
-        $mensajes = MensajeWhatsapp::query()
+        $consultaMensajes = MensajeWhatsapp::query()
             ->where('chat_monitoreado_id', $grupoId)
             ->where('estado_captura', 'normalizado')
             ->where('tipo_mensaje', 'texto')
@@ -62,7 +71,13 @@ final class AnalizarGemini extends Command
             ->whereNotIn(
                 'id',
                 DB::table('mensajero_analisis_operativos_ia')->select('mensaje_whatsapp_id')
-            )
+            );
+
+        if ($mensajeId !== null) {
+            $consultaMensajes->whereKey($mensajeId);
+        }
+
+        $mensajes = $consultaMensajes
             ->orderBy('recibido_en')->orderBy('id')
             ->limit($limite)
             ->get(['id', 'recibido_en']);
