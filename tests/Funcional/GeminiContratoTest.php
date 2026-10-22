@@ -14,6 +14,24 @@ use Tests\TestCase;
 
 final class GeminiContratoTest extends TestCase
 {
+    public function test_el_piloto_rechaza_publicar_sin_mensaje_explicito(): void
+    {
+        $this->artisan('mensajero:analizar-gemini', [
+            '--grupo' => '10020',
+            '--limite' => '1',
+            '--aplicar' => true,
+        ])->assertExitCode(1);
+    }
+
+    public function test_el_piloto_rechaza_identificador_invalido(): void
+    {
+        $this->artisan('mensajero:analizar-gemini', [
+            '--grupo' => '10020',
+            '--mensaje-id' => '-1',
+            '--aplicar' => true,
+        ])->assertExitCode(1);
+    }
+
     public function test_gemini_permanece_cerrado_sin_todas_las_autorizaciones(): void
     {
         config()->set('mensajero.ia', [
