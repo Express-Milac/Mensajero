@@ -50,6 +50,23 @@ CLAVE_API_GEMINI=<solo en .env privado>
 
 El programador de normalización es **global**: puede tratar mensajes históricos pendientes de otros grupos autorizados aunque la política IA no permita enviarlos a Google. No retroceder el corte IA ni activar otros grupos sin aprobación.
 
+## Arranque único en Windows (22/10/2026)
+
+Para el entorno **local de pruebas**, ahora existe un lanzador que evita ejecutar cinco comandos en ventanas creadas manualmente:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\mensajero-local.ps1
+~~~
+
+Consulta y parada:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\mensajero-local.ps1 -Accion estado
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\mensajero-local.ps1 -Accion detener
+~~~
+
+**Usar una opción u otra, no ambas a la vez:** cerrar primero los servicios manuales anteriores con Ctrl+C, porque el lanzador se niega a duplicar workers, recolector y servidor HTTP. Solo se gestionan procesos que haya iniciado el propio lanzador. **Guía completa:** [Arranque local unificado](arranque-local-unificado.md).
+
 ## Procesos que deben permanecer funcionando
 
 Ejecutarlos en terminales separadas o con supervisor; instalar una sola instancia de cada proceso:
