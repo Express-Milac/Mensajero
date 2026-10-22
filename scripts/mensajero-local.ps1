@@ -86,7 +86,7 @@ $bytes = [System.Security.Cryptography.SHA256]::Create().ComputeHash(
 )
 $hash = [System.BitConverter]::ToString($bytes).Replace('-', '').Substring(0, 16)
 $registro = Join-Path $directorio ("local-" + $hash + ".json")
-$mutex = New-Object System.Threading.Mutex($false, ('Local\MensajeroMILAC-' + $hash))
+$mutex = [System.Threading.Mutex]::new($false, ('Local\MensajeroMILAC-' + $hash))
 $bloqueo = $false
 
 function LeerRegistro {
