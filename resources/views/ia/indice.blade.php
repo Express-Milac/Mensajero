@@ -8,6 +8,42 @@
         <a class="catalogo-volver" href="{{ route('tablero') }}">Volver al centro de mando</a>
     </section>
 
+    <section class="catalogo-seccion" aria-label="Actividad de inteligencia artificial">
+        <div class="catalogo-titulo">
+            <div>
+                <h2>Actividad de Gemini</h2>
+                <p>Resumen de resultados guardados en SQL Server. No realiza solicitudes a Google.</p>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:10px">
+            <div style="background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:15px">
+                <span style="color:#6b7b92;font-size:12px">Modo de análisis</span>
+                <p style="font-weight:750;font-size:16px;margin:6px 0">
+                    {{ $actividadIA['configurada'] && $actividadIA['automatica'] ? 'Automático configurado' : 'Sin autorización automática' }}
+                </p>
+            </div>
+            <div style="background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:15px">
+                <span style="color:#6b7b92;font-size:12px">Análisis guardados</span>
+                <p style="font-weight:750;font-size:20px;margin:6px 0">{{ $actividadIA['resultados'] }}</p>
+            </div>
+            <div style="background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:15px">
+                <span style="color:#6b7b92;font-size:12px">Analizados sin evento</span>
+                <p style="font-weight:750;font-size:20px;margin:6px 0">{{ $actividadIA['sin_evento'] }}</p>
+            </div>
+            <div style="background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:15px">
+                <span style="color:#6b7b92;font-size:12px">Textos sin resultado IA desde el corte</span>
+                <p style="font-weight:750;font-size:20px;margin:6px 0">
+                    {{ $actividadIA['sin_resultado'] ?? '—' }}
+                </p>
+            </div>
+        </div>
+        <p style="font-size:12px;color:#697990;margin:0 0 24px">
+            Último análisis guardado (UTC): {{ $actividadIA['ultimo_analisis'] ?: 'Sin registros' }}.
+            «Automático configurado» no garantiza que el trabajador esté encendido.
+            «Sin resultado» puede incluir mensajes todavía en cola o pendientes de envío.
+        </p>
+    </section>
+
     <section class="catalogo-seccion" aria-label="Eventos operativos pendientes de revisión">
         <div class="catalogo-titulo">
             <div>
