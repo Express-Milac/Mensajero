@@ -6,7 +6,6 @@ param(
     [string] $Accion = 'iniciar',
 
     # Uso interno exclusivo para ventanas del lanzador.
-    [ValidateSet('', 'web', 'programador', 'normalizador', 'gemini', 'recolector')]
     [string] $Servicio = '',
     [string] $Marca = ''
 )
@@ -30,6 +29,9 @@ function LimpiarVariablesTemporales {
 
 # Ejecutado solamente en las ventanas que abre el lanzador.
 if ($Servicio -ne '') {
+    if ($Servicio -notin @('web','programador','normalizador','gemini','recolector')) {
+        throw 'Nombre de servicio interno no permitido.'
+    }
     if ($Marca -notmatch '^[a-f0-9]{32}$') {
         throw 'El proceso interno requiere una marca de lanzamiento valida.'
     }
