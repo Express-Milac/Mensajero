@@ -70,7 +70,7 @@
                 <span>Acciones</span>
             </div>
             @forelse($grupos as $grupo)
-                @php($autorizado = (bool) ($grupo->es_activo && $grupo->es_monitoreado))
+                @php($autorizado = (bool) ($grupo->es_activo && $grupo->es_monitoreado && $grupo->es_visible_tablero))
                 @php($tituloGrupo = $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre'))
                 <article class="gestor-fila" data-grupo-id="{{ $grupo->id }}" data-captura-autorizada="{{ $autorizado ? '1' : '0' }}">
                     <div class="gestor-identidad">
