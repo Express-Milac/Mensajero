@@ -3,6 +3,7 @@
 use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
 use App\Http\Controllers\IA\ControladorAnalisisIA;
+use App\Http\Controllers\Operacion\ControladorOperacion;
 use App\Http\Controllers\Mensajes\ControladorArchivosWhatsapp;
 use App\Http\Controllers\Mensajes\ControladorMensajes;
 use App\Http\Controllers\Remitentes\ControladorRemitentes;
@@ -41,6 +42,8 @@ Route::middleware('mensajero.acceso')->group(function () {
         Route::get('/mensajes/actualizacion', [ControladorMensajes::class, 'actualizacion'])
             ->middleware('throttle:240,1')
             ->name('mensajes.actualizacion');
+        Route::get('/operacion', [ControladorOperacion::class, 'indice'])
+            ->name('operacion.indice');
         Route::get('/mensajes/ia', [ControladorAnalisisIA::class, 'indice'])
             ->name('mensajes.ia.indice');
         Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
