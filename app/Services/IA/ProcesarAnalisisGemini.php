@@ -4,6 +4,9 @@ namespace App\Services\IA;
 
 use App\Models\ChatMonitoreado;
 use App\Models\MensajeWhatsapp;
+use App\Services\Operacion\RegistrarAcontecimientoOperativo;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -15,6 +18,7 @@ final class ProcesarAnalisisGemini
         private readonly PrepararContextoGemini $preparador,
         private readonly ClienteGemini $cliente,
         private readonly ValidarResultadoGemini $validador,
+        private readonly RegistrarAcontecimientoOperativo $registrar,
     ) {}
 
     public function ejecutar(int $mensajeId): string
@@ -28,7 +32,7 @@ final class ProcesarAnalisisGemini
             $mensaje->chat->tipo_chat !== 'grupo' ||
             ! $mensaje->chat->es_activo || ! $mensaje->chat->es_monitoreado ||
             ! $mensaje->chat->es_visible_tablero ||
-            $mensaje->tipo_mensaje !== 'texto' || $mensaje->estado_captura !== 'normalizado' ||
+            ! $this->tieneTextoAnalizable($mensaje) || $mensaje->estado_captura !== 'normalizado' ||
             $mensaje->recibido_en === null ||
             ! $this->politica->autoriza((int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en)) {
             return 'no_elegible';
@@ -45,7 +49,13 @@ final class ProcesarAnalisisGemini
         $consultaContexto = MensajeWhatsapp::query()
             ->where('chat_monitoreado_id', $mensaje->chat_monitoreado_id)
             ->where('estado_captura', 'normalizado')
-            ->where('tipo_mensaje', 'texto');
+            ->where(function ($consulta): void {
+                $consulta->where('tipo_mensaje', 'texto')
+                    ->orWhere(function ($multimedia): void {
+                        $multimedia->whereIn('tipo_mensaje', ['foto', 'video', 'documento'])
+                            ->whereNotNull('pie_multimedia');
+                    });
+            });
 
         if (config('mensajero.ia.solo_mensaje_objetivo', true) !== false) {
             $consultaContexto->whereKey($mensajeId);
@@ -60,8 +70,9 @@ final class ProcesarAnalisisGemini
             $fechaInicio = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
             $fecha = $mensaje->recibido_en->utc()->format('Y-m-d H:i:s.u');
 
+            $desdeVentana = $mensaje->recibido_en->copy()->subMinutes(5)->format('Y-m-d H:i:s.u');
             $consultaContexto
-                ->where('recibido_en', '>=', $fechaInicio)
+                ->where('recibido_en', '>=', max($fechaInicio, $desdeVentana))
                 ->where(function ($consulta) use ($fecha, $mensajeId): void {
                     $consulta->where('recibido_en', '<', $fecha)
                         ->orWhere(function ($empate) use ($fecha, $mensajeId): void {
@@ -73,13 +84,19 @@ final class ProcesarAnalisisGemini
         $anteriores = $consultaContexto
             ->orderByDesc('recibido_en')->orderByDesc('id')
             ->limit(6)
-            ->get(['id', 'contenido_texto']);
+            ->get(['id', 'contenido_texto', 'pie_multimedia', 'tipo_mensaje']);
 
         $contexto = [];
         foreach ($anteriores->reverse() as $anterior) {
-            $texto = $this->preparador->limpiar((string) $anterior->contenido_texto);
+            $contenido = $anterior->tipo_mensaje === 'texto'
+                ? $anterior->contenido_texto : $anterior->pie_multimedia;
+            $texto = $this->preparador->limpiar((string) $contenido);
             if ($texto !== '') {
-                $contexto[] = ['id' => (int) $anterior->id, 'texto' => $texto, 'tipo' => 'texto'];
+                $contexto[] = [
+                    'id' => (int) $anterior->id,
+                    'texto' => $texto,
+                    'tipo' => $anterior->tipo_mensaje === 'texto' ? 'texto' : 'leyenda_'.$anterior->tipo_mensaje,
+                ];
             }
         }
 
@@ -96,7 +113,7 @@ final class ProcesarAnalisisGemini
         );
         $huella = hash('sha256', json_encode($contexto, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
-        return DB::transaction(function () use ($mensaje, $mensajeId, $validado, $respuesta, $huella): string {
+        $estado = DB::transaction(function () use ($mensaje, $mensajeId, $validado, $respuesta, $huella): string {
             $grupo = ChatMonitoreado::query()
                 ->whereKey($mensaje->chat_monitoreado_id)
                 ->where('tipo_chat', 'grupo')
@@ -134,5 +151,35 @@ final class ProcesarAnalisisGemini
 
             return $validado['es_evento'] ? 'pendiente_revision' : 'sin_evento';
         }, 3);
+
+        // La proyección operativa NO forma parte de la llamada a Google:
+        // si falla, se recupera desde el análisis persistido, sin gastar
+        // otra solicitud Gemini ni perder la evidencia cruda.
+        if ($estado === 'pendiente_revision') {
+            try {
+                $analisisId = DB::table('mensajero_analisis_operativos_ia')
+                    ->where('mensaje_whatsapp_id', $mensajeId)->value('id');
+                if ($analisisId !== null) {
+                    $this->registrar->desdeAnalisis((int) $analisisId);
+                }
+            } catch (Throwable $error) {
+                Log::warning('Proyección operativa pendiente de recuperación.', [
+                    'mensaje_id' => $mensajeId,
+                    'tipo_error' => get_class($error),
+                ]);
+            }
+        }
+
+        return $estado;
+    }
+
+    private function tieneTextoAnalizable(MensajeWhatsapp $mensaje): bool
+    {
+        if ($mensaje->tipo_mensaje === 'texto') {
+            return trim((string) $mensaje->contenido_texto) !== '';
+        }
+
+        return in_array($mensaje->tipo_mensaje, ['foto', 'video', 'documento'], true)
+            && trim((string) $mensaje->pie_multimedia) !== '';
     }
 }
