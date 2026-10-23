@@ -8,6 +8,13 @@
         <a class="catalogo-volver" href="{{ route('mensajes.indice') }}">Ver mensajes originales ↗</a>
     </section>
 
+    @if(session('estado'))
+        <div class="notice success" role="status">{{ session('estado') }}</div>
+    @endif
+    @if($errors->any())
+        <div class="notice error-box" role="alert">{{ $errors->first() }}</div>
+    @endif
+
     <section class="catalogo-metricas gestor-metricas" aria-label="Resumen operativo">
         <article>
             <span class="catalogo-metrica-icono naranja">✧</span>
@@ -35,6 +42,14 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="estado-operacion">Revisión</label>
+                <select id="estado-operacion" name="estado">
+                    @foreach(['todos'=>'Todos', 'pendiente_revision'=>'Por verificar', 'validado'=>'Revisados y validados', 'descartado'=>'Descartados'] as $clave => $etiqueta)
+                        <option value="{{ $clave }}" @selected($estado === $clave)>{{ $etiqueta }}</option>
+                    @endforeach
+                </select>
+            </div>
             <button class="catalogo-aplicar" type="submit">Aplicar filtro</button>
             <a class="catalogo-limpiar" href="{{ route('mensajes.ia.indice') }}">Diagnóstico de Gemini ↗</a>
         </form>
@@ -49,12 +64,30 @@
                             <h3>{{ $item->titulo }}</h3>
                             <span>{{ $item->nombre_interno ?: ($item->nombre_grupo ?: 'Grupo sin nombre') }} · {{ ucfirst($item->categoria) }} · #{{ $item->id }}</span>
                         </div>
-                        <span class="catalogo-estado neutral">Por verificar</span>
+                        <span class="catalogo-estado neutral">{{ match($item->estado) { 'validado' => 'Validado por responsable', 'descartado' => 'Descartado', default => 'Por verificar' } }}</span>
                     </div>
                     <div class="catalogo-tarjeta-cuerpo">
                         <p style="font-size:13px;line-height:1.6;white-space:pre-wrap">{{ $item->resumen }}</p>
                         <p><span>Identificado (UTC)</span><strong>{{ $item->creado_en }}</strong></p>
                     </div>
+                    @if($puedeRevisar && $item->estado === 'pendiente_revision')
+                        <div style="display:flex;flex-wrap:wrap;gap:9px;padding:10px 16px">
+                            <form method="post" action="{{ route('operacion.revisar', $item->id) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="decision" value="validado">
+                                <button class="catalogo-aplicar" type="submit"
+                                        onclick="return confirm('¿Validar esta interpretación después de revisar las evidencias originales?')">Validar interpretación</button>
+                            </form>
+                            <form method="post" action="{{ route('operacion.revisar', $item->id) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="decision" value="descartado">
+                                <button class="catalogo-control secundario" type="submit"
+                                        onclick="return confirm('¿Descartar esta interpretación? No se borran los mensajes.')">Descartar interpretación</button>
+                            </form>
+                        </div>
+                    @endif
                     <div class="catalogo-tarjeta-pie" style="display:block">
                         <strong style="font-size:12px">Evidencias del acontecimiento</strong>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
