@@ -55,6 +55,7 @@ final class ControladorAnalisisIA extends Controller
                 ->where('g.tipo_chat', 'grupo')
                 ->where('g.es_activo', true)
                 ->where('g.es_monitoreado', true)
+                ->where('g.es_visible_tablero', true)
                 ->where('a.estado', 'pendiente_revision')
                 ->select([
                     'a.id', 'a.chat_monitoreado_id', 'a.categoria', 'a.titulo',
