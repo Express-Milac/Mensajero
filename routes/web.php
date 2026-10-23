@@ -44,6 +44,10 @@ Route::middleware('mensajero.acceso')->group(function () {
             ->name('mensajes.actualizacion');
         Route::get('/operacion', [ControladorOperacion::class, 'indice'])
             ->name('operacion.indice');
+        Route::patch('/operacion/{acontecimiento}/revision', [ControladorOperacion::class, 'revisar'])
+            ->whereNumber('acontecimiento')
+            ->middleware(['mensajero.gestion_operacion', 'throttle:30,1'])
+            ->name('operacion.revisar');
         Route::get('/mensajes/ia', [ControladorAnalisisIA::class, 'indice'])
             ->name('mensajes.ia.indice');
         Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
