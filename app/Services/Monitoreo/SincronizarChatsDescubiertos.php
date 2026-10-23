@@ -50,6 +50,7 @@ final class SincronizarChatsDescubiertos
                         'tipo_chat' => $tipoChat,
                         'nombre_grupo' => $nombreGrupo,
                         'es_monitoreado' => false,
+                        'es_visible_tablero' => false,
                         'es_activo' => array_key_exists('es_activo', $chatDescubierto) ? (bool) $chatDescubierto['es_activo'] : true,
                         'version_autorizacion' => 0,
                         'visto_primera_vez_en' => $vistoEn,
