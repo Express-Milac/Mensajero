@@ -42,6 +42,7 @@ final class AnalizarGemini extends Command
         $grupo = ChatMonitoreado::query()
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->find($grupoId);
 
