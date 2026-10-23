@@ -47,6 +47,7 @@ final class ControladorArchivosWhatsapp extends Controller
             ->where('conexion_id', $archivo->conexion_id)
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->exists();
 
