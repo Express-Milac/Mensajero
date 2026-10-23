@@ -55,6 +55,12 @@ Para servidor MILAC, usar supervisor de procesos, SSL y usuario restringido. **C
 **Reglas exactas de Gemini:** [Canalización y prompt](docs/canalizacion-ia.md).
 **Prueba funcional:** [Fase 2: piloto validado](docs/fase-2-gemini-piloto.md).
 
+## Gestor de grupos: interruptor único
+
+Desde la actualización del 23/10/2026, el interruptor de /grupos tiene **una única función combinada**: encendido significa **capturar nuevos mensajes y mostrar el grupo en el tablero**; apagado significa **no capturar y no mostrar**. Los mensajes históricos permanecen conservados, no se eliminan. La captura y la visibilidad se cambian en una transacción SQL Server auditada; los grupos nuevos descubiertos nacen deshabilitados. La autorización **Gemini** es independiente y continúa limitada al grupo 10020.
+
+Ver [Gestor de grupos](docs/gestor-grupos.md) para prueba y seguridad del modo local.
+
 ## Seguridad y límites
 
 - Solo grupos autorizados; no capturar conversaciones ajenas.
