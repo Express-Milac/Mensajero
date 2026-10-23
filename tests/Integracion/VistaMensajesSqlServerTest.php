@@ -204,7 +204,7 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/grupos?estado=monitoreados&origen=recolector')
                 ->assertOk()
                 ->assertSee('Gestor de grupos')
-                ->assertSee('Administrar visibilidad')
+                ->assertSee('Habilitar grupos')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Ver conversación')
                 ->assertSee('Acceso controlado')
@@ -378,7 +378,7 @@ class VistaMensajesSqlServerTest extends TestCase
         }
     }
 
-    public function test_gestor_oculta_y_muestra_grupo_sin_desactivar_captura_ni_borrar_evidencia(): void
+    public function test_interruptor_unico_apaga_y_reactiva_captura_y_tablero_con_auditoria(): void
     {
         DB::beginTransaction();
 
@@ -391,50 +391,74 @@ class VistaMensajesSqlServerTest extends TestCase
 
             $sufijo = bin2hex(random_bytes(6));
             $conexion = ConexionWhatsapp::query()->create([
-                'clave_conexion' => 'visibilidad-'.$sufijo,
+                'clave_conexion' => 'estado-unico-'.$sufijo,
                 'proveedor' => 'recolector_whatsapp',
                 'estado' => 'conectado',
             ]);
             $grupo = ChatMonitoreado::query()->create([
                 'conexion_id' => $conexion->id,
-                'id_chat_proveedor' => 'visibilidad-'.$sufijo.'@g.us',
-                'nombre_grupo' => 'Grupo de visibilidad '.$sufijo,
+                'id_chat_proveedor' => 'estado-unico-'.$sufijo.'@g.us',
+                'nombre_grupo' => 'Grupo estado único '.$sufijo,
                 'tipo_chat' => 'grupo',
                 'es_monitoreado' => true,
                 'es_activo' => true,
+                'es_visible_tablero' => true,
             ]);
 
-            $this->assertTrue($grupo->fresh()->es_visible_tablero);
-            $this->get('/tablero')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
-            $this->get('/mensajes')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
+            $this->get('/tablero')->assertOk()->assertSee('Grupo estado único '.$sufijo);
+            $this->get('/mensajes')->assertOk()->assertSee('Grupo estado único '.$sufijo);
 
-            $this->patch('/grupos/'.$grupo->id.'/visibilidad', [
-                'es_visible_tablero' => 0,
+            $this->patch('/grupos/'.$grupo->id.'/monitoreo', [
+                'es_monitoreado' => 0,
             ])->assertRedirect();
 
+            $this->assertFalse($grupo->fresh()->es_monitoreado);
             $this->assertFalse($grupo->fresh()->es_visible_tablero);
-            $this->assertTrue($grupo->fresh()->es_monitoreado);
-            $this->get('/tablero')->assertOk()->assertDontSee('Grupo de visibilidad '.$sufijo);
-            $this->get('/mensajes')->assertOk()->assertDontSee('Grupo de visibilidad '.$sufijo);
-            $this->get('/grupos?visibilidad=ocultos')
+            $this->get('/tablero')->assertOk()->assertDontSee('Grupo estado único '.$sufijo);
+            $this->get('/mensajes')->assertOk()->assertDontSee('Grupo estado único '.$sufijo);
+            $this->get('/grupos?estado=no_monitoreados')
                 ->assertOk()
-                ->assertSee('Grupo de visibilidad '.$sufijo)
-                ->assertSee('Oculto del tablero');
+                ->assertSee('Grupo estado único '.$sufijo)
+                ->assertSee('Deshabilitado');
+
+            // El historial existente no se elimina. El acceso directo se
+            // bloquea mientras la captura y visibilidad estén desactivadas.
+            $this->get('/mensajes/grupos/'.$grupo->id)->assertNotFound();
+
+            $rechazo = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
+                conexionId: (int) $conexion->id,
+                chatId: $grupo->id_chat_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: 'desactivado-'.$sufijo,
+                mensajeProveedorId: 'desactivado-'.$sufijo,
+                contenidoCrudo: json_encode(['message' => ['conversation' => 'No capturar']], JSON_THROW_ON_ERROR),
+                recibidoEn: CarbonImmutable::now('UTC'),
+                versionContrato: 'v3-recolector',
+                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+            ));
+            $this->assertNotSame('aceptado', $rechazo->estado);
+            $this->assertSame(0, EventoCrudoWhatsapp::query()
+                ->where('id_evento_externo', 'desactivado-'.$sufijo)->count());
+
+            $this->patch('/grupos/'.$grupo->id.'/monitoreo', [
+                'es_monitoreado' => 1,
+            ])->assertRedirect();
+
+            $this->assertTrue($grupo->fresh()->es_monitoreado);
+            $this->assertTrue($grupo->fresh()->es_visible_tablero);
+            $this->get('/tablero')->assertOk()->assertSee('Grupo estado único '.$sufijo);
             $this->get('/mensajes/grupos/'.$grupo->id)->assertOk();
 
-            $this->patch('/grupos/'.$grupo->id.'/visibilidad', [
-                'es_visible_tablero' => 1,
-            ])->assertRedirect();
+            $this->assertSame(2, DB::table('mensajero_auditoria_visibilidad_grupos')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            $this->assertSame(2, DB::table('mensajero_auditoria_monitoreo_chats')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
 
-            $this->assertTrue($grupo->fresh()->es_visible_tablero);
-            $this->assertTrue($grupo->fresh()->es_monitoreado);
-            $this->get('/tablero')->assertOk()->assertSee('Grupo de visibilidad '.$sufijo);
-            $this->assertSame(
-                2,
-                DB::table('mensajero_auditoria_visibilidad_grupos')
-                    ->where('chat_monitoreado_id', $grupo->id)
-                    ->count(),
-            );
+            // La antigua ruta que cambiaba solamente la vista ya no existe.
+            $this->patch('/grupos/'.$grupo->id.'/visibilidad', [
+                'es_visible_tablero' => 0,
+            ])->assertNotFound();
         } finally {
             DB::rollBack();
         }
