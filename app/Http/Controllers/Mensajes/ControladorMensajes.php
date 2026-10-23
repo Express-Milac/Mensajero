@@ -90,6 +90,7 @@ final class ControladorMensajes extends Controller
             ->with('conexion')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->where('es_visible_tablero', true)
             ->get();
@@ -215,6 +216,7 @@ final class ControladorMensajes extends Controller
             ->withCount('eventosCrudos')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->orderByDesc('eventos_crudos_count')
             ->orderBy('id')
@@ -253,6 +255,7 @@ final class ControladorMensajes extends Controller
             ->with('conexion')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->findOrFail($chat);
 
@@ -335,6 +338,7 @@ final class ControladorMensajes extends Controller
             ->whereHas('chat', function ($consulta) {
                 $consulta->where('tipo_chat', 'grupo')
                     ->where('es_monitoreado', true)
+                    ->where('es_visible_tablero', true)
                     ->where('es_activo', true);
             })
             ->findOrFail($evento);
