@@ -3,7 +3,6 @@
 namespace App\Services\Operacion;
 
 use App\Models\MensajeWhatsapp;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -84,6 +83,15 @@ final class VincularEvidenciasOperativas
             ->limit(2)->pluck('a.id');
 
         if ($coincidencias->count() !== 1) {
+            // Si aparece un segundo acontecimiento cercano, retirar
+            // asociaciones tentativas previas que ya serían ambiguas.
+            if ($coincidencias->count() > 1) {
+                DB::table('mensajero_evidencias_acontecimientos')
+                    ->where('mensaje_whatsapp_id', $adjunto->id)
+                    ->where('vinculo', 'posible_adjunta')
+                    ->whereIn('acontecimiento_id', $coincidencias->all())
+                    ->delete();
+            }
             return;
         }
 
