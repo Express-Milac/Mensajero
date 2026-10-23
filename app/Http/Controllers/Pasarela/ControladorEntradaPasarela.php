@@ -54,6 +54,7 @@ class ControladorEntradaPasarela extends Controller
 
         $chats = $conexion->chats()
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->orderBy('id')
             ->get(['id_chat_proveedor', 'tipo_chat', 'nombre_grupo', 'version_autorizacion'])
