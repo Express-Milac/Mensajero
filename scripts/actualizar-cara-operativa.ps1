@@ -71,6 +71,8 @@ try {
 
     Write-Host 'Cara operativa sincronizada. Comprobando sintaxis PHP...' -ForegroundColor Green
     $archivosPhp = @(
+        'database/migrations/2026_10_23_000100_crear_acontecimientos_operativos.php',
+        'database/migrations/2026_10_23_000200_crear_auditoria_operativa.php',
         'app/Services/Operacion/VincularEvidenciasOperativas.php',
         'app/Services/Operacion/RegistrarAcontecimientoOperativo.php',
         'app/Services/Operacion/RevisarAcontecimientoOperativo.php',
