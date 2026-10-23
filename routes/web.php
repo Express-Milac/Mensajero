@@ -32,11 +32,6 @@ Route::middleware('mensajero.acceso')->group(function () {
         ->middleware('mensajero.consulta_evidencia')
         ->name('grupos.indice');
 
-    Route::patch('/grupos/{chat}/visibilidad', [ControladorGrupos::class, 'actualizarVisibilidad'])
-        ->whereNumber('chat')
-        ->middleware(['mensajero.consulta_evidencia', 'mensajero.gestion_grupos', 'throttle:30,1'])
-        ->name('grupos.visibilidad.actualizar');
-
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
         Route::get('/mensajes', [ControladorMensajes::class, 'conversaciones'])
             ->name('mensajes.indice');
@@ -76,9 +71,10 @@ Route::middleware('mensajero.acceso')->group(function () {
             ->name('mensajes.archivo.descargar');
     });
 
+    // Un solo interruptor gestiona captura y visibilidad de forma auditada.
     Route::patch('/grupos/{chat}/monitoreo', [ControladorGrupos::class, 'actualizarMonitoreo'])
         ->whereNumber('chat')
-        ->middleware('mensajero.acceso:administrador')
+        ->middleware(['mensajero.consulta_evidencia', 'mensajero.gestion_grupos', 'throttle:30,1'])
         ->name('grupos.monitoreo.actualizar');
 
     Route::get('/estado', function (DiagnosticoInfraestructura $diagnostico) {
