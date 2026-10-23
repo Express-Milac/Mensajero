@@ -82,9 +82,9 @@
                 }
 
                 estado.textContent = 'Guardado';
-                window.setTimeout(() => {
-                    if (estado.textContent === 'Guardado') estado.textContent = '';
-                }, 3000);
+                // Reconstruir la fila desde el servidor: al apagar cambia
+                // también el acceso a la conversación y el orden del listado.
+                window.location.reload();
             } catch (error) {
                 mostrar(guardado);
                 estado.textContent = 'No se guardó. Intenta de nuevo.';
