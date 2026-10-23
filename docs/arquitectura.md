@@ -39,3 +39,12 @@ La operación continua exige .env autorizado, trabajador IA, supervisor de proce
 **Límites conocidos:** el disparo IA posterior al commit no tiene aún un buzón transaccional propio para recuperar todos los fallos de publicación; múltiples reintentos pueden consumir varias llamadas de Google aunque solo se permita una fila resultado por mensaje. No existen topes internos de costo ni aprobación humana auditable. No declarar lista esta fase para producción.
 
 Ver [Instrucciones exactas de Gemini](canalizacion-ia.md) y [Operación permanente](operacion-gemini-permanente.md).
+
+
+## Primera cara operativa — octubre 2026
+
+El registro WhatsApp crudo permanece inalterable. La tabla mensajero_analisis_operativos_ia conserva cada respuesta validada de Gemini; una proyección separada a mensajero_acontecimientos_operativos genera una tarjeta operativa y mensajero_evidencias_acontecimientos enlaza los mensajes fuente o posibles archivos cercanos, sin confundir evidencia con interpretación.
+
+La vista /operacion no sustituye /mensajes. El asociador de adjuntos exige mismo grupo, mismo remitente, ventana ±90 segundos y exactamente un acontecimiento posible; los archivos siguen privados, sin transmisión visual a Google. Al revisar una interpretación, se registra una auditoría distinta, sin alterar el mensaje WhatsApp original.
+
+El código piloto permite contexto textual acotado solo con autorización explícita; por defecto se transmite el mensaje objetivo. No existe todavía consolidación semántica de todas las conversaciones ni análisis visual. Ver [cara operativa](cara-operativa.md).
