@@ -8,6 +8,7 @@ use App\Models\ContactoWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Services\Operacion\RegistrarAcontecimientoOperativo;
+use App\Services\Operacion\RevisarAcontecimientoOperativo;
 use App\Services\Operacion\VincularEvidenciasOperativas;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -103,6 +104,25 @@ final class AcontecimientosOperativosSqlServerTest extends TestCase
                 'mensaje_whatsapp_id' => $foto->id,
                 'vinculo' => 'posible_adjunta',
             ]);
+
+            $revisor = app(RevisarAcontecimientoOperativo::class);
+            $revisor->ejecutar((int) $id, 'validado', 'prueba_integracion', null);
+            $this->assertSame('validado', DB::table('mensajero_acontecimientos_operativos')
+                ->where('id', $id)->value('estado'));
+            $this->assertDatabaseHas('mensajero_auditoria_acontecimientos', [
+                'acontecimiento_id' => $id,
+                'estado_anterior' => 'pendiente_revision',
+                'estado_nuevo' => 'validado',
+                'actor_tipo' => 'prueba_integracion',
+            ]);
+            $this->get('/operacion?estado=validado')->assertOk()->assertSee('Validado por responsable');
+
+            try {
+                $revisor->ejecutar((int) $id, 'descartado', 'prueba_integracion', null);
+                $this->fail('Una interpretación revisada no debe poder revisarse una segunda vez.');
+            } catch (\DomainException $esperada) {
+                $this->assertStringContainsString('ya fue revisado', $esperada->getMessage());
+            }
 
             // El mensaje original y el archivo potencial permanecen intactos.
             $this->assertSame('foto', $foto->fresh()->tipo_mensaje);
