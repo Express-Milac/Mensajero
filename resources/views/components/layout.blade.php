@@ -36,6 +36,15 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
                         <span>Centro de mando</span>
                     </a>
+
+                    <a class="nav {{ request()->routeIs('mensajes.*') && ! request()->routeIs('mensajes.ia.*') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}" @if(request()->routeIs('mensajes.indice')) aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h7"/></svg>
+                        <span>Mensajes originales</span>
+                    </a>
+                    <a class="nav {{ request()->routeIs('operacion.*') || request()->routeIs('mensajes.ia.*') ? 'active' : '' }}" href="{{ route('operacion.indice') }}" @if(request()->routeIs('operacion.*')) aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>
+                        <span>Operación interpretada</span>
+                    </a>
                     <a class="nav {{ request()->routeIs('remitentes.*') ? 'active' : '' }}" href="{{ route('remitentes.indice') }}" @if(request()->routeIs('remitentes.*')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
                         <span>Remitentes</span>
