@@ -17,8 +17,8 @@ final class AutorizarGestionGrupos
             return $siguiente($request);
         }
 
-        // Única excepción temporal: opt-in explícito, sesión de desarrollo
-        // sin autenticación, equipo local y acceso de evidencia ya autorizado.
+        // Excepción temporal explícita para controlar captura Y visibilidad.
+        // Se permite solo en el propio equipo durante el POC, sin red compartida.
         if ($modo === 'deshabilitado'
             && app()->environment(['local', 'testing'])
             && config('mensajero.consulta_local_sin_autenticacion', false)
@@ -27,6 +27,6 @@ final class AutorizarGestionGrupos
             return $siguiente($request);
         }
 
-        abort(403, 'La gestión de visibilidad requiere un administrador autorizado.');
+        abort(403, 'Cambiar la captura y visibilidad requiere autorización administrativa.');
     }
 }
