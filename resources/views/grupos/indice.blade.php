@@ -54,7 +54,7 @@
             @endif
         </form>
 
-        @if(config('mensajero.autenticacion.modo') === 'deshabilitado' && ! $puedeCambiarVista)
+        @if(config('mensajero.autenticacion.modo') === 'deshabilitado' && ! $puedeCambiarCaptura)
             <div class="catalogo-aviso gestor-aviso" role="note"><strong>Gestión protegida:</strong> solo puedes consultar grupos. Activar o desactivar grupos requiere un administrador o autorización expresa en desarrollo local.</div>
         @endif
 
