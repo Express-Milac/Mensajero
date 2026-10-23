@@ -84,7 +84,7 @@ class ControladorGrupos extends Controller
                 && config('mensajero.gestion_local_grupos_habilitada', false)
                 && in_array($request->ip(), ['127.0.0.1', '::1'], true));
 
-        return view('grupos.indice', compact('grupos', 'buscar', 'origen', 'estado', 'visibilidad', 'estadisticas', 'puedeCambiarVista'));
+        return view('grupos.indice', compact('grupos', 'buscar', 'origen', 'estado', 'estadisticas', 'puedeCambiarCaptura'));
     }
 
     public function actualizarMonitoreo(
