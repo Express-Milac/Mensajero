@@ -9,6 +9,7 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Jobs\AnalizarMensajeGeminiTrabajo;
 use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\Operacion\VincularEvidenciasOperativas;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Support\Facades\DB;
@@ -160,25 +161,36 @@ final class NormalizarEventoWhatsapp
             return 'normalizado';
         }, 3);
 
-        // Desacoplado del COMMIT: una caída de Gemini o Redis nunca
-        // revierte la normalización, la evidencia ni la captura del recolector.
-        if ($resultado === 'normalizado' && config('mensajero.ia.ejecucion_automatica') === true) {
+        // Operación desacoplada: ninguna falla de IA o de sugerencias de
+        // adjuntos revierte el COMMIT de los mensajes originales.
+        if ($resultado === 'normalizado') {
             try {
                 $proyeccion = MensajeWhatsapp::query()
                     ->where('evento_crudo_id', $eventoCrudoId)
-                    ->first(['id', 'chat_monitoreado_id', 'tipo_mensaje', 'recibido_en']);
+                    ->first(['id', 'chat_monitoreado_id', 'tipo_mensaje', 'contenido_texto',
+                        'pie_multimedia', 'recibido_en']);
 
-                if ($proyeccion !== null && $proyeccion->tipo_mensaje === 'texto' &&
-                    $proyeccion->recibido_en !== null &&
-                    app(PoliticaEnvioGemini::class)->autoriza(
-                        (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
-                    )) {
-                    AnalizarMensajeGeminiTrabajo::dispatch((int) $proyeccion->id);
+                if ($proyeccion !== null) {
+                    // Adjuntos de un acontecimiento previamente registrado
+                    // (si son inequívocos; solo una vinculación posible).
+                    app(VincularEvidenciasOperativas::class)->alNormalizar((int) $proyeccion->id);
+
+                    $textoAnalizable = $proyeccion->tipo_mensaje === 'texto'
+                        ? trim((string) $proyeccion->contenido_texto) !== ''
+                        : (in_array($proyeccion->tipo_mensaje, ['foto','video','documento'], true)
+                            && trim((string) $proyeccion->pie_multimedia) !== '');
+
+                    if ($textoAnalizable
+                        && config('mensajero.ia.ejecucion_automatica') === true
+                        && $proyeccion->recibido_en !== null
+                        && app(PoliticaEnvioGemini::class)->autoriza(
+                            (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
+                        )) {
+                        AnalizarMensajeGeminiTrabajo::dispatch((int) $proyeccion->id);
+                    }
                 }
             } catch (Throwable $error) {
-                // El comando mensajero:analizar-gemini permite recuperar una
-                // publicación fallida sin volver a capturar mensajes.
-                Log::warning('No se pudo publicar trabajo de IA; el mensaje normalizado permanece intacto.', [
+                Log::warning('Falló una tarea operativa posterior a normalización; evidencia conservada.', [
                     'evento_crudo_id' => $eventoCrudoId,
                     'tipo_error' => get_class($error),
                 ]);
