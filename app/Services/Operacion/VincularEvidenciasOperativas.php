@@ -52,7 +52,7 @@ final class VincularEvidenciasOperativas
             ->where('estado_captura', 'normalizado')
             ->whereIn('tipo_mensaje', ['foto', 'video', 'audio', 'documento'])
             ->whereBetween('recibido_en', [$inicio, $fin])
-            ->whereKeyNot($origen->id)
+            ->where('id', '!=', $origen->id)
             ->orderBy('id')->limit(30)->get();
 
         foreach ($adjuntos as $adjunto) {
