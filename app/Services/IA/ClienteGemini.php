@@ -35,7 +35,11 @@ final class ClienteGemini
                         .'Si hay ambigüedad, clasifica como no evento. '
                         .'Las referencias mensaje_ids deben ser identificadores enteros que figuren en la entrada. '
                         .'No incluyas teléfonos, direcciones de correo ni datos privados en el resumen. '
-                        .'Un acuerdo sin confirmación explícita NO es un acuerdo confirmado.',
+                        .'Un acuerdo sin confirmación explícita NO es un acuerdo confirmado. '
+                        .'El tipo leyenda_foto, leyenda_video o leyenda_documento contiene solo palabras del remitente: '
+                        .'NO has visto el archivo, no afirmes daños o entregas verificados visualmente. '
+                        .'Una foto sin leyenda no acredita un hecho; un mensaje puede ser seguimiento o simple conversación. '
+                        .'No declares completada una operación a partir de una pregunta ni de una afirmación no corroborada.',
                 ]],
             ],
             'contents' => [[
