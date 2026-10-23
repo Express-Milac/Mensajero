@@ -2,13 +2,23 @@
 
 Sistema propio de Express MILAC para **capturar mensajes de grupos WhatsApp expresamente seleccionados**, conservar evidencia y proponer eventos operativos mediante Google Gemini. Laravel 13 / PHP 8.4, SQL Server corporativo (tablas mensajero_*), Redis y recolector Node/Baileys.
 
-## Estado al 22/10/2026
+## Estado confirmado del piloto y avance al 23/10/2026
 
 - **Fase 1, POC funcional:** recepción de WhatsApp desde número recolector secundario, selección de grupos, pasarela HMAC, SQL Server, buzón, normalización asíncrona Redis, dashboard, historiales y evidencias. El recolector no oficial nunca debe vincular el número principal.
 - **Fase 2, piloto Gemini funcional:** el mensaje ficticio **#74** del grupo interno **10020, «Mensajero milac Prueba»**, produjo la incidencia «Retraso en descarga por falta de anden», almacenada en estado **pendiente_revision**. La vista /mensajes/ia mostró el resumen y vínculo al mensaje fuente. Modelo **gemini-3.5-flash-lite**, 223 tokens entrada, 84 salida.
 - **Pruebas Gemini:** 9 aprobadas, 19 aserciones (resultado obtenido en Windows el 22/10/2026). Esto verifica un flujo básico real, **no** operación ininterrumpida ni seguridad de producción.
 - **Ejecución automática implementada:** la normalización puede encolar Gemini para mensajes **nuevos, texto, grupo autorizado y posterior al corte**, con trabajador Redis separado. La activación persistente es por configuración privada del equipo, NO por el mero contenido de GitHub.
 - **Pendientes:** revisión/aprobación humana operativa, cuotas/costo con límites locales, tolerancia a fallos y conciliación de tareas perdidas, monitorización, autenticación corporativa, certificación multimedia/carga y despliegue supervisado.
+
+## Dos caras: cruda y operativa (23/10/2026)
+
+- **Mensajes originales**: consulta sin alteraciones de textos, fotografías, audios, videos y documentos recibidos por grupos autorizados.
+- **Operación interpretada**: nueva pantalla /operacion con acontecimientos propuestos por Gemini, referencias a mensajes y posibles adjuntos multimedia, estado de revisión y auditoría.
+- Los mensajes con leyenda de foto/video/documento ahora pueden iniciar un análisis **solo textual**: Gemini no recibe las fotografías ni certifica visualmente su contenido.
+- Las fotos sin explicación solo se sugieren como adjuntos si comparten emisor/grupo y no existe ambigüedad. La asociación no demuestra que la fotografía corresponda al acontecimiento.
+- Código y pruebas publicados, **pendientes de ejecución en SQL Server _test y prueba real en el recolector**. No equivale a producción ni a correlación semántica completa de incidentes repetidos.
+
+Guía: [Cara operativa](docs/cara-operativa.md). Migraciones nuevas de 23/10/2026. Los resultados IA históricos del piloto pueden proyectarse localmente sin volver a consultar Google.
 
 ## Arquitectura resumida
 
