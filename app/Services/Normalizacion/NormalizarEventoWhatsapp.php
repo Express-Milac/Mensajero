@@ -171,9 +171,16 @@ final class NormalizarEventoWhatsapp
                         'pie_multimedia', 'recibido_en']);
 
                 if ($proyeccion !== null) {
-                    // Adjuntos de un acontecimiento previamente registrado
-                    // (si son inequívocos; solo una vinculación posible).
-                    app(VincularEvidenciasOperativas::class)->alNormalizar((int) $proyeccion->id);
+                    // Una falla de vinculación de multimedia NO debe impedir
+                    // la publicación independiente del trabajo Gemini.
+                    try {
+                        app(VincularEvidenciasOperativas::class)->alNormalizar((int) $proyeccion->id);
+                    } catch (Throwable $errorAdjunto) {
+                        Log::warning('Vinculación de evidencia operativa pendiente.', [
+                            'mensaje_id' => $proyeccion->id,
+                            'tipo_error' => get_class($errorAdjunto),
+                        ]);
+                    }
 
                     $textoAnalizable = $proyeccion->tipo_mensaje === 'texto'
                         ? trim((string) $proyeccion->contenido_texto) !== ''
