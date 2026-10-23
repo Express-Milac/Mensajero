@@ -40,6 +40,19 @@ Configurar solo para el piloto local si se desea validar o descartar desde la p�
 
 Sin esta bandera, /operacion es de solo lectura. El permiso no se hereda de gestión de grupos. En producción se exige autenticación administrativa corporativa.
 
+## Actualizar archivos locales sin tocar la base de datos
+
+Desde la raíz de Mensajero en PowerShell, obtener el actualizador:
+
+    git fetch origin fase-2-gemini-eventos-operativos-20261021
+    git restore --source=FETCH_HEAD --worktree -- scripts/actualizar-cara-operativa.ps1
+
+Después ejecutar:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\actualizar-cara-operativa.ps1
+
+El actualizador respalda los archivos existentes bajo %LOCALAPPDATA%\Mensajero\respaldos, descarga los cambios de código y valida sintaxis PHP. Puede reemplazar modificaciones locales en las rutas que administra, por lo que siempre conserva copia; revisar esos respaldos si se había editado código manualmente. **No modifica .env, no ejecuta migraciones, no inicia servicios y no consulta Google.**
+
 ## Instalación y pruebas
 
 Primero comprobar cuidadosamente el nombre de la BD SQL Server. **No migrar inadvertidamente la base de negocio**; los ensayos deben usar exclusivamente una BD que termine en _test. Instalar las dos nuevas migraciones en un entorno autorizado y reiniciar Laravel y los trabajadores de normalización e IA (sin crear otro recolector).
