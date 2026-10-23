@@ -1,0 +1,99 @@
+# Actualiza solamente la primera version de la cara operativa.
+# No escribe .env, no ejecuta migraciones, no envia nada a Google.
+[CmdletBinding()]
+param()
+$ErrorActionPreference = 'Stop'
+$raiz = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$ref = 'fase-2-gemini-eventos-operativos-20261021'
+
+$rutas = @(
+    'database/migrations/2026_10_23_000100_crear_acontecimientos_operativos.php',
+    'database/migrations/2026_10_23_000200_crear_auditoria_operativa.php',
+    'app/Services/Operacion',
+    'app/Http/Controllers/Operacion',
+    'app/Http/Middleware/AutorizarGestionOperacion.php',
+    'app/Console/Commands/ProyectarOperacion.php',
+    'app/Services/IA/ClienteGemini.php',
+    'app/Services/IA/ProcesarAnalisisGemini.php',
+    'app/Services/Normalizacion/NormalizarEventoWhatsapp.php',
+    'app/Http/Controllers/Mensajes/ControladorArchivosWhatsapp.php',
+    'resources/views/operacion',
+    'resources/views/components/layout.blade.php',
+    'routes/web.php',
+    'bootstrap/app.php',
+    'config/mensajero.php',
+    '.env.example',
+    'tests/Funcional/GeminiContratoTest.php',
+    'tests/Funcional/OperacionAccesoTest.php',
+    'tests/Integracion/AcontecimientosOperativosSqlServerTest.php',
+    'docs/cara-operativa.md',
+    'docs/canalizacion-ia.md',
+    'docs/arquitectura.md',
+    'docs/operacion-gemini-permanente.md',
+    'README.md'
+)
+
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    throw 'Git no esta disponible.'
+}
+
+$destinoBase = Join-Path $env:LOCALAPPDATA (
+    'Mensajero\respaldos\cara-operativa-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+)
+
+Push-Location $raiz
+try {
+    Write-Host 'Recuperando la rama de la cara operativa...' -ForegroundColor Cyan
+    & git fetch origin $ref
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo obtener la rama de GitHub.' }
+
+    New-Item -Path $destinoBase -ItemType Directory -Force | Out-Null
+
+    # Copiar el contenido anterior completo, incluyendo archivos no registrados
+    # dentro de las carpetas que se van a sustituir.
+    foreach ($ruta in $rutas) {
+        $origen = Join-Path $raiz $ruta
+        $destino = Join-Path $destinoBase $ruta
+        if (Test-Path -LiteralPath $origen -PathType Leaf) {
+            New-Item -Path (Split-Path $destino) -ItemType Directory -Force | Out-Null
+            Copy-Item -LiteralPath $origen -Destination $destino -Force
+        } elseif (Test-Path -LiteralPath $origen -PathType Container) {
+            New-Item -Path $destino -ItemType Directory -Force | Out-Null
+            Copy-Item -Path (Join-Path $origen '*') -Destination $destino -Recurse -Force
+        }
+    }
+
+    Write-Host ('Respaldo de archivos existentes: ' + $destinoBase)
+    & git restore --source=FETCH_HEAD --worktree -- $rutas
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Git no pudo actualizar todos los archivos. Se conservaron los respaldos.'
+    }
+
+    Write-Host 'Cara operativa sincronizada. Comprobando sintaxis PHP...' -ForegroundColor Green
+    $archivosPhp = @(
+        'app/Services/Operacion/VincularEvidenciasOperativas.php',
+        'app/Services/Operacion/RegistrarAcontecimientoOperativo.php',
+        'app/Services/Operacion/RevisarAcontecimientoOperativo.php',
+        'app/Http/Controllers/Operacion/ControladorOperacion.php',
+        'app/Http/Middleware/AutorizarGestionOperacion.php',
+        'app/Console/Commands/ProyectarOperacion.php',
+        'app/Services/IA/ProcesarAnalisisGemini.php',
+        'app/Services/IA/ClienteGemini.php',
+        'app/Services/Normalizacion/NormalizarEventoWhatsapp.php',
+        'routes/web.php', 'bootstrap/app.php', 'config/mensajero.php'
+    )
+
+    foreach ($archivo in $archivosPhp) {
+        & php -l $archivo
+        if ($LASTEXITCODE -ne 0) {
+            throw ('Error de sintaxis PHP en ' + $archivo)
+        }
+    }
+
+    Write-Host ''
+    Write-Host 'Archivos actualizados. NO se aplicaron migraciones a SQL Server.' -ForegroundColor Green
+    Write-Host 'Revisar docs/cara-operativa.md y validar el destino SQL antes de migrar.'
+    Write-Host 'Los trabajadores Laravel se deben reiniciar luego de migrar.'
+} finally {
+    Pop-Location
+}
