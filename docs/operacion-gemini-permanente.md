@@ -13,7 +13,7 @@ Los scripts y documentos en GitHub no activan por sí solos Gemini en el equipo 
 1. Número recolector secundario → filtro de grupos → pasarela HMAC → SQL Server (evento crudo y buzón).
 2. El programador Laravel despacha el buzón a Redis cada minuto, si MENSAJERO_NORMALIZACION_HABILITADA=true.
 3. El trabajador mensajero_normalizacion proyecta el mensaje en SQL Server.
-4. El normalizador publica AnalizarMensajeGeminiTrabajo solo si MENSAJERO_IA_EJECUCION_AUTOMATICA=true y la política autoriza fecha, grupo y envío. Solo **mensajes nuevos de texto normalizados**, grupo activo y monitoreado, entre los ID expresamente permitidos y posterior a MENSAJERO_IA_FECHA_INICIO.
+4. El normalizador publica AnalizarMensajeGeminiTrabajo solo si MENSAJERO_IA_EJECUCION_AUTOMATICA=true y la política autoriza fecha, grupo y envío. Solo **mensajes nuevos de texto o leyendas escritas de fotografía/video/documento**, grupo activo y autorizado, y posteriores a MENSAJERO_IA_FECHA_INICIO. Nunca se envían los archivos binarios al piloto.
 5. El trabajador separado mensajero_ia llama a Google; por defecto MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO=true impide transmitir textos anteriores.
 6. Validador PHP → tabla mensajero_analisis_operativos_ia → pendiente_revision o sin_evento. Un evento es **propuesta**, nunca instrucción confirmada.
 
@@ -134,6 +134,13 @@ No levantar un segundo trabajador si el primero sigue vivo. Revisar también si 
 
 El resumen de la vista no es un latido de trabajador; para afirmar 24/7 falta implementar heartbeat y supervisión real de servicios.
 
+
+
+## Cara operativa (23/10/2026)
+
+Los mensajes originales permanecen disponibles en /mensajes. El nuevo módulo /operacion proyecta interpretaciones Gemini en acontecimientos estructurados con citas a los mensajes originales, posibles fotos relacionadas y estado de revisión auditado. No se envían las fotografías a Google y no se consideran hechos confirmados.
+
+Aplicar las dos migraciones de 23/10/2026 en el SQL Server autorizado antes de reiniciar servicios. Reconciliar las interpretaciones piloto ya existentes con mensajero:proyectar-operacion, sin nuevas llamadas a Google. Revisar [cara operativa](cara-operativa.md).
 
 ## Suspender sin perder mensajes
 
