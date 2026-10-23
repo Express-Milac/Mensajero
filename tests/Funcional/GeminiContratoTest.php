@@ -134,6 +134,41 @@ final class GeminiContratoTest extends TestCase
         });
     }
 
+    public function test_leyenda_de_fotografia_se_envia_como_texto_sin_archivo_ni_verificacion_visual(): void
+    {
+        config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
+        config()->set('mensajero.ia.clave_api', 'clave-ficticia-no-funcional');
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'finishReason' => 'STOP',
+                    'content' => ['parts' => [['text' => json_encode([
+                        'es_evento' => true,
+                        'categoria' => 'incidencia',
+                        'titulo' => 'Posible daño reportado',
+                        'resumen' => 'El remitente describe un daño; no se ha verificado la fotografía.',
+                        'mensaje_ids' => [101],
+                    ])]]],
+                ]],
+                'usageMetadata' => ['promptTokenCount' => 35, 'candidatesTokenCount' => 20],
+            ]),
+        ]);
+
+        (new ClienteGemini)->analizar([
+            ['id' => 101, 'texto' => 'Daño en llanta del camión ficticio', 'tipo' => 'leyenda_foto'],
+        ]);
+
+        Http::assertSent(function (Request $solicitud): bool {
+            $contenido = json_decode((string) $solicitud['contents'][0]['parts'][0]['text'], true);
+            $instrucciones = (string) $solicitud['systemInstruction']['parts'][0]['text'];
+            return is_array($contenido)
+                && $contenido['mensajes'][0]['tipo'] === 'leyenda_foto'
+                && str_contains($instrucciones, 'NO has visto el archivo')
+                && ! array_key_exists('inlineData', $solicitud['contents'][0]['parts'][0]);
+        });
+    }
+
     public function test_codigo_401_informa_razon_google_sin_exponer_credenciales(): void
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
