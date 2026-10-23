@@ -121,6 +121,24 @@ class RecolectorWhatsappSqlServerTest extends TestCase
                 ->where('conexion_id', $conexion->id)
                 ->where('identificador_periodo', $identificadorPeriodo)
                 ->count());
+            // El interruptor único retira el grupo de la lista autorizada
+            // inmediatamente sin borrar sus registros ni la sesión.
+            app(CambiarMonitoreoChat::class)->ejecutar((int) $chat->id, false, 'prueba_integracion');
+            $this->assertFalse($chat->fresh()->es_visible_tablero);
+            $this->enviarFirmado(
+                '/api/pasarela/v1/chats-autorizados',
+                $consulta,
+                'consulta-apagada-'.$sufijo
+            )->assertOk()->assertJsonCount(0, 'chats');
+
+            app(CambiarMonitoreoChat::class)->ejecutar((int) $chat->id, true, 'prueba_integracion');
+            $this->assertTrue($chat->fresh()->es_visible_tablero);
+            $this->enviarFirmado(
+                '/api/pasarela/v1/chats-autorizados',
+                $consulta,
+                'consulta-encendida-'.$sufijo
+            )->assertOk()->assertJsonCount(1, 'chats');
+
         } finally {
             DB::rollBack();
         }
