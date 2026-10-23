@@ -1,4 +1,4 @@
-/* Gestión de visibilidad por grupo, sin navegación ni recarga de página. */
+/* Gestión unificada de captura y tablero por grupo, sin recargar la página. */
 (() => {
     'use strict';
 
@@ -26,7 +26,7 @@
 
         function mostrar(valor) {
             interruptor.checked = valor;
-            etiqueta.textContent = valor ? 'Visible' : 'Oculto';
+            etiqueta.textContent = valor ? 'Habilitado' : 'Deshabilitado';
             interruptor.setAttribute('aria-checked', String(valor));
         }
 
@@ -39,7 +39,7 @@
             // FormData se construye antes de deshabilitar el interruptor.
             // Se fija explícitamente el valor para evitar que el hidden 0 prevalezca.
             const datosEnvio = new FormData(formulario);
-            datosEnvio.set('es_visible_tablero', solicitado ? '1' : '0');
+            datosEnvio.set('es_monitoreado', solicitado ? '1' : '0');
 
             mostrar(solicitado);
             interruptor.disabled = true;
@@ -63,21 +63,22 @@
                 if (!respuesta.ok || respuesta.redirected ||
                     !datos || datos.ok !== true ||
                     datos.grupo_id !== grupoId ||
-                    typeof datos.es_visible_tablero !== 'boolean') {
-                    throw new Error('No se pudo confirmar el cambio de visibilidad.');
+                    typeof datos.es_monitoreado !== 'boolean' ||
+                    typeof datos.es_visible_tablero !== 'boolean' ||
+                    datos.es_monitoreado !== datos.es_visible_tablero) {
+                    throw new Error('No se pudo confirmar el cambio de captura y tablero.');
                 }
 
-                const confirmado = datos.es_visible_tablero;
+                const confirmado = datos.es_monitoreado;
                 const anterior = guardado;
                 guardado = confirmado;
                 mostrar(confirmado);
 
                 if (anterior !== confirmado) {
                     const diferencia = confirmado ? 1 : -1;
-                    actualizarContador('ocultos', -diferencia);
-                    if (fila.dataset.capturaAutorizada === '1') {
-                        actualizarContador('visibles', diferencia);
-                    }
+                    actualizarContador('deshabilitados', -diferencia);
+                    actualizarContador('habilitados', diferencia);
+                    fila.dataset.capturaAutorizada = confirmado ? '1' : '0';
                 }
 
                 estado.textContent = 'Guardado';
