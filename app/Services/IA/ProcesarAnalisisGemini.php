@@ -27,6 +27,7 @@ final class ProcesarAnalisisGemini
         if ($mensaje === null || $mensaje->chat === null ||
             $mensaje->chat->tipo_chat !== 'grupo' ||
             ! $mensaje->chat->es_activo || ! $mensaje->chat->es_monitoreado ||
+            ! $mensaje->chat->es_visible_tablero ||
             $mensaje->tipo_mensaje !== 'texto' || $mensaje->estado_captura !== 'normalizado' ||
             $mensaje->recibido_en === null ||
             ! $this->politica->autoriza((int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en)) {
@@ -101,6 +102,7 @@ final class ProcesarAnalisisGemini
                 ->where('tipo_chat', 'grupo')
                 ->where('es_activo', true)
                 ->where('es_monitoreado', true)
+                ->where('es_visible_tablero', true)
                 ->lockForUpdate()
                 ->first();
 
