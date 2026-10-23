@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Operacion;
 
 use App\Http\Controllers\Controller;
+use App\Services\Operacion\RevisarAcontecimientoOperativo;
+use DomainException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -14,9 +17,11 @@ final class ControladorOperacion extends Controller
     {
         $filtros = $request->validate([
             'categoria' => ['nullable', 'in:todos,logistica,incidencia,acuerdo,solicitud,otro'],
+            'estado' => ['nullable', 'in:todos,pendiente_revision,validado,descartado'],
         ]);
 
         $categoria = $filtros['categoria'] ?? 'todos';
+        $estado = $filtros['estado'] ?? 'todos';
         $gruposIA = (array) config('mensajero.ia.grupos_autorizados', []);
         $acontecimientos = null;
         $filas = [];
@@ -43,6 +48,9 @@ final class ControladorOperacion extends Controller
             if ($categoria !== 'todos') {
                 $base->where('a.categoria', $categoria);
             }
+            if ($estado !== 'todos') {
+                $base->where('a.estado', $estado);
+            }
 
             $acontecimientos = $base->select([
                 'a.id', 'a.chat_monitoreado_id', 'a.categoria', 'a.titulo',
@@ -68,6 +76,40 @@ final class ControladorOperacion extends Controller
             }
         }
 
-        return view('operacion.indice', compact('filas', 'resumen', 'acontecimientos', 'categoria'));
+        $puedeRevisar = (config('mensajero.autenticacion.modo') === 'local'
+            && auth()->check() && auth()->user()->can('administrar'))
+            || (config('mensajero.autenticacion.modo') === 'deshabilitado'
+                && app()->environment(['local', 'testing'])
+                && config('mensajero.consulta_local_sin_autenticacion', false)
+                && config('mensajero.gestion_local_operacion_habilitada', false)
+                && in_array($request->ip(), ['127.0.0.1', '::1'], true));
+
+        return view('operacion.indice', compact('filas', 'resumen', 'acontecimientos', 'categoria', 'estado', 'puedeRevisar'));
+    }
+
+    public function revisar(Request $request, int $acontecimiento, RevisarAcontecimientoOperativo $revisor): RedirectResponse
+    {
+        $datos = $request->validate([
+            'decision' => ['required', 'in:validado,descartado'],
+        ]);
+
+        $actorId = auth()->id();
+        try {
+            $revisor->ejecutar(
+                $acontecimiento,
+                $datos['decision'],
+                is_numeric($actorId) ? 'administrador' : 'gestor_local_autorizado',
+                is_numeric($actorId) ? (int) $actorId : null,
+            );
+        } catch (DomainException $error) {
+            return back()->withErrors(['revision' => $error->getMessage()]);
+        }
+
+        return back()->with(
+            'estado',
+            $datos['decision'] === 'validado'
+                ? 'Interpretación validada por un responsable. La evidencia original no se modificó.'
+                : 'Interpretación descartada. La evidencia original permanece conservada.'
+        );
     }
 }
