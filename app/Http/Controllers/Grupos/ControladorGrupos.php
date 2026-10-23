@@ -42,9 +42,11 @@ class ControladorGrupos extends Controller
         }
 
         if ($estado === 'monitoreados') {
-            $consulta->where('es_monitoreado', true)->where('es_activo', true);
+            $consulta->where('es_monitoreado', true)->where('es_visible_tablero', true)->where('es_activo', true);
         } elseif ($estado === 'no_monitoreados') {
-            $consulta->where('es_monitoreado', false);
+            $consulta->where(function ($consulta): void {
+                $consulta->where('es_monitoreado', false)->orWhere('es_visible_tablero', false);
+            });
         } elseif ($estado === 'inactivos') {
             $consulta->where('es_activo', false);
         }
@@ -68,10 +70,10 @@ class ControladorGrupos extends Controller
         $base = ChatMonitoreado::query()->where('tipo_chat', 'grupo');
         $estadisticas = [
             'descubiertos' => (clone $base)->count(),
-            'autorizados' => (clone $base)->where('es_monitoreado', true)->where('es_activo', true)->count(),
+            'autorizados' => (clone $base)->where('es_monitoreado', true)->where('es_visible_tablero', true)->where('es_activo', true)->count(),
             'sin_monitorear' => (clone $base)->where('es_monitoreado', false)->count(),
             'no_habilitados' => (clone $base)->where(function ($consulta): void {
-                $consulta->where('es_monitoreado', false)->orWhere('es_activo', false);
+                $consulta->where('es_monitoreado', false)->orWhere('es_visible_tablero', false)->orWhere('es_activo', false);
             })->count(),
         ];
 
