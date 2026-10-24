@@ -22,6 +22,7 @@ $rutas = @(
     'app/Services/IA/ConciliarPublicacionesGemini.php',
     'scripts/activar-conciliacion-gemini.ps1',
     'scripts/autorizar-lote-real-gemini.ps1',
+    'scripts/diagnosticar-trabajador-gemini.ps1',
     'app/Services/IA/PoliticaEnvioGemini.php',
     'docs/conciliacion-gemini.md',
     'docs/piloto-mensajes-reales.md',
@@ -129,6 +130,7 @@ try {
         'scripts/actualizar-cara-operativa.ps1',
         'scripts/activar-conciliacion-gemini.ps1',
         'scripts/autorizar-lote-real-gemini.ps1',
+        'scripts/diagnosticar-trabajador-gemini.ps1',
         'scripts/autorizar-grupos-reales-gemini.ps1',
         'scripts/mensajero-local.ps1'
     )
