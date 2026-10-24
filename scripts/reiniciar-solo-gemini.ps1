@@ -51,6 +51,9 @@ $iniciado = $procesoPHP.StartTime
 $archivos = @(
     $envRuta,
     (Join-Path $raiz 'app\Services\IA\PoliticaEnvioGemini.php'),
+    (Join-Path $raiz 'app\Services\IA\ControlInterpretacionGemini.php'),
+    (Join-Path $raiz 'app\Services\IA\ProcesarAnalisisGemini.php'),
+    (Join-Path $raiz 'app\Services\Normalizacion\NormalizarEventoWhatsapp.php'),
     (Join-Path $raiz 'app\Jobs\AnalizarMensajeGeminiTrabajo.php')
 )
 $modificado = ($archivos | ForEach-Object {
