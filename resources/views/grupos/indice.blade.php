@@ -3,6 +3,7 @@
         <div>
             <span class="centro-hero-marca">MENSAJERO MILAC / GRUPOS</span>
             <h1>Gestor de grupos</h1>
+            <p>La captura y la interpretación de Gemini son controles independientes. Los envíos a Google se administran desde el Control de Gemini.</p>
             <p>Un solo interruptor controla la captura de mensajes y la aparición del grupo en el tablero. Al deshabilitarlo, los mensajes ya registrados se conservan.</p>
         </div>
         <a class="catalogo-volver" href="{{ route('mensajes.indice') }}">Explorar conversaciones <span aria-hidden="true">→</span></a>
