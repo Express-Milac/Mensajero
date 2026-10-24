@@ -8,7 +8,7 @@ use RuntimeException;
 final class ClienteGemini
 {
     /**
-     * @param array<int, array{id:int, texto:string, tipo:string}> $mensajes
+     * @param array<int, array{id:int, texto:string, tipo:string, emisor?:string, responde_a?:?int}> $mensajes
      * @return array{resultado:array<string,mixed>, modelo:string, tokens_entrada:?int, tokens_salida:?int}
      */
     public function analizar(array $mensajes): array
@@ -38,6 +38,9 @@ final class ClienteGemini
                         .'Un acuerdo sin confirmación explícita NO es un acuerdo confirmado. '
                         .'El tipo leyenda_foto, leyenda_video o leyenda_documento contiene solo palabras del remitente: '
                         .'NO has visto el archivo, no afirmes daños o entregas verificados visualmente. '
+                        .'Los alias de emisor son seudónimos temporales y responde_a solo identifica una cita directa en este lote. '
+                        .'Mensajes próximos del mismo grupo pueden corresponder a operaciones diferentes: no asumas relación solo por tiempo. '
+                        .'No confundas preguntas con afirmaciones ni repitas un evento anterior como nuevo. '
                         .'Una foto sin leyenda no acredita un hecho; un mensaje puede ser seguimiento o simple conversación. '
                         .'No declares completada una operación a partir de una pregunta ni de una afirmación no corroborada.',
                 ]],
