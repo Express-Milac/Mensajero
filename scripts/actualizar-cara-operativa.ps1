@@ -103,8 +103,6 @@ try {
         'app/Console/Commands/ConciliarGemini.php',
         'app/Jobs/AnalizarMensajeGeminiTrabajo.php',
         'app/Services/IA/ConciliarPublicacionesGemini.php',
-        'scripts/activar-conciliacion-gemini.ps1',
-        'docs/conciliacion-gemini.md',
         'routes/console.php',
         'tests/Funcional/ConciliacionGeminiTest.php',
         'app/Services/IA/ConstruirDialogoGemini.php',
@@ -118,6 +116,24 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw ('Error de sintaxis PHP en ' + $archivo)
         }
+    }
+
+    Write-Host 'Comprobando sintaxis PowerShell...' -ForegroundColor Green
+    $archivosPowerShell = @(
+        'scripts/actualizar-cara-operativa.ps1',
+        'scripts/activar-conciliacion-gemini.ps1',
+        'scripts/autorizar-grupos-reales-gemini.ps1',
+        'scripts/mensajero-local.ps1'
+    )
+    foreach ($archivo in $archivosPowerShell) {
+        $tokens = $null
+        $errores = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $raiz $archivo), [ref] $tokens, [ref] $errores)
+        if ($errores.Count -gt 0) {
+            throw ('Error de sintaxis PowerShell en ' + $archivo + ': ' + $errores[0].Message)
+        }
+        Write-Host ('Sintaxis correcta: ' + $archivo)
     }
 
     Write-Host ''
