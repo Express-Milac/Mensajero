@@ -3,6 +3,7 @@
 namespace App\Services\IA;
 
 use App\Jobs\AnalizarMensajeGeminiTrabajo;
+use App\Services\IA\ControlInterpretacionGemini;
 use App\Models\MensajeWhatsapp;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -139,7 +140,8 @@ final class ConciliarPublicacionesGemini
                 ->where('estado_captura', 'normalizado')->first();
 
             if ($mensaje === null || $mensaje->recibido_en === null
-                || ! $this->politica->autoriza($grupoId, $mensaje->recibido_en)) {
+                || ! $this->politica->autoriza($grupoId, $mensaje->recibido_en)
+                || ! app(ControlInterpretacionGemini::class)->permite($grupoId, $mensaje->recibido_en, true)) {
                 return 'no_elegible';
             }
 
