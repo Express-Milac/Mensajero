@@ -19,6 +19,7 @@ $rutas = @(
     'resources/views/ia/configuracion.blade.php',
     'public/css/control-gemini.css',
     'tests/Funcional/ControlGeminiWebTest.php',
+    'docs/control-interpretacion-gemini.md',
     'app/Http/Controllers/Mensajes/ControladorMensajes.php',
     'resources/views/mensajes/indice.blade.php',
     'resources/views/mensajes/conversaciones.blade.php',
