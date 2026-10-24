@@ -15,6 +15,9 @@ return [
         'habilitada' => filter_var(env('IA_HABILITADA', false), FILTER_VALIDATE_BOOLEAN),
         'envio_autorizado' => filter_var(env('MENSAJERO_IA_ENVIO_AUTORIZADO', false), FILTER_VALIDATE_BOOLEAN),
         'servicio_pagado_confirmado' => filter_var(env('MENSAJERO_IA_SERVICIO_PAGADO_CONFIRMADO', false), FILTER_VALIDATE_BOOLEAN),
+        // Indicador heredado del piloto; ahora los envíos automáticos se
+        // controlan desde SQL Server mediante /configuracion/gemini.
+        // No editar esta variable para operar los interruptores del panel.
         'ejecucion_automatica' => filter_var(env('MENSAJERO_IA_EJECUCION_AUTOMATICA', false), FILTER_VALIDATE_BOOLEAN),
         // Piloto: nunca incluir conversaciones anteriores por defecto.
         'solo_mensaje_objetivo' => filter_var(env('MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO', true), FILTER_VALIDATE_BOOLEAN),
