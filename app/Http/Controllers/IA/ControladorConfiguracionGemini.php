@@ -49,7 +49,6 @@ final class ControladorConfiguracionGemini extends Controller
     ): RedirectResponse {
         $datos = $request->validate([
             'habilitado' => ['required', 'boolean'],
-            'confirmo_envio' => ['nullable', 'accepted'],
         ]);
         $habilitar = $request->boolean('habilitado');
 
