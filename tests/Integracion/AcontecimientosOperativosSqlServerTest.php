@@ -8,7 +8,6 @@ use App\Models\ContactoWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Services\Operacion\RegistrarAcontecimientoOperativo;
-use App\Services\Operacion\RevisarAcontecimientoOperativo;
 use App\Services\Operacion\VincularEvidenciasOperativas;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -105,24 +104,15 @@ final class AcontecimientosOperativosSqlServerTest extends TestCase
                 'vinculo' => 'posible_adjunta',
             ]);
 
-            $revisor = app(RevisarAcontecimientoOperativo::class);
-            $revisor->ejecutar((int) $id, 'validado', 'prueba_integracion', null);
-            $this->assertSame('validado', DB::table('mensajero_acontecimientos_operativos')
+            $this->assertSame('generado_ia', DB::table('mensajero_acontecimientos_operativos')
                 ->where('id', $id)->value('estado'));
-            $this->assertDatabaseHas('mensajero_auditoria_acontecimientos', [
-                'acontecimiento_id' => $id,
-                'estado_anterior' => 'pendiente_revision',
-                'estado_nuevo' => 'validado',
-                'actor_tipo' => 'prueba_integracion',
-            ]);
-            $this->get('/operacion?estado=validado')->assertOk()->assertSee('Validado por responsable');
+            $this->get('/operacion')
+                ->assertOk()
+                ->assertSee('Generado por IA')
+                ->assertDontSee('Validar interpretación')
+                ->assertDontSee('Descartar interpretación');
+            $this->patch('/operacion/'.$id.'/revision', ['decision' => 'validado'])->assertNotFound();
 
-            try {
-                $revisor->ejecutar((int) $id, 'descartado', 'prueba_integracion', null);
-                $this->fail('Una interpretación revisada no debe poder revisarse una segunda vez.');
-            } catch (\DomainException $esperada) {
-                $this->assertStringContainsString('ya fue revisado', $esperada->getMessage());
-            }
 
             // El mensaje original y el archivo potencial permanecen intactos.
             $this->assertSame('foto', $foto->fresh()->tipo_mensaje);
@@ -166,7 +156,7 @@ final class AcontecimientosOperativosSqlServerTest extends TestCase
         return DB::table('mensajero_analisis_operativos_ia')->insertGetId([
             'mensaje_whatsapp_id' => $mensaje->id,
             'chat_monitoreado_id' => $grupo->id,
-            'estado' => 'pendiente_revision',
+            'estado' => 'identificado_ia',
             'categoria' => 'logistica',
             'titulo' => (string) $mensaje->contenido_texto,
             'resumen' => 'Se reportó un acontecimiento, todavía sin confirmación independiente.',
