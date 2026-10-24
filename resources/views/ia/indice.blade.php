@@ -3,7 +3,7 @@
         <div>
             <span class="centro-hero-marca">MENSAJERO MILAC / INTELIGENCIA ARTIFICIAL</span>
             <h1>Eventos operativos detectados</h1>
-            <p>Interpretaciones preliminares elaboradas a partir de mensajes conservados. No son hechos verificados, acuerdos confirmados ni instrucciones operativas.</p>
+            <p>Resultados generados automáticamente por Gemini a partir de mensajes originales conservados. Son síntesis automatizadas con sus fuentes; no sustituyen los registros originales ni ejecutan instrucciones operativas.</p>
         </div>
         <a class="catalogo-volver" href="{{ route('tablero') }}">Volver al centro de mando</a>
     </section>
@@ -44,11 +44,11 @@
         </p>
     </section>
 
-    <section class="catalogo-seccion" aria-label="Eventos operativos pendientes de revisión">
+    <section class="catalogo-seccion" aria-label="Eventos detectados por inteligencia artificial">
         <div class="catalogo-titulo">
             <div>
-                <h2>Pendientes de revisión</h2>
-                <p>Los resultados de Gemini requieren validación humana antes de cualquier decisión.</p>
+                <h2>Acontecimientos identificados por IA</h2>
+                <p>Los acontecimientos se registran sin aprobación manual y se conservan con referencias a sus fuentes.</p>
             </div>
         </div>
 
@@ -62,7 +62,7 @@
                             <h3>{{ $evento->titulo }}</h3>
                             <span>{{ $evento->nombre_interno ?: ($evento->nombre_grupo ?: 'Grupo sin nombre') }} · {{ ucfirst($evento->categoria) }}</span>
                         </div>
-                        <span class="catalogo-estado neutral">Por verificar</span>
+                        <span class="catalogo-estado neutral">Generado por IA</span>
                     </div>
 
                     <div class="catalogo-tarjeta-cuerpo">
@@ -80,8 +80,8 @@
                 </article>
             @empty
                 <section class="catalogo-vacio">
-                    <h3>Sin eventos propuestos</h3>
-                    <p>Gemini está deshabilitado por defecto. Cuando se autorice el piloto y se procesen mensajes nuevos del grupo de prueba, aparecerán aquí las interpretaciones con sus fuentes.</p>
+                    <h3>Sin acontecimientos identificados</h3>
+                    <p>Cuando Gemini procese mensajes del grupo autorizado y detecte acontecimientos, se mostrarán aquí con sus referencias originales.</p>
                 </section>
             @endforelse
         </div>
