@@ -256,6 +256,27 @@ final class GeminiContratoTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_diagnostico_lote_rechaza_ids_incorrectos_antes_de_leer_sql_o_google(): void
+    {
+        Http::fake();
+        $this->artisan('mensajero:diagnosticar-lote-gemini', [
+            '--grupo' => '10197',
+            '--ids' => '1590,1590',
+        ])->assertExitCode(1);
+
+        $this->artisan('mensajero:diagnosticar-lote-gemini', [
+            '--grupo' => '10197',
+            '--ids' => '-1,1603',
+        ])->assertExitCode(1);
+
+        $this->artisan('mensajero:diagnosticar-lote-gemini', [
+            '--grupo' => '0',
+            '--ids' => '1590,1603,1607',
+        ])->assertExitCode(1);
+
+        Http::assertNothingSent();
+    }
+
     public function test_una_respuesta_incompleta_no_se_acepta(): void
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
