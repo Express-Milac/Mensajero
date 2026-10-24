@@ -43,7 +43,11 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
         DB::table('mensajero_control_publicaciones_gemini')
             ->where('mensaje_whatsapp_id', $this->mensajeId)
             ->whereIn('estado', ['reservado', 'publicado'])
-            ->update(['estado' => $nuevo]);
+            ->update([
+                'estado' => $nuevo,
+                // Se registra la causa sin contenidos, teléfonos ni credenciales.
+                'error_tipo' => $nuevo === 'omitido' ? $estado : null,
+            ]);
     }
 
     public function failed(?Throwable $error): void
