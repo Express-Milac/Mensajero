@@ -11,6 +11,14 @@ $rutas = @(
     'database/migrations/2026_10_23_000200_crear_auditoria_operativa.php',
     'database/migrations/2026_10_24_000100_crear_control_publicaciones_gemini.php',
     'app/Services/Operacion',
+    'app/Services/Mensajes/PrepararEventosPanorama.php',
+    'app/Http/Controllers/Mensajes/ControladorMensajes.php',
+    'resources/views/mensajes/indice.blade.php',
+    'resources/views/mensajes/conversaciones.blade.php',
+    'resources/views/mensajes/partes/panorama-tarjetas.blade.php',
+    'public/css/panorama-eventos.css',
+    'public/js/panorama.js',
+    'tests/Funcional/PanoramaEventosMensajesTest.php',
     'app/Http/Controllers/Operacion',
     'app/Http/Middleware/AutorizarGestionOperacion.php',
     'app/Console/Commands/ProyectarOperacion.php',
@@ -104,6 +112,9 @@ try {
         'app/Http/Middleware/AutorizarGestionOperacion.php',
         'app/Console/Commands/ProyectarOperacion.php',
         'app/Services/IA/ProcesarAnalisisGemini.php',
+        'app/Services/Mensajes/PrepararEventosPanorama.php',
+        'app/Http/Controllers/Mensajes/ControladorMensajes.php',
+        'tests/Funcional/PanoramaEventosMensajesTest.php',
         'app/Console/Commands/AnalizarGemini.php',
         'app/Console/Commands/ComprobarGruposIa.php',
         'app/Console/Commands/EstadoGemini.php',
@@ -146,6 +157,14 @@ try {
             throw ('Error de sintaxis PowerShell en ' + $archivo + ': ' + $errores[0].Message)
         }
         Write-Host ('Sintaxis correcta: ' + $archivo)
+    }
+
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+        & node --check 'public/js/panorama.js'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Error de sintaxis JavaScript en public/js/panorama.js'
+        }
+        Write-Host 'Sintaxis correcta: public/js/panorama.js'
     }
 
     Write-Host ''
