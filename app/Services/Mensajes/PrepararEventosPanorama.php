@@ -74,6 +74,7 @@ final class PrepararEventosPanorama
             ->select([
                 'e.acontecimiento_id', 'e.vinculo', 'm.tipo_mensaje',
                 'm.evento_crudo_id', 'f.id as archivo_id', 'f.estado as archivo_estado',
+                'f.disco as archivo_disco',
             ])
             ->orderBy('e.id')
             ->get()
@@ -84,7 +85,8 @@ final class PrepararEventosPanorama
             $fotografias = $evidencias->where('tipo_mensaje', 'foto');
             $miniaturas = $fotografias
                 ->filter(static fn ($fuente): bool => $fuente->archivo_id !== null
-                    && $fuente->archivo_estado === 'verificado')
+                    && $fuente->archivo_estado === 'verificado'
+                    && $fuente->archivo_disco === 'mensajero_local')
                 ->take(self::MAXIMO_MINIATURAS)
                 ->map(static fn ($fuente): array => [
                     'archivo_id' => (int) $fuente->archivo_id,
