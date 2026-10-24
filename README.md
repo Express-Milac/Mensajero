@@ -10,6 +10,14 @@ Sistema propio de Express MILAC para **capturar mensajes de grupos WhatsApp expr
 - **Ejecución automática implementada:** la normalización puede encolar Gemini para mensajes **nuevos, texto, grupo autorizado y posterior al corte**, con trabajador Redis separado. La activación persistente es por configuración privada del equipo, NO por el mero contenido de GitHub.
 - **Pendientes:** revisión/aprobación humana operativa, cuotas/costo con límites locales, tolerancia a fallos y conciliación de tareas perdidas, monitorización, autenticación corporativa, certificación multimedia/carga y despliegue supervisado.
 
+## Gemini con conversaciones reales (24/10/2026)
+
+Ahora existe un proceso explícito para seleccionar hasta seis grupos reales de manera autorizada, sin asumir que capturar un grupo autoriza transferirlo a Google. La fecha de corte se actualiza al momento de otorgar el nuevo permiso; se procesan solo mensajes nuevos. La herramienta lista y comprueba IDs con `mensajero:comprobar-grupos-ia` y configura el envío con `scripts/autorizar-grupos-reales-gemini.ps1`.
+
+El modo `-ContextoConversacional` añade hasta seis textos o leyendas (cinco minutos, un mismo grupo), alias temporales de participantes y referencias a respuestas, para que Gemini interprete conversaciones reales y no solo mensajes sueltos. Por defecto solo se envía el mensaje objetivo. Se conservan los originales y la revisión humana.
+
+**No hay envío automático a nuevos grupos por actualizar el código**: la habilitación real requiere confirmación expresa. No activar varios grupos de alto volumen sin límite y supervisión de gasto. Más detalles en [Autorizar Gemini para grupos reales](docs/autorizar-gemini-grupos-reales.md).
+
 ## Dos caras: cruda y operativa (23/10/2026)
 
 - **Mensajes originales**: consulta sin alteraciones de textos, fotografías, audios, videos y documentos recibidos por grupos autorizados.
