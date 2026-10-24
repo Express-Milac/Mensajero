@@ -11,12 +11,27 @@ use Illuminate\Support\Facades\DB;
 final class ComprobarGruposIa extends Command
 {
     protected $signature = 'mensajero:comprobar-grupos-ia
-        {--grupos= : Lista separada por comas de identificadores internos (hasta 6)}';
+        {--grupos= : Lista separada por comas de identificadores internos (hasta 6)}
+        {--listar : Mostrar grupos habilitados y sus IDs sin leer contenido de WhatsApp}';
 
     protected $description = 'Comprueba que los grupos candidatos para Gemini están activos y habilitados en Mensajero. Solo lectura.';
 
     public function handle(): int
     {
+        if ($this->option('listar')) {
+            $disponibles = DB::table('mensajero_chats_monitoreados')
+                ->where('tipo_chat', 'grupo')
+                ->where('es_activo', true)->where('es_monitoreado', true)
+                ->where('es_visible_tablero', true)
+                ->orderBy('id')->limit(100)
+                ->get(['id', 'nombre_interno', 'nombre_grupo']);
+            $this->table(['ID interno', 'Grupo habilitado'], $disponibles->map(
+                static fn ($g): array => [$g->id, $g->nombre_interno ?: ($g->nombre_grupo ?: '(sin nombre)')]
+            )->all());
+            $this->comment('Solo metadatos. No se transmitio contenido a Google.');
+            return self::SUCCESS;
+        }
+
         $cadena = trim((string) $this->option('grupos'));
         if (! preg_match('/\A[1-9][0-9]*(?:,[1-9][0-9]*){0,5}\z/D', $cadena)) {
             $this->error('Introduce de 1 a 6 IDs internos positivos, separados por comas y sin espacios.');
