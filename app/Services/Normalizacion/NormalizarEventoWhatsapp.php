@@ -9,6 +9,8 @@ use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
 use App\Jobs\AnalizarMensajeGeminiTrabajo;
 use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\IA\ConciliarPublicacionesGemini;
+use Illuminate\Support\Facades\Schema;
 use App\Services\Operacion\VincularEvidenciasOperativas;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -193,7 +195,20 @@ final class NormalizarEventoWhatsapp
                         && app(PoliticaEnvioGemini::class)->autoriza(
                             (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
                         )) {
-                        AnalizarMensajeGeminiTrabajo::dispatch((int) $proyeccion->id);
+                        if (Schema::hasTable('mensajero_control_publicaciones_gemini')) {
+                            $estadoPublicacion = app(ConciliarPublicacionesGemini::class)
+                                ->publicarNuevo((int) $proyeccion->id, (int) $proyeccion->chat_monitoreado_id);
+                            if ($estadoPublicacion !== 'publicado' && $estadoPublicacion !== 'registrado') {
+                                Log::notice('Publicación Gemini omitida por control preventivo.', [
+                                    'mensaje_id' => $proyeccion->id,
+                                    'estado' => $estadoPublicacion,
+                                ]);
+                            }
+                        } else {
+                            // Compatibilidad durante despliegue: primero instalar
+                            // migración de control, luego reiniciar trabajadores.
+                            AnalizarMensajeGeminiTrabajo::dispatch((int) $proyeccion->id);
+                        }
                     }
                 }
             } catch (Throwable $error) {
