@@ -3,7 +3,7 @@
         <div>
             <span class="centro-hero-marca">MENSAJERO MILAC / OPERACIÓN</span>
             <h1>Operación interpretada</h1>
-            <p>Acontecimientos identificados por Gemini a partir de mensajes originales. Son propuestas que requieren revisión; ninguna fotografía está verificada visualmente por IA.</p>
+            <p>Bitácora automática generada por Gemini a partir de conversaciones reales. Cada acontecimiento conserva enlaces a sus fuentes originales; Gemini aún no interpreta visualmente las fotografías.</p>
         </div>
         <a class="catalogo-volver" href="{{ route('mensajes.indice') }}">Ver mensajes originales ↗</a>
     </section>
@@ -18,11 +18,11 @@
     <section class="catalogo-metricas gestor-metricas" aria-label="Resumen operativo">
         <article>
             <span class="catalogo-metrica-icono naranja">✧</span>
-            <div><span>Por verificar</span><strong>{{ number_format($resumen['pendientes']) }}</strong><small>Acontecimientos propuestos</small></div>
+            <div><span>Generados por IA</span><strong>{{ number_format($resumen['generados']) }}</strong><small>Acontecimientos registrados automáticamente</small></div>
         </article>
         <article>
             <span class="catalogo-metrica-icono gris">▧</span>
-            <div><span>Posibles adjuntos</span><strong>{{ number_format($resumen['adjuntos_posibles']) }}</strong><small>Asociación preliminar, sin validación visual</small></div>
+            <div><span>Archivos relacionados</span><strong>{{ number_format($resumen['adjuntos_posibles']) }}</strong><small>Vinculación sugerida por proximidad, sin análisis visual</small></div>
         </article>
     </section>
 
@@ -42,14 +42,6 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label for="estado-operacion">Revisión</label>
-                <select id="estado-operacion" name="estado">
-                    @foreach(['todos'=>'Todos', 'pendiente_revision'=>'Por verificar', 'validado'=>'Revisados y validados', 'descartado'=>'Descartados'] as $clave => $etiqueta)
-                        <option value="{{ $clave }}" @selected($estado === $clave)>{{ $etiqueta }}</option>
-                    @endforeach
-                </select>
-            </div>
             <button class="catalogo-aplicar" type="submit">Aplicar filtro</button>
             <a class="catalogo-limpiar" href="{{ route('mensajes.ia.indice') }}">Diagnóstico de Gemini ↗</a>
         </form>
@@ -64,30 +56,12 @@
                             <h3>{{ $item->titulo }}</h3>
                             <span>{{ $item->nombre_interno ?: ($item->nombre_grupo ?: 'Grupo sin nombre') }} · {{ ucfirst($item->categoria) }} · #{{ $item->id }}</span>
                         </div>
-                        <span class="catalogo-estado neutral">{{ match($item->estado) { 'validado' => 'Validado por responsable', 'descartado' => 'Descartado', default => 'Por verificar' } }}</span>
+                        <span class="catalogo-estado neutral">Generado por IA</span>
                     </div>
                     <div class="catalogo-tarjeta-cuerpo">
                         <p style="font-size:13px;line-height:1.6;white-space:pre-wrap">{{ $item->resumen }}</p>
                         <p><span>Identificado (UTC)</span><strong>{{ $item->creado_en }}</strong></p>
                     </div>
-                    @if($puedeRevisar && $item->estado === 'pendiente_revision')
-                        <div style="display:flex;flex-wrap:wrap;gap:9px;padding:10px 16px">
-                            <form method="post" action="{{ route('operacion.revisar', $item->id) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="decision" value="validado">
-                                <button class="catalogo-aplicar" type="submit"
-                                        onclick="return confirm('¿Validar esta interpretación después de revisar las evidencias originales?')">Validar interpretación</button>
-                            </form>
-                            <form method="post" action="{{ route('operacion.revisar', $item->id) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="decision" value="descartado">
-                                <button class="catalogo-control secundario" type="submit"
-                                        onclick="return confirm('¿Descartar esta interpretación? No se borran los mensajes.')">Descartar interpretación</button>
-                            </form>
-                        </div>
-                    @endif
                     <div class="catalogo-tarjeta-pie" style="display:block">
                         <strong style="font-size:12px">Evidencias del acontecimiento</strong>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
@@ -103,7 +77,7 @@
                                         <span style="font-size:12px">{{ ucfirst($fuente->tipo_mensaje) }}</span>
                                     @endif
                                     <div style="margin-top:7px;font-size:11px;color:#64748b">
-                                        {{ $fuente->vinculo === 'sustento_ia' ? 'Fuente del análisis' : 'Posible adjunto · sin confirmar' }}
+                                        {{ $fuente->vinculo === 'sustento_ia' ? 'Fuente del análisis' : 'Adjunto relacionado por proximidad' }}
                                     </div>
                                     @if($fuente->pie_multimedia)
                                         <div style="font-size:11px">{{ \Illuminate\Support\Str::limit($fuente->pie_multimedia, 100) }}</div>
@@ -116,8 +90,8 @@
                 </article>
             @empty
                 <section class="catalogo-vacio">
-                    <h3>Todavía no hay acontecimientos proyectados</h3>
-                    <p>Se mostrarán cuando Gemini identifique una novedad del grupo piloto y exista su registro operativo. Los resultados anteriores se pueden proyectar sin llamar de nuevo a Google.</p>
+                    <h3>Todavía no hay acontecimientos generados</h3>
+                    <p>Se mostrarán automáticamente cuando Gemini detecte un acontecimiento en un grupo autorizado y se guarde su interpretación. No es necesaria la aprobación de una persona.</p>
                 </section>
             @endforelse
         </div>
