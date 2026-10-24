@@ -11,6 +11,8 @@ Cada grupo monitorizado conserva una tarjeta común, con dos paneles independien
 
 Ambos paneles tienen desplazamiento vertical independiente y conservan su posición al actualizar. En pantallas estrechas la vista se apila (eventos primero, mensajes después).
 
+Cuando la IA registra un nuevo acontecimiento, emite un aviso del canal local en vivo para actualizar el tablero sin esperar un mensaje posterior de WhatsApp. El aviso contiene solo identificadores, nunca texto ni medios.
+
 Los filtros existentes por actividad y orden se aplican a los grupos. La búsqueda local incluye nombre de grupo, textos de mensajes y títulos/resúmenes de eventos visibles. Solo se consultan grupos monitorizados.
 
 ## Fotografías y documentos
