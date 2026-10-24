@@ -75,7 +75,7 @@ final class VincularEvidenciasOperativas
             ->join('mensajero_mensajes_whatsapp as origen', 'origen.id', '=', 'a.mensaje_objetivo_id')
             ->join('mensajero_chats_monitoreados as grupo', 'grupo.id', '=', 'a.chat_monitoreado_id')
             ->where('a.chat_monitoreado_id', $adjunto->chat_monitoreado_id)
-            ->where('a.estado', 'pendiente_revision')
+            ->whereIn('a.estado', ['generado_ia', 'pendiente_revision'])
             ->where('origen.contacto_remitente_id', $adjunto->contacto_remitente_id)
             ->whereBetween('origen.recibido_en', [$inicio, $fin])
             ->where('grupo.es_activo', true)
