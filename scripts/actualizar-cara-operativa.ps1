@@ -49,6 +49,7 @@ $rutas = @(
     'tests/Funcional/OperacionAccesoTest.php',
     'tests/Integracion/AcontecimientosOperativosSqlServerTest.php',
     'docs/cara-operativa.md',
+    'docs/bitacora-automatica.md',
     'docs/canalizacion-ia.md',
     'docs/arquitectura.md',
     'docs/operacion-gemini-permanente.md',
