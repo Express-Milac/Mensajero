@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Operacion;
 
 use App\Http\Controllers\Controller;
-use App\Services\Operacion\RevisarAcontecimientoOperativo;
-use DomainException;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -17,15 +14,13 @@ final class ControladorOperacion extends Controller
     {
         $filtros = $request->validate([
             'categoria' => ['nullable', 'in:todos,logistica,incidencia,acuerdo,solicitud,otro'],
-            'estado' => ['nullable', 'in:todos,pendiente_revision,validado,descartado'],
         ]);
 
         $categoria = $filtros['categoria'] ?? 'todos';
-        $estado = $filtros['estado'] ?? 'todos';
         $gruposIA = (array) config('mensajero.ia.grupos_autorizados', []);
         $acontecimientos = null;
         $filas = [];
-        $resumen = ['pendientes' => 0, 'adjuntos_posibles' => 0];
+        $resumen = ['generados' => 0, 'adjuntos_posibles' => 0];
 
         if ($gruposIA !== [] && Schema::hasTable('mensajero_acontecimientos_operativos')) {
             $base = DB::table('mensajero_acontecimientos_operativos as a')
@@ -34,9 +29,12 @@ final class ControladorOperacion extends Controller
                 ->where('g.tipo_chat', 'grupo')
                 ->where('g.es_activo', true)
                 ->where('g.es_monitoreado', true)
-                ->where('g.es_visible_tablero', true);
+                ->where('g.es_visible_tablero', true)
+                // Los descartes realizados en la interfaz antigua siguen conservados,
+                // pero no se presentan como sucesos activos de la bitácora.
+                ->where('a.estado', '<>', 'descartado');
 
-            $resumen['pendientes'] = (clone $base)->where('a.estado', 'pendiente_revision')->count();
+            $resumen['generados'] = (clone $base)->count();
             $resumen['adjuntos_posibles'] = DB::table('mensajero_evidencias_acontecimientos as e')
                 ->join('mensajero_acontecimientos_operativos as a', 'a.id', '=', 'e.acontecimiento_id')
                 ->join('mensajero_chats_monitoreados as g', 'g.id', '=', 'a.chat_monitoreado_id')
@@ -48,10 +46,6 @@ final class ControladorOperacion extends Controller
             if ($categoria !== 'todos') {
                 $base->where('a.categoria', $categoria);
             }
-            if ($estado !== 'todos') {
-                $base->where('a.estado', $estado);
-            }
-
             $acontecimientos = $base->select([
                 'a.id', 'a.chat_monitoreado_id', 'a.categoria', 'a.titulo',
                 'a.resumen', 'a.estado', 'a.creado_en',
@@ -76,40 +70,6 @@ final class ControladorOperacion extends Controller
             }
         }
 
-        $puedeRevisar = (config('mensajero.autenticacion.modo') === 'local'
-            && auth()->check() && auth()->user()->can('administrar'))
-            || (config('mensajero.autenticacion.modo') === 'deshabilitado'
-                && app()->environment(['local', 'testing'])
-                && config('mensajero.consulta_local_sin_autenticacion', false)
-                && config('mensajero.gestion_local_operacion_habilitada', false)
-                && in_array($request->ip(), ['127.0.0.1', '::1'], true));
-
-        return view('operacion.indice', compact('filas', 'resumen', 'acontecimientos', 'categoria', 'estado', 'puedeRevisar'));
-    }
-
-    public function revisar(Request $request, int $acontecimiento, RevisarAcontecimientoOperativo $revisor): RedirectResponse
-    {
-        $datos = $request->validate([
-            'decision' => ['required', 'in:validado,descartado'],
-        ]);
-
-        $actorId = auth()->id();
-        try {
-            $revisor->ejecutar(
-                $acontecimiento,
-                $datos['decision'],
-                is_numeric($actorId) ? 'administrador' : 'gestor_local_autorizado',
-                is_numeric($actorId) ? (int) $actorId : null,
-            );
-        } catch (DomainException $error) {
-            return back()->withErrors(['revision' => $error->getMessage()]);
-        }
-
-        return back()->with(
-            'estado',
-            $datos['decision'] === 'validado'
-                ? 'Interpretación validada por un responsable. La evidencia original no se modificó.'
-                : 'Interpretación descartada. La evidencia original permanece conservada.'
-        );
+        return view('operacion.indice', compact('filas', 'resumen', 'acontecimientos', 'categoria'));
     }
 }
