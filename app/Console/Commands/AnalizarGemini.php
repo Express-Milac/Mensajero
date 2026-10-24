@@ -16,7 +16,8 @@ final class AnalizarGemini extends Command
     protected $signature = 'mensajero:analizar-gemini
         {--grupo=10020 : Identificador interno del grupo autorizado}
         {--limite=2 : Máximo de mensajes nuevos a seleccionar (1-5)}
-        {--mensaje-id= : Mensaje exacto a analizar (obligatorio para aplicar durante el piloto)}
+        {--mensaje-id= : Mensaje exacto a analizar (obligatorio para aplicar durante el piloto normal)}
+        {--lote-real : Seleccionar hasta cinco mensajes REALES existentes del grupo autorizado, con corte propio}
         {--aplicar : Publicar trabajos en Redis; sin esta opción solo previsualiza}';
 
     protected $description = 'Previsualiza o solicita interpretación Gemini de mensajes nuevos en un grupo permitido.';
@@ -35,9 +36,23 @@ final class AnalizarGemini extends Command
             return self::FAILURE;
         }
 
-        if ($this->option('aplicar') && $mensajeId === null) {
-            $this->error('Para el piloto debes indicar --mensaje-id=ID y evitar enviar varios mensajes a Google.');
+        $loteReal = (bool) $this->option('lote-real');
+        if ($this->option('aplicar') && $mensajeId === null && ! $loteReal) {
+            $this->error('Para el piloto normal usa --mensaje-id=ID; para un lote real autorizado indica --lote-real.');
             return self::FAILURE;
+        }
+
+        if ($loteReal && $mensajeId !== null) {
+            $this->error('Selecciona --lote-real o --mensaje-id, pero no ambos.');
+            return self::FAILURE;
+        }
+
+        if ($loteReal) {
+            $fechas = config('mensajero.ia.fechas_inicio_grupos', []);
+            if (! is_array($fechas) || ! isset($fechas[(string) $grupoId])) {
+                $this->error('El lote real requiere una fecha de autorización individual para este grupo.');
+                return self::FAILURE;
+            }
         }
 
         $grupo = ChatMonitoreado::query()
@@ -87,10 +102,26 @@ final class AnalizarGemini extends Command
             $consultaMensajes->whereKey($mensajeId);
         }
 
+        if ($loteReal && Schema::hasTable('mensajero_control_publicaciones_gemini')) {
+            $consultaMensajes->whereNotExists(function ($consulta): void {
+                $consulta->selectRaw('1')
+                    ->from('mensajero_control_publicaciones_gemini as p')
+                    ->whereColumn('p.mensaje_whatsapp_id', 'mensajero_mensajes_whatsapp.id');
+            });
+        }
+
+        // Con lote real se trabaja con los últimos mensajes capturados;
+        // el procesamiento de esos ID se muestra luego en orden cronológico.
+        $consultaMensajes = $loteReal
+            ? $consultaMensajes->orderByDesc('recibido_en')->orderByDesc('id')
+            : $consultaMensajes->orderBy('recibido_en')->orderBy('id');
+
         $mensajes = $consultaMensajes
-            ->orderBy('recibido_en')->orderBy('id')
             ->limit($limite)
             ->get(['id', 'recibido_en']);
+        if ($loteReal) {
+            $mensajes = $mensajes->reverse()->values();
+        }
 
         $this->info('Grupo: '.$grupoId.' | Mensajes nuevos elegibles: '.$mensajes->count());
         foreach ($mensajes as $mensaje) {
@@ -105,6 +136,16 @@ final class AnalizarGemini extends Command
         if (! $politica->configuracionCompleta()) {
             $this->error('IA no autorizada. Revisa habilitación, consentimiento, servicio pagado y clave.');
             return self::FAILURE;
+        }
+
+        if ($loteReal && $mensajes->isNotEmpty()) {
+            $this->warn('Esto enviará contenido REAL del grupo '.$grupoId.' a Google mediante Redis.');
+            $this->warn('Máximo en esta ejecución: '.$mensajes->count().' mensajes. Su contexto puede incluir hasta 6 textos del mismo grupo.');
+            $respuesta = trim((string) $this->ask('Escribe AUTORIZO LOTE REAL para publicar los ID mostrados'));
+            if ($respuesta !== 'AUTORIZO LOTE REAL') {
+                $this->warn('Cancelado: ningún trabajo publicado.');
+                return self::FAILURE;
+            }
         }
 
         foreach ($mensajes as $mensaje) {
