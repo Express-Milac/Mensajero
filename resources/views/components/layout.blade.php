@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/interfaz-unificada.css') }}?v={{ filemtime(public_path('css/interfaz-unificada.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/panorama-eventos.css') }}?v={{ filemtime(public_path('css/panorama-eventos.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/control-gemini.css') }}?v={{ filemtime(public_path('css/control-gemini.css')) }}">
 </head>
 <body @class([
     'panorama-claro',
@@ -46,6 +47,13 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>
                         <span>Operación interpretada</span>
                     </a>
+                    @if((config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar')) || (config('mensajero.autenticacion.modo') === 'deshabilitado' && app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion') === true && config('mensajero.gestion_local_ia_habilitada') === true && in_array(request()->ip(), ['127.0.0.1','::1'], true)))
+                        <a class="nav {{ request()->routeIs('gemini.configuracion*') ? 'active' : '' }}" href="{{ route('gemini.configuracion') }}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v4m0 12v4m10-10h-4M6 12H2m17.1-7.1-2.8 2.8M7.7 16.3l-2.8 2.8m14.2 0-2.8-2.8M7.7 7.7 4.9 4.9"/><circle cx="12" cy="12" r="5"/></svg>
+                            <span>Control de Gemini</span>
+                        </a>
+                    @endif
+
                     <a class="nav {{ request()->routeIs('remitentes.*') ? 'active' : '' }}" href="{{ route('remitentes.indice') }}" @if(request()->routeIs('remitentes.*')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
                         <span>Remitentes</span>
