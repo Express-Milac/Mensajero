@@ -6,6 +6,7 @@ use App\Jobs\AnalizarMensajeGeminiTrabajo;
 use App\Models\ChatMonitoreado;
 use App\Models\MensajeWhatsapp;
 use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\IA\ConciliarPublicacionesGemini;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -111,8 +112,15 @@ final class AnalizarGemini extends Command
                 continue;
             }
 
-            AnalizarMensajeGeminiTrabajo::dispatch((int) $mensaje->id);
-            $this->info('Publicado trabajo de análisis para mensaje #'.$mensaje->id);
+            if (Schema::hasTable('mensajero_control_publicaciones_gemini')) {
+                $estado = app(ConciliarPublicacionesGemini::class)
+                    ->publicarManual((int) $mensaje->id, $grupoId);
+                $this->info('Mensaje #'.$mensaje->id.' | Control de publicación: '.$estado);
+            } else {
+                // Compatibilidad con instalaciones aún sin migración nueva.
+                AnalizarMensajeGeminiTrabajo::dispatch((int) $mensaje->id);
+                $this->info('Publicado trabajo de análisis para mensaje #'.$mensaje->id);
+            }
         }
 
         $this->comment('Los trabajos se procesan exclusivamente con queue:work redis --queue=mensajero_ia.');
