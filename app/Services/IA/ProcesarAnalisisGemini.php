@@ -62,7 +62,7 @@ final class ProcesarAnalisisGemini
         } else {
             // Incluso si se autoriza el contexto, nunca consultar mensajes
             // previos a la fecha de consentimiento explícito de Gemini.
-            $inicio = $this->politica->fechaInicio();
+            $inicio = $this->politica->fechaInicioGrupo((int) $mensaje->chat_monitoreado_id);
             if ($inicio === null) {
                 return 'no_elegible';
             }
