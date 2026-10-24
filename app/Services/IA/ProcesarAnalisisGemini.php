@@ -15,7 +15,7 @@ final class ProcesarAnalisisGemini
 {
     public function __construct(
         private readonly PoliticaEnvioGemini $politica,
-        private readonly PrepararContextoGemini $preparador,
+        private readonly ConstruirDialogoGemini $constructorDialogo,
         private readonly ClienteGemini $cliente,
         private readonly ValidarResultadoGemini $validador,
         private readonly RegistrarAcontecimientoOperativo $registrar,
@@ -84,21 +84,10 @@ final class ProcesarAnalisisGemini
         $anteriores = $consultaContexto
             ->orderByDesc('recibido_en')->orderByDesc('id')
             ->limit(6)
-            ->get(['id', 'contenido_texto', 'pie_multimedia', 'tipo_mensaje']);
+            ->get(['id', 'contenido_texto', 'pie_multimedia', 'tipo_mensaje',
+                'contacto_remitente_id', 'mensaje_citado_id']);
 
-        $contexto = [];
-        foreach ($anteriores->reverse() as $anterior) {
-            $contenido = $anterior->tipo_mensaje === 'texto'
-                ? $anterior->contenido_texto : $anterior->pie_multimedia;
-            $texto = $this->preparador->limpiar((string) $contenido);
-            if ($texto !== '') {
-                $contexto[] = [
-                    'id' => (int) $anterior->id,
-                    'texto' => $texto,
-                    'tipo' => $anterior->tipo_mensaje === 'texto' ? 'texto' : 'leyenda_'.$anterior->tipo_mensaje,
-                ];
-            }
-        }
+        $contexto = $this->constructorDialogo->ejecutar($anteriores->reverse()->all());
 
         if ($contexto === [] || $contexto[array_key_last($contexto)]['id'] !== $mensajeId) {
             return 'sin_texto';
