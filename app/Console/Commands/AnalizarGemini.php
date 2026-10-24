@@ -67,7 +67,15 @@ final class AnalizarGemini extends Command
         $consultaMensajes = MensajeWhatsapp::query()
             ->where('chat_monitoreado_id', $grupoId)
             ->where('estado_captura', 'normalizado')
-            ->where('tipo_mensaje', 'texto')
+            ->where(function ($consulta): void {
+                $consulta->where(function ($texto): void {
+                    $texto->where('tipo_mensaje', 'texto')
+                        ->whereNotNull('contenido_texto');
+                })->orWhere(function ($leyenda): void {
+                    $leyenda->whereIn('tipo_mensaje', ['foto', 'video', 'documento'])
+                        ->whereNotNull('pie_multimedia');
+                });
+            })
             ->where('recibido_en', '>=', $fechaUtc)
             ->whereNotIn(
                 'id',
