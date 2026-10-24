@@ -49,7 +49,7 @@
         <div class="catalogo-tarjetas">
             @forelse($filas as $fila)
                 @php($item = $fila['acontecimiento'])
-                <article class="catalogo-tarjeta" aria-label="Acontecimiento operativo {{ $item->id }}">
+                <article id="acontecimiento-{{ $item->id }}" class="catalogo-tarjeta" aria-label="Acontecimiento operativo {{ $item->id }}">
                     <div class="catalogo-tarjeta-encabezado">
                         <span class="catalogo-grupo-icono" aria-hidden="true">✧</span>
                         <div class="catalogo-grupo-titulo">
