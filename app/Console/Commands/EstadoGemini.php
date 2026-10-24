@@ -70,7 +70,13 @@ final class EstadoGemini extends Command
                 $base = DB::table('mensajero_mensajes_whatsapp as m')
                     ->where('m.chat_monitoreado_id', $grupoId)
                     ->where('m.estado_captura', 'normalizado')
-                    ->where('m.tipo_mensaje', 'texto')
+                    ->where(function ($consulta): void {
+                        $consulta->where('m.tipo_mensaje', 'texto')
+                            ->orWhere(function ($media): void {
+                                $media->whereIn('m.tipo_mensaje', ['foto', 'video', 'documento'])
+                                    ->whereNotNull('m.pie_multimedia');
+                            });
+                    })
                     ->where('m.recibido_en', '>=', $fechaUtc);
 
                 $sinResultado = (clone $base)
@@ -80,7 +86,7 @@ final class EstadoGemini extends Command
                             ->whereColumn('a.mensaje_whatsapp_id', 'm.id');
                     })->count();
 
-                $this->line('Mensajes de texto normalizados desde el corte sin resultado IA: '.$sinResultado);
+                $this->line('Textos y leyendas normalizados desde el corte sin resultado IA: '.$sinResultado);
 
                 $ultimos = (clone $base)
                     ->leftJoin('mensajero_analisis_operativos_ia as a', 'a.mensaje_whatsapp_id', '=', 'm.id')
@@ -89,7 +95,7 @@ final class EstadoGemini extends Command
                     ->get(['m.id', 'm.recibido_en', 'a.estado']);
 
                 if ($ultimos->isEmpty()) {
-                    $this->warn('No se encontraron textos normalizados posteriores al corte.');
+                    $this->warn('No se encontraron textos o leyendas posteriores al corte.');
                 } else {
                     $this->table(
                         ['ID de mensaje', 'Recibido (UTC)', 'Resultado IA en SQL'],
