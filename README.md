@@ -10,6 +10,14 @@ Sistema propio de Express MILAC para **capturar mensajes de grupos WhatsApp expr
 - **Ejecución automática implementada:** la normalización puede encolar Gemini para mensajes **nuevos, texto, grupo autorizado y posterior al corte**, con trabajador Redis separado. La activación persistente es por configuración privada del equipo, NO por el mero contenido de GitHub.
 - **Pendientes:** revisión/aprobación humana operativa, cuotas/costo con límites locales, tolerancia a fallos y conciliación de tareas perdidas, monitorización, autenticación corporativa, certificación multimedia/carga y despliegue supervisado.
 
+## Gemini con datos reales YA capturados (24/10/2026)
+
+Se agregó un piloto por grupo para evaluar interpretaciones a partir de los mensajes reales existentes en SQL Server, sin exigir mensajes ficticios nuevos en WhatsApp. El grupo de Patios (ID 10197) tiene actividad real; el permiso previo de Google aplicaba solo al grupo de prueba (10020).
+
+La nueva autorización por grupo y corte horario permite un lote manual pequeño y desactiva temporalmente los envíos IA automáticos. Los mensajes originales permanecen intactos. Se requiere consentimiento expreso para enviar datos empresariales a Google.
+
+Véase [Piloto de mensajes reales](docs/piloto-mensajes-reales.md).
+
 ## Recuperación controlada de mensajes sin Gemini (24/10/2026)
 
 Se añadió una conciliación **desactivada por defecto** para cubrir despachos omitidos entre SQL Server y Redis. La tabla `mensajero_control_publicaciones_gemini` registra una reserva única por mensaje, compartida por normalización, envío manual y recuperación. Los trabajos tienen un único intento automático; cualquier publicación incierta requiere revisión humana, sin reintento facturable ciego.
