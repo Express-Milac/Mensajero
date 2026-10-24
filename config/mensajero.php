@@ -67,6 +67,9 @@ return [
     // No habilita cambios de captura ni acceso por red compartida.
     'gestion_local_grupos_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_GRUPOS_HABILITADA', false),
 
+    // Permiso INDEPENDIENTE para encender los envíos pagados a Gemini desde localhost.
+    'gestion_local_ia_habilitada' => filter_var(env('MENSAJERO_GESTION_LOCAL_IA_HABILITADA', false), FILTER_VALIDATE_BOOLEAN),
+
     // Revisión operativa en localhost POC; NO implica permiso de grupos ni Gemini.
     'gestion_local_operacion_habilitada' => (bool) env('MENSAJERO_GESTION_LOCAL_OPERACION_HABILITADA', false),
 
