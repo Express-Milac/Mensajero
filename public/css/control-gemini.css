@@ -1,0 +1,16 @@
+/* Control explícito de interpretación IA, consistente con la identidad MILAC. */
+.panorama-claro .control-gemini{margin-top:18px}
+.panorama-claro .control-gemini-form{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.panorama-claro .control-gemini-form label{display:flex;align-items:center;gap:8px;font-size:12px;color:#3e5368;line-height:1.5;cursor:pointer}
+.panorama-claro .control-gemini-form input[type=checkbox]{width:17px;height:17px;accent-color:#ef7529;flex:none}
+.panorama-claro .control-gemini-form button{margin:0;flex:none}
+.panorama-claro .control-gemini-form button:disabled{opacity:.45;cursor:not-allowed}
+.panorama-claro .control-gemini-nota{font-size:11px;color:#6c7f91;margin:12px 0;line-height:1.6}
+.panorama-claro .control-gemini-lista{display:flex;flex-direction:column;gap:10px}
+.panorama-claro .control-gemini-fila{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,1fr);gap:16px;align-items:center;border:1px solid #e5edf1;border-radius:12px;background:#fff;padding:15px}
+.panorama-claro .control-gemini-fila h3{font-size:14px;margin:0 0 4px}
+.panorama-claro .control-gemini-fila p{font-size:11px;color:#60758a;margin:0}
+.panorama-claro .control-gemini-accion-grupo{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.panorama-claro .control-gemini-accion-grupo>strong{color:#a15422;font-size:12px}
+.panorama-claro .control-gemini-accion-grupo small{font-size:11px;color:#7b8b99}
+@media(max-width:720px){.panorama-claro .control-gemini-fila{grid-template-columns:minmax(0,1fr)}}
