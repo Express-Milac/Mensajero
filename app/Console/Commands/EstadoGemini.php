@@ -62,6 +62,17 @@ final class EstadoGemini extends Command
                 $this->line('Resultado guardado '.$fila->estado.': '.$fila->total);
             }
 
+            if (Schema::hasTable('mensajero_control_publicaciones_gemini')) {
+                $publicaciones = DB::table('mensajero_control_publicaciones_gemini')
+                    ->where('chat_monitoreado_id', $grupoId)
+                    ->select('estado')->selectRaw('COUNT(*) as total')
+                    ->groupBy('estado')->get();
+                foreach ($publicaciones as $publicacion) {
+                    $this->line('Control de envíos IA '.$publicacion->estado.': '.$publicacion->total);
+                }
+                $this->warn('Los estados reservado/publicado sin resultado NO deben reenviarse automáticamente.');
+            }
+
             if ($inicio === null) {
                 $this->warn('Sin corte temporal no es posible seleccionar mensajes recientes autorizados.');
             } else {
