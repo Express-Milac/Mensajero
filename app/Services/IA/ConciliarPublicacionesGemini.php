@@ -44,7 +44,7 @@ final class ConciliarPublicacionesGemini
             return [];
         }
 
-        $inicio = $this->politica->fechaInicio();
+        $inicio = $this->politica->fechaInicioGrupo($grupoId);
         if ($inicio === null) {
             return [];
         }
