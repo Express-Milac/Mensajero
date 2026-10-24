@@ -16,6 +16,16 @@ use Tests\TestCase;
 
 final class GeminiContratoTest extends TestCase
 {
+    public function test_solo_una_omision_anterior_a_google_se_descarta_y_la_incertidumbre_exige_revision(): void
+    {
+        $this->assertSame('omitido', AnalizarMensajeGeminiTrabajo::clasificarEstado('no_elegible'));
+        $this->assertSame('omitido', AnalizarMensajeGeminiTrabajo::clasificarEstado('sin_texto'));
+        $this->assertSame('finalizado', AnalizarMensajeGeminiTrabajo::clasificarEstado('sin_evento'));
+        $this->assertSame('finalizado', AnalizarMensajeGeminiTrabajo::clasificarEstado('pendiente_revision'));
+        $this->assertSame('requiere_revision', AnalizarMensajeGeminiTrabajo::clasificarEstado('rechazado_despues_google'));
+        $this->assertSame('requiere_revision', AnalizarMensajeGeminiTrabajo::clasificarEstado('estado_desconocido'));
+    }
+
     public function test_el_trabajo_gemini_puede_despacharse_sin_usar_redis_real(): void
     {
         Bus::fake();
