@@ -19,12 +19,41 @@ final class PoliticaEnvioGemini
 
     public function autoriza(int $grupoId, DateTimeInterface $recibidoEn): bool
     {
-        $inicio = $this->fechaInicio();
+        $inicio = $this->fechaInicioGrupo($grupoId);
 
         return $this->configuracionCompleta()
             && $inicio !== null
             && in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)
             && $recibidoEn->getTimestamp() >= $inicio->getTimestamp();
+    }
+
+    /**
+     * Cada grupo real puede tener un límite temporal adicional y más reciente
+     * que el consentimiento global. Nunca permite retroceder el global.
+     */
+    public function fechaInicioGrupo(int $grupoId): ?DateTimeImmutable
+    {
+        $global = $this->fechaInicio();
+        if ($global === null || $grupoId < 1) {
+            return null;
+        }
+
+        $fechas = config('mensajero.ia.fechas_inicio_grupos', []);
+        if (! is_array($fechas) || ! array_key_exists((string) $grupoId, $fechas)) {
+            return $global;
+        }
+
+        $valor = $fechas[(string) $grupoId];
+        if (! is_string($valor)) {
+            return null; // Falla cerrado si la autorización adicional es inválida.
+        }
+
+        $grupo = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $valor);
+        if ($grupo === false) {
+            return null;
+        }
+
+        return $grupo->getTimestamp() > $global->getTimestamp() ? $grupo : $global;
     }
 
     public function fechaInicio(): ?DateTimeImmutable
