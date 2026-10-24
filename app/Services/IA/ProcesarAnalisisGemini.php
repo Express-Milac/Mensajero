@@ -6,6 +6,7 @@ use App\Models\ChatMonitoreado;
 use App\Models\MensajeWhatsapp;
 use App\Services\Operacion\RegistrarAcontecimientoOperativo;
 use App\Services\Mensajes\NotificadorTiempoReal;
+use App\Services\IA\ControlInterpretacionGemini;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,8 @@ final class ProcesarAnalisisGemini
             ! $mensaje->chat->es_visible_tablero ||
             ! $this->tieneTextoAnalizable($mensaje) || $mensaje->estado_captura !== 'normalizado' ||
             $mensaje->recibido_en === null ||
-            ! $this->politica->autoriza((int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en)) {
+            ! $this->politica->autoriza((int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en)
+            || ! app(ControlInterpretacionGemini::class)->permite((int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en)) {
             return 'no_elegible';
         }
 
@@ -93,6 +95,14 @@ final class ProcesarAnalisisGemini
 
         if ($contexto === [] || $contexto[array_key_last($contexto)]['id'] !== $mensajeId) {
             return 'sin_texto';
+        }
+
+        // Revalidar antes de la llamada pagada: un administrador pudo apagar
+        // Gemini mientras se construía el diálogo en otro proceso.
+        if (! app(ControlInterpretacionGemini::class)->permite(
+            (int) $mensaje->chat_monitoreado_id, $mensaje->recibido_en
+        )) {
+            return 'no_elegible';
         }
 
         // Ninguna operación de red ocurre dentro de una transacción SQL Server.
