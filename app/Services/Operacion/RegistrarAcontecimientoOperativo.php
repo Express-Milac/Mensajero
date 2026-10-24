@@ -26,7 +26,7 @@ final class RegistrarAcontecimientoOperativo
                 $analisis = DB::table('mensajero_analisis_operativos_ia')->where('id', $analisisId)
                     ->lockForUpdate()->first();
 
-                if ($analisis === null || $analisis->estado !== 'pendiente_revision') {
+                if ($analisis === null || ! in_array($analisis->estado, ['identificado_ia', 'pendiente_revision'], true)) {
                     return null;
                 }
 
@@ -76,7 +76,7 @@ final class RegistrarAcontecimientoOperativo
                     'categoria' => (string) $analisis->categoria,
                     'titulo' => (string) $analisis->titulo,
                     'resumen' => (string) $analisis->resumen,
-                    'estado' => 'pendiente_revision',
+                    'estado' => 'generado_ia',
                     'creado_en' => $ahora,
                     'actualizado_en' => $ahora,
                 ]);
