@@ -16,6 +16,7 @@ $rutas = @(
     'app/Console/Commands/ComprobarGruposIa.php',
     'scripts/mensajero-local.ps1',
     'scripts/autorizar-grupos-reales-gemini.ps1',
+    'app/Console/Commands/AnalizarGemini.php',
     'app/Services/IA/ClienteGemini.php',
     'app/Services/IA/ProcesarAnalisisGemini.php',
     'app/Services/Normalizacion/NormalizarEventoWhatsapp.php',
@@ -83,6 +84,8 @@ try {
         'app/Http/Middleware/AutorizarGestionOperacion.php',
         'app/Console/Commands/ProyectarOperacion.php',
         'app/Services/IA/ProcesarAnalisisGemini.php',
+        'app/Console/Commands/AnalizarGemini.php',
+        'app/Console/Commands/ComprobarGruposIa.php',
         'app/Services/IA/ClienteGemini.php',
         'app/Services/Normalizacion/NormalizarEventoWhatsapp.php',
         'routes/web.php', 'bootstrap/app.php', 'config/mensajero.php'
