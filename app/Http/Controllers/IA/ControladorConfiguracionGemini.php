@@ -37,7 +37,8 @@ final class ControladorConfiguracionGemini extends Controller
         $general = $control->estado(0);
         $disponible = $control->disponible();
         $listo = $politica->configuracionCompleta();
-        $maximo = max(0, min(30, (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10)));
+        $limite = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
+        $maximo = $limite >= 1 && $limite <= 30 ? $limite : 0;
 
         return view('ia.configuracion', compact('filas', 'general', 'disponible', 'listo', 'maximo'));
     }
