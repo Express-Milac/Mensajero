@@ -10,6 +10,14 @@ Sistema propio de Express MILAC para **capturar mensajes de grupos WhatsApp expr
 - **Ejecución automática implementada:** la normalización puede encolar Gemini para mensajes **nuevos, texto, grupo autorizado y posterior al corte**, con trabajador Redis separado. La activación persistente es por configuración privada del equipo, NO por el mero contenido de GitHub.
 - **Pendientes:** revisión/aprobación humana operativa, cuotas/costo con límites locales, tolerancia a fallos y conciliación de tareas perdidas, monitorización, autenticación corporativa, certificación multimedia/carga y despliegue supervisado.
 
+## Recuperación controlada de mensajes sin Gemini (24/10/2026)
+
+Se añadió una conciliación **desactivada por defecto** para cubrir despachos omitidos entre SQL Server y Redis. La tabla `mensajero_control_publicaciones_gemini` registra una reserva única por mensaje, compartida por normalización, envío manual y recuperación. Los trabajos tienen un único intento automático; cualquier publicación incierta requiere revisión humana, sin reintento facturable ciego.
+
+La programación cada cinco minutos necesita autorización adicional con fecha de corte nueva; solo recupera mensajes recientes y elegibles de los grupos Gemini existentes. Hay un límite conservador de hasta 10 publicaciones nuevas por día UTC y por grupo (configurable entre 1 y 30). La captura y los originales no se modifican.
+
+El código y las pruebas están en la rama, **no se ha aplicado la nueva migración a la base activa ni comprobado el SQL del entorno**. Ver [Conciliación y recuperación de Gemini](docs/conciliacion-gemini.md).
+
 ## Gemini con conversaciones reales (24/10/2026)
 
 Ahora existe un proceso explícito para seleccionar hasta seis grupos reales de manera autorizada, sin asumir que capturar un grupo autoriza transferirlo a Google. La fecha de corte se actualiza al momento de otorgar el nuevo permiso; se procesan solo mensajes nuevos. La herramienta lista y comprueba IDs con `mensajero:comprobar-grupos-ia` y configura el envío con `scripts/autorizar-grupos-reales-gemini.ps1`.
