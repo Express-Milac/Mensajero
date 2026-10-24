@@ -225,8 +225,15 @@ function ValidarConfiguracion {
     if ($configuracion.ia -ne $true -or $configuracion.automatica -ne $true) {
         throw 'La politica Gemini o la ejecucion automatica no estan autorizadas en .env.'
     }
-    if ((@($configuracion.grupos) | Measure-Object).Count -ne 1 -or [int] $configuracion.grupos[0] -ne 10020) {
-        throw 'El piloto solo permite que Gemini procese el grupo 10020.'
+    $gruposIA = @($configuracion.grupos)
+    if ($gruposIA.Count -lt 1 -or $gruposIA.Count -gt 6) {
+        throw 'Gemini necesita entre 1 y 6 grupos expresamente autorizados.'
+    }
+    if (@($gruposIA | Where-Object { $_ -isnot [int] -or $_ -le 0 }).Count -ne 0) {
+        throw 'La lista Gemini tiene identificadores invalidos.'
+    }
+    if (@($gruposIA | Sort-Object -Unique).Count -ne $gruposIA.Count) {
+        throw 'La lista Gemini contiene grupos duplicados.'
     }
     $programacion = (& php artisan schedule:list | Out-String)
     if ($LASTEXITCODE -ne 0 -or -not $programacion.Contains('mensajero:despachar-buzon')) {
@@ -253,7 +260,7 @@ try {
     switch ($Accion) {
         'estado' {
             Resumen $datosActuales
-            Write-Host 'La verificacion de eventos IA esta en: php artisan mensajero:estado-gemini --grupo=10020'
+            Write-Host 'Diagnostico por grupo: php artisan mensajero:estado-gemini --grupo=ID'
             break
         }
         'detener' {
