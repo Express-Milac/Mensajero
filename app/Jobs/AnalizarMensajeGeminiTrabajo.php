@@ -57,7 +57,7 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
     public static function clasificarEstado(string $resultado): string
     {
         return match ($resultado) {
-            'pendiente_revision', 'sin_evento', 'duplicado' => 'finalizado',
+            'identificado_ia', 'pendiente_revision', 'sin_evento', 'duplicado' => 'finalizado',
             'no_elegible', 'sin_texto' => 'omitido',
             default => 'requiere_revision',
         };
