@@ -23,7 +23,7 @@
     let consultando = false;
     const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Búsqueda deliberadamente acotada a los mensajes visibles de cada
+    // Búsqueda deliberadamente acotada a los mensajes y eventos visibles de cada
     // tarjeta. No consulta ni expone JSON completo ni grupos no autorizados.
     function normalizar(valor) {
         return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -45,7 +45,7 @@
             resultadoBusqueda.textContent = consulta === ''
                 ? ''
                 : visibles + (visibles === 1 ? ' grupo coincide' : ' grupos coinciden') +
-                    ' con la búsqueda entre los mensajes recientes.';
+                    ' con la búsqueda entre los eventos y mensajes recientes.';
         }
     }
 
@@ -62,19 +62,22 @@
         });
     }
 
-    // Los botones solo desplazan mensajes de su propio grupo.
+    // Los botones desplazan eventos o mensajes solo dentro de su grupo.
     zonaGrupos.addEventListener('click', (evento) => {
-        const boton = evento.target.closest('[data-mover-grupo]');
+        const boton = evento.target.closest('[data-mover-grupo], [data-mover-eventos]');
         if (!boton || !zonaGrupos.contains(boton)) {
             return;
         }
 
-        const carrusel = boton.closest('[data-grupo-id]')?.querySelector('[data-carrusel-mensajes]');
+        const esEventos = boton.hasAttribute('data-mover-eventos');
+        const carrusel = boton.closest('[data-grupo-id]')?.querySelector(
+            esEventos ? '[data-carrusel-eventos]' : '[data-carrusel-mensajes]',
+        );
         if (!carrusel) {
             return;
         }
 
-        const direccion = boton.dataset.moverGrupo === 'arriba' ? -1 : 1;
+        const direccion = (esEventos ? boton.dataset.moverEventos : boton.dataset.moverGrupo) === 'arriba' ? -1 : 1;
         const movimiento = Math.max(120, Math.round(carrusel.clientHeight * 0.75));
         const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -169,6 +172,8 @@
                 tarjetaActual = tarjetaRecibida.cloneNode(true);
                 cambio = true;
             } else if (tarjetaActual.outerHTML !== tarjetaRecibida.outerHTML) {
+                const anteriorEventos = tarjetaActual.querySelector('[data-carrusel-eventos]');
+                const desplazamientoEventos = anteriorEventos?.scrollTop ?? 0;
                 const anterior = tarjetaActual.querySelector('[data-carrusel-mensajes]');
                 const posicionesAnteriores = new Map(
                     Array.from(anterior?.querySelectorAll('[data-mensaje-id]') ?? [])
@@ -190,14 +195,22 @@
                 const foco = tarjetaActual.contains(document.activeElement) ? document.activeElement : null;
                 const botonActivo = foco?.getAttribute('data-mover-grupo');
                 const focoCarrusel = foco === anterior;
+                const focoEventos = foco === anteriorEventos;
+                const botonEventosActivo = foco?.getAttribute('data-mover-eventos');
                 const focoEnlace = foco?.closest('a[href]')?.getAttribute('href');
 
                 const reemplazo = tarjetaRecibida.cloneNode(true);
                 tarjetaActual.replaceWith(reemplazo);
                 tarjetaActual = reemplazo;
                 const nuevoCarrusel = reemplazo.querySelector('[data-carrusel-mensajes]');
+                const nuevoEventos = reemplazo.querySelector('[data-carrusel-eventos]');
 
                 restaurarPosicionCarrusel(anterior, nuevoCarrusel, desplazamiento, ancla);
+                // Conservar la lectura de eventos incluso si llegan mensajes
+                // nuevos y se sustituye la tarjeta completa del grupo.
+                if (nuevoEventos) {
+                    nuevoEventos.scrollTop = desplazamientoEventos;
+                }
 
                 // FLIP: el mensaje recién llegado desciende suavemente y los
                 // existentes se desplazan. No mover el carrusel si alguien lee el historial.
@@ -233,7 +246,12 @@
                     });
                 }
 
-                if (focoCarrusel) {
+                if (focoEventos) {
+                    nuevoEventos?.focus({ preventScroll: true });
+                } else if (botonEventosActivo) {
+                    reemplazo.querySelector('[data-mover-eventos="' + botonEventosActivo + '"]')
+                        ?.focus({ preventScroll: true });
+                } else if (focoCarrusel) {
                     nuevoCarrusel?.focus({ preventScroll: true });
                 } else if (botonActivo) {
                     reemplazo.querySelector('[data-mover-grupo="' + botonActivo + '"]')
