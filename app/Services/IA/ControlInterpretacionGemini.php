@@ -96,9 +96,12 @@ final class ControlInterpretacionGemini
                 $chat = DB::table('mensajero_chats_monitoreados')
                     ->where('id', $grupoId)->where('tipo_chat', 'grupo')
                     ->lockForUpdate()->first(['id', 'es_activo', 'es_monitoreado', 'es_visible_tablero']);
-                if ($chat === null || ! (bool) $chat->es_activo
-                    || ! (bool) $chat->es_monitoreado || ! (bool) $chat->es_visible_tablero) {
-                    throw new DomainException('El grupo debe estar activo, monitoreado y visible.');
+                if ($chat === null) {
+                    throw new DomainException('El grupo no está registrado.');
+                }
+                if ($habilitar && (! (bool) $chat->es_activo
+                    || ! (bool) $chat->es_monitoreado || ! (bool) $chat->es_visible_tablero)) {
+                    throw new DomainException('El grupo debe estar activo, monitoreado y visible para habilitar Gemini.');
                 }
             }
 
