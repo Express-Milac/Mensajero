@@ -85,7 +85,7 @@ final class AcontecimientosOperativosSqlServerTest extends TestCase
                 ->assertOk()
                 ->assertSee('Operación interpretada')
                 ->assertSee('Entrega de unidad ficticia')
-                ->assertSee('Posible adjunto')
+                ->assertSee('Archivos relacionados')
                 ->assertSee('Original #'.$foto->id);
 
             // Un segundo acontecimiento cercano del mismo emisor convierte
