@@ -32,7 +32,7 @@ final class EstadoGemini extends Command
 
         $ia = (array) config('mensajero.ia', []);
         $autorizado = in_array($grupoId, $ia['grupos_autorizados'] ?? [], true);
-        $inicio = $politica->fechaInicio();
+        $inicio = $politica->fechaInicioGrupo($grupoId);
         $configurada = $politica->configuracionCompleta();
         $automatica = $configurada && ($ia['ejecucion_automatica'] ?? false) === true;
         $normaliza = config('mensajero.normalizacion.habilitada') === true;
