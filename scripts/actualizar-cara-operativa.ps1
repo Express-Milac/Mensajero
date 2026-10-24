@@ -23,6 +23,7 @@ $rutas = @(
     'scripts/autorizar-lote-real-gemini.ps1',
     'app/Services/IA/PoliticaEnvioGemini.php',
     'docs/conciliacion-gemini.md',
+    'docs/piloto-mensajes-reales.md',
     'routes/console.php',
     'tests/Funcional/ConciliacionGeminiTest.php',
     'docs/autorizar-gemini-grupos-reales.md',
