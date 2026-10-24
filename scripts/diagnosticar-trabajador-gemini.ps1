@@ -7,6 +7,9 @@ $raiz = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $archivos = @(
     (Join-Path $raiz '.env'),
     (Join-Path $raiz 'app\Services\IA\PoliticaEnvioGemini.php'),
+    (Join-Path $raiz 'app\Services\IA\ControlInterpretacionGemini.php'),
+    (Join-Path $raiz 'app\Services\IA\ProcesarAnalisisGemini.php'),
+    (Join-Path $raiz 'app\Services\Normalizacion\NormalizarEventoWhatsapp.php'),
     (Join-Path $raiz 'app\Jobs\AnalizarMensajeGeminiTrabajo.php')
 )
 foreach ($ruta in $archivos) {
