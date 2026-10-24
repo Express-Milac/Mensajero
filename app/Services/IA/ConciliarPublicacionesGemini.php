@@ -100,13 +100,31 @@ final class ConciliarPublicacionesGemini
 
     public function publicar(int $mensajeId, int $grupoId): string
     {
-        if (! $this->habilitada() || ! $this->disponible() || ! $this->grupoPermitido($grupoId)) {
+        return $this->publicarInterno($mensajeId, $grupoId, 'conciliacion');
+    }
+
+    public function publicarNuevo(int $mensajeId, int $grupoId): string
+    {
+        return $this->publicarInterno($mensajeId, $grupoId, 'normalizacion');
+    }
+
+    public function publicarManual(int $mensajeId, int $grupoId): string
+    {
+        return $this->publicarInterno($mensajeId, $grupoId, 'manual');
+    }
+
+    private function publicarInterno(int $mensajeId, int $grupoId, string $origen): string
+    {
+        if (($origen === 'conciliacion' && ! $this->habilitada())
+            || ! $this->politica->configuracionCompleta()
+            || ! $this->disponible()
+            || ! $this->grupoPermitido($grupoId)) {
             return 'deshabilitado';
         }
 
         // La reserva única y el límite diario se calculan bajo bloqueo del
         // grupo en SQL Server. Redis/Google NUNCA se llaman dentro de la transacción.
-        $resultado = DB::transaction(function () use ($mensajeId, $grupoId): string {
+        $resultado = DB::transaction(function () use ($mensajeId, $grupoId, $origen): string {
             $grupo = DB::table('mensajero_chats_monitoreados')
                 ->where('id', $grupoId)->where('tipo_chat', 'grupo')
                 ->where('es_activo', true)->where('es_monitoreado', true)
@@ -125,16 +143,18 @@ final class ConciliarPublicacionesGemini
                 return 'no_elegible';
             }
 
-            $inicio = $this->corteConciliacion();
-            if ($inicio === null || $mensaje->recibido_en->getTimestamp() < $inicio->getTimestamp()) {
-                return 'fuera_del_corte';
-            }
+            if ($origen === 'conciliacion') {
+                $inicio = $this->corteConciliacion();
+                if ($inicio === null || $mensaje->recibido_en->getTimestamp() < $inicio->getTimestamp()) {
+                    return 'fuera_del_corte';
+                }
 
-            $edad = now('UTC')->getTimestamp() - $mensaje->recibido_en->getTimestamp();
-            $horas = max(1, min(24, (int) config('mensajero.ia.conciliacion_horas_maximas', 4)));
-            $antiguedad = max(120, min(3600, (int) config('mensajero.ia.conciliacion_antiguedad_segundos', 180)));
-            if ($edad < $antiguedad || $edad > $horas * 3600) {
-                return 'fuera_de_ventana';
+                $edad = now('UTC')->getTimestamp() - $mensaje->recibido_en->getTimestamp();
+                $horas = max(1, min(24, (int) config('mensajero.ia.conciliacion_horas_maximas', 4)));
+                $antiguedad = max(120, min(3600, (int) config('mensajero.ia.conciliacion_antiguedad_segundos', 180)));
+                if ($edad < $antiguedad || $edad > $horas * 3600) {
+                    return 'fuera_de_ventana';
+                }
             }
 
             $contenido = $mensaje->tipo_mensaje === 'texto'
@@ -165,7 +185,7 @@ final class ConciliarPublicacionesGemini
                 'mensaje_whatsapp_id' => $mensajeId,
                 'chat_monitoreado_id' => $grupoId,
                 'estado' => 'reservado',
-                'origen' => 'conciliacion',
+                'origen' => $origen,
                 'reservado_en' => now('UTC')->format('Y-m-d H:i:s.u'),
             ]);
 
