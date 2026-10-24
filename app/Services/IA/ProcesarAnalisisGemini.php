@@ -128,7 +128,7 @@ final class ProcesarAnalisisGemini
             DB::table('mensajero_analisis_operativos_ia')->insert([
                 'mensaje_whatsapp_id' => $mensajeId,
                 'chat_monitoreado_id' => (int) $grupo->id,
-                'estado' => $validado['es_evento'] ? 'pendiente_revision' : 'sin_evento',
+                'estado' => $validado['es_evento'] ? 'identificado_ia' : 'sin_evento',
                 'categoria' => $validado['categoria'],
                 'titulo' => $validado['titulo'],
                 'resumen' => $validado['resumen'],
@@ -140,13 +140,13 @@ final class ProcesarAnalisisGemini
                 'creado_en' => now('UTC')->format('Y-m-d H:i:s.u'),
             ]);
 
-            return $validado['es_evento'] ? 'pendiente_revision' : 'sin_evento';
+            return $validado['es_evento'] ? 'identificado_ia' : 'sin_evento';
         }, 3);
 
         // La proyección operativa NO forma parte de la llamada a Google:
         // si falla, se recupera desde el análisis persistido, sin gastar
         // otra solicitud Gemini ni perder la evidencia cruda.
-        if ($estado === 'pendiente_revision') {
+        if ($estado === 'identificado_ia') {
             try {
                 $analisisId = DB::table('mensajero_analisis_operativos_ia')
                     ->where('mensaje_whatsapp_id', $mensajeId)->value('id');
