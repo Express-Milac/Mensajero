@@ -112,10 +112,12 @@ final class ProcesarAnalisisGemini
                 ->lockForUpdate()
                 ->first();
 
-            // Revalidar el permiso después de la llamada externa.
+            // La llamada a Google YA ocurrió. Este rechazo no equivale a
+            // un mensaje no elegible antes del envío y jamás se debe reintentar
+            // automáticamente: puede haber generado consumo de API.
             if ($grupo === null || $mensaje->recibido_en === null ||
                 ! $this->politica->autoriza((int) $grupo->id, $mensaje->recibido_en)) {
-                return 'no_elegible';
+                return 'rechazado_despues_google';
             }
 
             if (DB::table('mensajero_analisis_operativos_ia')
