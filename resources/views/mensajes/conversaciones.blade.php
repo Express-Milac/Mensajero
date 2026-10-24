@@ -3,7 +3,7 @@
         <div>
             <span class="centro-hero-marca">MENSAJERO MILAC / CONSULTA</span>
             <h1>Explorar conversaciones</h1>
-            <p>Consulta mensajes y participantes recientes de cada grupo autorizado. Entra a una conversación para ver el historial completo y sus evidencias.</p>
+            <p>Consulta los eventos interpretados por Gemini a la izquierda y los mensajes originales a la derecha. Entra a cada conversación para ver su historial.</p>
         </div>
         <div class="centro-cabecera-acceso">
             <span id="estado-actualizacion" role="status" aria-live="polite">Comprobando mensajes...</span>
@@ -13,14 +13,14 @@
 
     <section class="centro-conversaciones" aria-label="Conversaciones consultables">
         <div class="titulo-panorama centro-cabecera-grupos">
-            <div><h2>Conversaciones recientes</h2><p class="muted">Cada tarjeta muestra los últimos ocho mensajes con su propio desplazamiento. No incluye conversaciones fuera del monitoreo autorizado.</p></div>
+            <div><h2>Conversaciones recientes</h2><p class="muted">Cada grupo presenta sus eventos interpretados y mensajes originales en columnas independientes. No se incluyen grupos fuera del monitoreo autorizado.</p></div>
             <a class="enlace-panorama" href="{{ route('grupos.indice') }}">Ver catálogo de grupos →</a>
         </div>
         <form class="filtros-panorama centro-filtros" method="get" action="{{ route('mensajes.indice') }}" aria-label="Filtros de conversaciones">
             <div class="centro-busqueda">
                 <label for="buscar-conversaciones">Buscar en mensajes recientes</label>
                 <input id="buscar-conversaciones" type="search" data-buscar-conversaciones placeholder="Nombre del grupo o texto reciente..." autocomplete="off">
-                <small>La búsqueda instantánea se limita a los mensajes cargados.</small>
+                <small>La búsqueda instantánea se limita a los eventos y mensajes cargados.</small>
             </div>
             <div class="filtro-grupo">
                 <label for="actividad">Actividad</label>
@@ -39,10 +39,6 @@
                 </select>
             </div>
             <button class="filtro-aplicar" type="submit">Aplicar</button>
-            <div class="centro-modos" role="group" aria-label="Disposición de grupos">
-                <button type="button" class="centro-modo activo" data-modo-tarjetas="cuadricula" aria-pressed="true" title="Cuadrícula">▦</button>
-                <button type="button" class="centro-modo" data-modo-tarjetas="lista" aria-pressed="false" title="Lista">☷</button>
-            </div>
             @if($actividad !== 'todos' || $orden !== 'recientes')
                 <a class="filtro-limpiar" href="{{ route('mensajes.indice') }}">Restablecer</a>
             @endif
