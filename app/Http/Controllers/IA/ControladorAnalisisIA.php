@@ -5,6 +5,7 @@ namespace App\Http\Controllers\IA;
 use App\Http\Controllers\Controller;
 use App\Models\MensajeWhatsapp;
 use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\IA\ControlInterpretacionGemini;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ final class ControladorAnalisisIA extends Controller
         // La configuracion no demuestra que el trabajador siga encendido.
         $actividadIA = [
             'configurada' => $politica->configuracionCompleta(),
-            'automatica' => config('mensajero.ia.ejecucion_automatica') === true,
+            'automatica' => app(ControlInterpretacionGemini::class)->estado(0)['habilitado'],
             'resultados' => 0,
             'sin_evento' => 0,
             'sin_resultado' => null,
