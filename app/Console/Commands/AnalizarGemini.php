@@ -52,7 +52,7 @@ final class AnalizarGemini extends Command
             return self::FAILURE;
         }
 
-        $inicio = $politica->fechaInicio();
+        $inicio = $politica->fechaInicioGrupo($grupoId);
         if ($inicio === null) {
             $this->error('Configura MENSAJERO_IA_FECHA_INICIO en formato ISO-8601 con zona horaria.');
             return self::FAILURE;
