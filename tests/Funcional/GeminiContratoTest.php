@@ -190,6 +190,16 @@ final class GeminiContratoTest extends TestCase
         (new ClienteGemini)->analizar([['id' => 74, 'texto' => 'Solo un mensaje ficticio.', 'tipo' => 'texto']]);
     }
 
+    public function test_comprobador_de_grupos_rechaza_ids_invalidos_sin_consultar_google(): void
+    {
+        Http::fake();
+        $this->artisan('mensajero:comprobar-grupos-ia', ['--grupos' => '10020,10020'])
+            ->assertExitCode(1);
+        $this->artisan('mensajero:comprobar-grupos-ia', ['--grupos' => 'codigo-no-numerico'])
+            ->assertExitCode(1);
+        Http::assertNothingSent();
+    }
+
     public function test_diagnostico_gemini_rechaza_parametros_invalidos_sin_acceder_a_google(): void
     {
         Http::fake();
