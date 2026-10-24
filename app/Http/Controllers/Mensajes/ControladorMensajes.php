@@ -10,6 +10,7 @@ use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Mensajes\AnalizarPanoramaContenido;
 use App\Services\Mensajes\IdentificarRemitente;
 use App\Services\Mensajes\NotificadorTiempoReal;
+use App\Services\Mensajes\PrepararEventosPanorama;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
@@ -95,6 +96,9 @@ final class ControladorMensajes extends Controller
             ->where('es_visible_tablero', true)
             ->get();
 
+        // Lectura local; no envía mensajes a Gemini ni modifica la base de datos.
+        $eventosPorGrupo = app(PrepararEventosPanorama::class)->ejecutar($grupos);
+
         $identificadores = $grupos->pluck('id')->all();
         $conteos = $identificadores === []
             ? collect()
@@ -110,7 +114,7 @@ final class ControladorMensajes extends Controller
                 ->groupBy('chat_monitoreado_id')
                 ->pluck('total', 'chat_monitoreado_id');
 
-        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos, $identificador): array {
+        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos, $identificador, $eventosPorGrupo): array {
             // Se limita la consulta de contenido a ocho mensajes más
             // recientes por grupo. Nunca se descargan todos los eventos.
             $recientes = EventoCrudoWhatsapp::query()
@@ -128,6 +132,7 @@ final class ControladorMensajes extends Controller
                 'grupo' => $grupo,
                 'hoy' => (int) ($conteos[$grupo->id] ?? 0),
                 'ultima' => $recientes->first()?->recibido_en,
+                'eventos' => $eventosPorGrupo[(int) $grupo->id] ?? [],
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $identificador->nombre($evento),
