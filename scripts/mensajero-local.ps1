@@ -222,8 +222,11 @@ function ValidarConfiguracion {
     if ($configuracion.normalizacion -ne $true) {
         throw 'MENSAJERO_NORMALIZACION_HABILITADA no esta activada en .env.'
     }
-    if ($configuracion.ia -ne $true -or $configuracion.automatica -ne $true) {
-        throw 'La politica Gemini o la ejecucion automatica no estan autorizadas en .env.'
+    if ($configuracion.ia -ne $true) {
+        throw 'La política Gemini no está autorizada.'
+    }
+    if ($configuracion.automatica -ne $true) {
+        Write-Host 'Gemini se ejecutara en modo manual; sin publicacion automatica.'
     }
     $gruposIA = @($configuracion.grupos)
     if ($gruposIA.Count -lt 1 -or $gruposIA.Count -gt 6) {
