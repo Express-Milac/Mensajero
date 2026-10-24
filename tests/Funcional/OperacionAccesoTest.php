@@ -14,10 +14,10 @@ final class OperacionAccesoTest extends TestCase
         ]);
 
         $this->get('/operacion')->assertForbidden();
-        $this->patch('/operacion/1/revision', ['decision' => 'validado'])->assertForbidden();
+        $this->patch('/operacion/1/revision', ['decision' => 'validado'])->assertNotFound();
     }
 
-    public function test_una_autorizacion_de_consulta_no_permite_validar_sin_permiso_independiente(): void
+    public function test_no_existe_un_procedimiento_de_aprobacion_humana(): void
     {
         config([
             'mensajero.autenticacion.modo' => 'deshabilitado',
@@ -27,10 +27,10 @@ final class OperacionAccesoTest extends TestCase
 
         $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
             ->patch('/operacion/1/revision', ['decision' => 'validado'])
-            ->assertForbidden();
+            ->assertNotFound();
     }
 
-    public function test_el_permiso_de_ensayo_local_no_funciona_en_red_remota(): void
+    public function test_el_acceso_remoto_permanece_cerrado_para_la_bitacora(): void
     {
         config([
             'mensajero.autenticacion.modo' => 'deshabilitado',
@@ -40,7 +40,7 @@ final class OperacionAccesoTest extends TestCase
 
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.42'])
             ->patch('/operacion/1/revision', ['decision' => 'validado'])
-            ->assertForbidden();
+            ->assertNotFound();
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.42'])
             ->get('/operacion')->assertForbidden();
     }
