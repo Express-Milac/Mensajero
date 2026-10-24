@@ -5,6 +5,7 @@ namespace App\Services\IA;
 use App\Models\ChatMonitoreado;
 use App\Models\MensajeWhatsapp;
 use App\Services\Operacion\RegistrarAcontecimientoOperativo;
+use App\Services\Mensajes\NotificadorTiempoReal;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ final class ProcesarAnalisisGemini
         private readonly ClienteGemini $cliente,
         private readonly ValidarResultadoGemini $validador,
         private readonly RegistrarAcontecimientoOperativo $registrar,
+        private readonly NotificadorTiempoReal $notificador,
     ) {}
 
     public function ejecutar(int $mensajeId): string
@@ -151,7 +153,16 @@ final class ProcesarAnalisisGemini
                 $analisisId = DB::table('mensajero_analisis_operativos_ia')
                     ->where('mensaje_whatsapp_id', $mensajeId)->value('id');
                 if ($analisisId !== null) {
-                    $this->registrar->desdeAnalisis((int) $analisisId);
+                    $idAcontecimiento = $this->registrar->desdeAnalisis((int) $analisisId);
+                    if ($idAcontecimiento !== null && $mensaje->evento_crudo_id !== null) {
+                        // Actualizar el panorama inmediatamente cuando la IA
+                        // publica un acontecimiento, sin esperar otro WhatsApp.
+                        // El aviso lleva solo identificadores, no contenido.
+                        $this->notificador->avisar(
+                            (int) $mensaje->chat_monitoreado_id,
+                            (int) $mensaje->evento_crudo_id,
+                        );
+                    }
                 }
             } catch (Throwable $error) {
                 Log::warning('Proyección operativa pendiente de recuperación.', [
