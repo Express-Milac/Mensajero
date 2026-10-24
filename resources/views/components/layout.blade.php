@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/interfaz-unificada.css') }}?v={{ filemtime(public_path('css/interfaz-unificada.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/panorama-eventos.css') }}?v={{ filemtime(public_path('css/panorama-eventos.css')) }}">
 </head>
 <body @class([
     'panorama-claro',
