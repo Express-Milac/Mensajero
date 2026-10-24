@@ -34,7 +34,7 @@ final class ProyectarOperacion extends Command
 
         $registros = DB::table('mensajero_analisis_operativos_ia as a')
             ->where('a.chat_monitoreado_id', $grupo)
-            ->where('a.estado', 'pendiente_revision')
+            ->whereIn('a.estado', ['identificado_ia', 'pendiente_revision'])
             ->whereNotExists(function ($consulta): void {
                 $consulta->selectRaw('1')->from('mensajero_acontecimientos_operativos as o')
                     ->whereColumn('o.analisis_ia_id', 'a.id');
