@@ -71,3 +71,31 @@ Se incorporó una auditoría de solo lectura para comprobar cada ID sin mostrar 
 La auditoría informa: permiso de grupo, corte efectivo, captura normalizada, disponibilidad de texto/leyenda, pertenencia del mensaje objetivo al contexto y estado de reserva en SQL Server. **No reconstruye retroactivamente la configuración exacta del trabajador durante una ejecución ya terminada.** Por eso también se agregó almacenamiento del motivo simple (no_elegible, sin_texto, etc.) en el campo error_tipo cuando se omiten futuros trabajos.
 
 No eliminar, reutilizar ni forzar las reservas omitidas hasta conocer el diagnóstico. Aun si el código actual permite procesar el mensaje, el trabajador Redis pudo haber leído una configuración antigua durante su ejecución. La investigación debe verificar la reinicialización real del proceso, no solamente la existencia de un PID supervisor.
+
+## Diagnóstico confirmado del primer lote real
+
+El 24 de octubre los mensajes 1590, 1603 y 1607 (fotografías con leyenda) se comprobaron como elegibles para el grupo 10197 y tenían contexto válido. No existe interpretación IA guardada y quedaron con estado omitido.
+
+El proceso PHP trabajador de Gemini se había iniciado a las 10:39:46, ANTES de la autorización histórica de Patios a las 11:10. Es muy probable que utilizara la política anterior. La configuración exacta del proceso en ese instante no se puede reconstruir.
+
+Para recargar únicamente el trabajador Gemini, sin tocar WhatsApp, antes verificar en seco:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\reiniciar-solo-gemini.ps1
+
+Y reiniciar exclusivamente ese PHP solo si la cola Redis está vacía y se verifica el supervisor correcto:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\reiniciar-solo-gemini.ps1 -Aplicar
+
+Después comprobar la nueva hora y PID:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\diagnosticar-trabajador-gemini.ps1
+
+Realizar la siguiente prueba con UN mensaje REAL distinto a esos tres. Previsualizar:
+
+    php artisan mensajero:analizar-gemini --grupo=10197 --limite=1 --lote-real
+
+Solo tras comprobar worker y autorización, aplicar con confirmación:
+
+    php artisan mensajero:analizar-gemini --grupo=10197 --limite=1 --lote-real --aplicar
+
+No borrar, editar ni reencolar las reservas omitidas 1590, 1603 y 1607: en el código anterior el estado omitido podía producirse incluso si el permiso cambiaba después de contactar a Google. La versión nueva reserva para revisión cualquier resultado posterior a una llamada a Google o estado inesperado. Esa distinción no es retroactiva.
