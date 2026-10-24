@@ -1,5 +1,8 @@
 # Cara operativa de Mensajero MILAC — Primera versión
 
+> **ACTUALIZACIÓN VIGENTE (24/oct/2026):** se eliminó la revisión humana obligatoria: la bitácora se publica con estado `generado_ia` y sin botones Validar/Descartar. Este documento conserva abajo la descripción de la implementación anterior por trazabilidad, pero sus apartados de revisión/permiso de validación han quedado OBSOLETOS. Véase [Bitácora automática](bitacora-automatica.md).
+
+
 Actualización: 23/10/2026. Código incorporado a la rama de desarrollo; pendiente de ejecutar integración real en SQL Server _test y prueba con WhatsApp del piloto.
 
 ## Contrato de las dos caras
