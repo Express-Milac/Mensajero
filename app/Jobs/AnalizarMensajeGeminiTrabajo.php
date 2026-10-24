@@ -37,10 +37,7 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
 
         // También es seguro si el trabajo se ejecutó antes de confirmar en
         // SQL que la publicación llegó a Redis.
-        $nuevo = $estado === 'rechazado_despues_google'
-            ? 'requiere_revision'
-            : (in_array($estado, ['pendiente_revision', 'sin_evento', 'duplicado'], true)
-                ? 'finalizado' : 'omitido');
+        $nuevo = self::clasificarEstado($estado);
 
         DB::table('mensajero_control_publicaciones_gemini')
             ->where('mensaje_whatsapp_id', $this->mensajeId)
@@ -51,6 +48,19 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
                 'error_tipo' => in_array($nuevo, ['omitido', 'requiere_revision'], true)
                     ? $estado : null,
             ]);
+    }
+
+    /**
+     * Solo descartes explícitamente ANTERIORES al servicio externo son omitidos.
+     * Cualquier estado desconocido o posterior a Google exige revisión.
+     */
+    public static function clasificarEstado(string $resultado): string
+    {
+        return match ($resultado) {
+            'pendiente_revision', 'sin_evento', 'duplicado' => 'finalizado',
+            'no_elegible', 'sin_texto' => 'omitido',
+            default => 'requiere_revision',
+        };
     }
 
     public function failed(?Throwable $error): void
