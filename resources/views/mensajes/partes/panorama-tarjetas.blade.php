@@ -48,7 +48,7 @@
                                     <div class="centro-avatar centro-avatar-ia" aria-hidden="true">✦</div>
                                     <div class="centro-mensaje-cuerpo">
                                         <div class="fragmento-datos">
-                                            <span class="fragmento-remitente">{{ ucfirst($evento['categoria']) }} · Evento #{{ $evento['id'] }}</span>
+                                            <span class="fragmento-remitente">{{ ['logistica' => 'Logística', 'incidencia' => 'Incidencia', 'acuerdo' => 'Acuerdo', 'solicitud' => 'Solicitud', 'otro' => 'Otro'][$evento['categoria']] ?? ucfirst($evento['categoria']) }} · Evento #{{ $evento['id'] }}</span>
                                             <time datetime="{{ $evento['fecha']->toIso8601String() }}">{{ $evento['fecha']->timezone(config('app.timezone'))->format('d/m H:i') }}</time>
                                         </div>
                                         <strong class="centro-evento-titulo">{{ $evento['titulo'] }}</strong>
