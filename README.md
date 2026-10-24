@@ -1,5 +1,8 @@
 # Mensajero MILAC
 
+> **Actualización de diseño (24/oct/2026):** Mensajero genera y muestra acontecimientos de Gemini sin pedir validación humana. Los estados nuevos son `identificado_ia` (análisis) y `generado_ia` (bitácora). Las referencias antiguas a `pendiente_revision` y aprobación se conservan como historial del piloto y no describen el funcionamiento vigente. Véase [Bitácora automática](docs/bitacora-automatica.md).
+
+
 Sistema propio de Express MILAC para **capturar mensajes de grupos WhatsApp expresamente seleccionados**, conservar evidencia y proponer eventos operativos mediante Google Gemini. Laravel 13 / PHP 8.4, SQL Server corporativo (tablas mensajero_*), Redis y recolector Node/Baileys.
 
 ## Estado confirmado del piloto y avance al 23/10/2026
