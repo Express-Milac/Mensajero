@@ -100,7 +100,7 @@ try {
 
     $ajustes = [ordered]@{
         'MENSAJERO_IA_GRUPOS_AUTORIZADOS' = ($gruposNuevos -join ',')
-        'MENSAJERO_IA_FECHAS_INICIO_GRUPOS' = $jsonCortes
+        'MENSAJERO_IA_FECHAS_INICIO_GRUPOS' = ("'" + $jsonCortes + "'")
         'MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO' = 'false'
         'MENSAJERO_IA_EJECUCION_AUTOMATICA' = 'false'
         'MENSAJERO_IA_CONCILIACION_AUTOMATICA' = 'false'
