@@ -48,6 +48,46 @@ final class GeminiContratoTest extends TestCase
         ])->assertExitCode(1);
     }
 
+    public function test_corte_estricto_por_grupo_real_sin_retroceder_consentimiento_global(): void
+    {
+        config()->set('mensajero.ia', [
+            'habilitada' => true,
+            'envio_autorizado' => true,
+            'servicio_pagado_confirmado' => true,
+            'clave_api' => 'clave-ficticia-no-funcional',
+            'grupos_autorizados' => [10020, 10197],
+            'fecha_inicio' => '2026-10-22T14:19:08-06:00',
+            'fechas_inicio_grupos' => [
+                '10197' => '2026-10-24T09:15:40-06:00',
+            ],
+        ]);
+
+        $politica = new PoliticaEnvioGemini;
+        $this->assertFalse($politica->autoriza(10197, new DateTimeImmutable('2026-10-24T09:15:39-06:00')));
+        $this->assertTrue($politica->autoriza(10197, new DateTimeImmutable('2026-10-24T09:15:40-06:00')));
+        $this->assertTrue($politica->autoriza(10020, new DateTimeImmutable('2026-10-23T10:00:00-06:00')));
+
+        config()->set('mensajero.ia.fechas_inicio_grupos.10197', '2026-10-21T00:00:00-06:00');
+        $this->assertFalse($politica->autoriza(10197, new DateTimeImmutable('2026-10-21T10:00:00-06:00')));
+        $this->assertTrue($politica->autoriza(10197, new DateTimeImmutable('2026-10-23T10:00:00-06:00')));
+
+        config()->set('mensajero.ia.fechas_inicio_grupos.10197', 'fecha_invalida');
+        $this->assertFalse($politica->autoriza(10197, new DateTimeImmutable('2026-10-24T10:00:00-06:00')));
+    }
+
+    public function test_lote_real_requiere_autorizacion_temporal_individual_y_no_publica_por_defecto(): void
+    {
+        Http::fake();
+        config()->set('mensajero.ia.fechas_inicio_grupos', []);
+        $this->artisan('mensajero:analizar-gemini', [
+            '--grupo' => '10197',
+            '--lote-real' => true,
+            '--aplicar' => true,
+        ])->assertExitCode(1);
+
+        Http::assertNothingSent();
+    }
+
     public function test_gemini_permanece_cerrado_sin_todas_las_autorizaciones(): void
     {
         config()->set('mensajero.ia', [
