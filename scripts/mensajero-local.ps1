@@ -229,7 +229,9 @@ function ValidarConfiguracion {
     if ($gruposIA.Count -lt 1 -or $gruposIA.Count -gt 6) {
         throw 'Gemini necesita entre 1 y 6 grupos expresamente autorizados.'
     }
-    if (@($gruposIA | Where-Object { -not ([string] $_ -match '^[1-9][0-9]*
+    if (@($gruposIA | Where-Object { -not ([string] $_ -match '^[1-9][0-9]+$') }).Count -ne 0) {
+        throw 'La lista Gemini tiene identificadores invalidos.'
+    }
     if (@($gruposIA | Sort-Object -Unique).Count -ne $gruposIA.Count) {
         throw 'La lista Gemini contiene grupos duplicados.'
     }
