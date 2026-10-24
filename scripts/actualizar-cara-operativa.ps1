@@ -20,6 +20,8 @@ $rutas = @(
     'app/Jobs/AnalizarMensajeGeminiTrabajo.php',
     'app/Services/IA/ConciliarPublicacionesGemini.php',
     'scripts/activar-conciliacion-gemini.ps1',
+    'scripts/autorizar-lote-real-gemini.ps1',
+    'app/Services/IA/PoliticaEnvioGemini.php',
     'docs/conciliacion-gemini.md',
     'routes/console.php',
     'tests/Funcional/ConciliacionGeminiTest.php',
@@ -103,6 +105,7 @@ try {
         'app/Console/Commands/ConciliarGemini.php',
         'app/Jobs/AnalizarMensajeGeminiTrabajo.php',
         'app/Services/IA/ConciliarPublicacionesGemini.php',
+        'app/Services/IA/PoliticaEnvioGemini.php',
         'routes/console.php',
         'tests/Funcional/ConciliacionGeminiTest.php',
         'app/Services/IA/ConstruirDialogoGemini.php',
@@ -122,6 +125,7 @@ try {
     $archivosPowerShell = @(
         'scripts/actualizar-cara-operativa.ps1',
         'scripts/activar-conciliacion-gemini.ps1',
+        'scripts/autorizar-lote-real-gemini.ps1',
         'scripts/autorizar-grupos-reales-gemini.ps1',
         'scripts/mensajero-local.ps1'
     )
