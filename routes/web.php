@@ -3,6 +3,7 @@
 use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
 use App\Http\Controllers\IA\ControladorAnalisisIA;
+use App\Http\Controllers\IA\ControladorConfiguracionGemini;
 use App\Http\Controllers\Operacion\ControladorOperacion;
 use App\Http\Controllers\Mensajes\ControladorArchivosWhatsapp;
 use App\Http\Controllers\Mensajes\ControladorMensajes;
@@ -46,6 +47,13 @@ Route::middleware('mensajero.acceso')->group(function () {
             ->name('operacion.indice');
         Route::get('/mensajes/ia', [ControladorAnalisisIA::class, 'indice'])
             ->name('mensajes.ia.indice');
+        Route::get('/configuracion/gemini', [ControladorConfiguracionGemini::class, 'indice'])
+            ->middleware('mensajero.gestion_ia')
+            ->name('gemini.configuracion');
+        Route::patch('/configuracion/gemini/{grupo}', [ControladorConfiguracionGemini::class, 'cambiar'])
+            ->whereNumber('grupo')
+            ->middleware(['mensajero.gestion_ia', 'throttle:20,1'])
+            ->name('gemini.configuracion.cambiar');
         Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
             ->name('remitentes.indice');
         Route::get('/mensajes/remitentes/eventos/{evento}', [ControladorRemitentes::class, 'editar'])
