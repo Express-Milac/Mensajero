@@ -59,3 +59,15 @@ La nueva variable MENSAJERO_IA_FECHAS_INICIO_GRUPOS almacena un JSON por grupo; 
 - Los envíos nuevos y manuales comparten el cupo SQL de diez publicaciones por grupo y día UTC por defecto.
 - Una publicación con resultado incierto exige revisión y no se reintenta de forma automática.
 - No ejecutar pruebas de integración SQL en la base viva mensajero_test. No publicar contenido de grupo, teléfonos ni claves en GitHub.
+
+## Diagnóstico del primer lote real (24/10/2026)
+
+En la primera ejecución sobre Logística de Patios, los IDs internos 1590, 1603 y 1607 se publicaron correctamente en Redis, pero los tres finalizaron como omitido, sin análisis IA guardado y con Redis vacío. **Esto no demuestra una respuesta fallida de Google**; el código solo marca omitido cuando el procesador no encuentra elegibilidad o contexto utilizable.
+
+Se incorporó una auditoría de solo lectura para comprobar cada ID sin mostrar su texto ni repetir una solicitud:
+
+    php artisan mensajero:diagnosticar-lote-gemini --grupo=10197 --ids=1590,1603,1607
+
+La auditoría informa: permiso de grupo, corte efectivo, captura normalizada, disponibilidad de texto/leyenda, pertenencia del mensaje objetivo al contexto y estado de reserva en SQL Server. **No reconstruye retroactivamente la configuración exacta del trabajador durante una ejecución ya terminada.** Por eso también se agregó almacenamiento del motivo simple (no_elegible, sin_texto, etc.) en el campo error_tipo cuando se omiten futuros trabajos.
+
+No eliminar, reutilizar ni forzar las reservas omitidas hasta conocer el diagnóstico. Aun si el código actual permite procesar el mensaje, el trabajador Redis pudo haber leído una configuración antigua durante su ejecución. La investigación debe verificar la reinicialización real del proceso, no solamente la existencia de un PID supervisor.
