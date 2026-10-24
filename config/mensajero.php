@@ -23,6 +23,11 @@ return [
             static fn (int $id): bool => $id > 0
         ))),
         'fecha_inicio' => env('MENSAJERO_IA_FECHA_INICIO', ''),
+        // Cortes adicionales POR GRUPO, en JSON. Nunca permiten retroceder el corte global.
+        'fechas_inicio_grupos' => (static function (): array {
+            $valor = json_decode((string) env('MENSAJERO_IA_FECHAS_INICIO_GRUPOS', '{}'), true);
+            return is_array($valor) && ! array_is_list($valor) ? $valor : [];
+        })(),
         'modelo' => env('MODELO_GEMINI', 'gemini-3.5-flash-lite'),
         'clave_api' => env('CLAVE_API_GEMINI', ''),
         'cola' => env('MENSAJERO_COLA_IA', 'mensajero_ia'),
