@@ -22,6 +22,7 @@ final class GeminiContratoTest extends TestCase
         $this->assertSame('omitido', AnalizarMensajeGeminiTrabajo::clasificarEstado('sin_texto'));
         $this->assertSame('finalizado', AnalizarMensajeGeminiTrabajo::clasificarEstado('sin_evento'));
         $this->assertSame('finalizado', AnalizarMensajeGeminiTrabajo::clasificarEstado('pendiente_revision'));
+        $this->assertSame('finalizado', AnalizarMensajeGeminiTrabajo::clasificarEstado('identificado_ia'));
         $this->assertSame('requiere_revision', AnalizarMensajeGeminiTrabajo::clasificarEstado('rechazado_despues_google'));
         $this->assertSame('requiere_revision', AnalizarMensajeGeminiTrabajo::clasificarEstado('estado_desconocido'));
     }
