@@ -11,6 +11,10 @@ El modo contextual añade alias anónimos por emisor y responde_a para citas rea
 ## Activación real, voluntaria y no retroactiva
 
 1. Actualizar código y aplicar únicamente las dos migraciones de cara operativa en SQL Server autorizado, tras comprobar destino.
+
+   Para ver los IDs sin abrir ni exportar mensajes:
+
+    php artisan mensajero:comprobar-grupos-ia --listar
 2. Comprobar qué grupos tienen captura y tablero habilitados. Requiere sus IDs internos, no el nombre del grupo:
 
     php artisan mensajero:comprobar-grupos-ia --grupos=10020
