@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\IA\ControlInterpretacionGemini;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -34,12 +35,17 @@ final class EstadoGemini extends Command
         $autorizado = in_array($grupoId, $ia['grupos_autorizados'] ?? [], true);
         $inicio = $politica->fechaInicioGrupo($grupoId);
         $configurada = $politica->configuracionCompleta();
-        $automatica = $configurada && ($ia['ejecucion_automatica'] ?? false) === true;
+        $control = app(ControlInterpretacionGemini::class);
+        $globalEncendido = $control->estado(0)['habilitado'];
+        $grupoEncendido = $control->estado($grupoId)['habilitado'];
+        $automatica = $configurada && $globalEncendido && $grupoEncendido;
         $normaliza = config('mensajero.normalizacion.habilitada') === true;
 
         $this->info('ESTADO GEMINI | Grupo interno '.$grupoId);
         $this->line('Politica IA completa: '.($configurada ? 'SI' : 'NO'));
-        $this->line('Ejecucion automatica autorizada: '.($automatica ? 'SI' : 'NO'));
+        $this->line('Control general Gemini: '.($globalEncendido ? 'ENCENDIDO' : 'APAGADO'));
+        $this->line('Control de este grupo: '.($grupoEncendido ? 'ENCENDIDO' : 'APAGADO'));
+        $this->line('Interpretacion automatica efectiva: '.($automatica ? 'SI' : 'NO'));
         $this->line('Normalizacion habilitada (configuracion nueva): '.($normaliza ? 'SI' : 'NO'));
         $this->line('Grupo incluido en IA: '.($autorizado ? 'SI' : 'NO'));
         $this->line('Fecha de corte: '.($inicio?->format(DATE_ATOM) ?? 'NO CONFIGURADA'));
