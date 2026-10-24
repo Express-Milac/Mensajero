@@ -26,6 +26,13 @@ return [
         'modelo' => env('MODELO_GEMINI', 'gemini-3.5-flash-lite'),
         'clave_api' => env('CLAVE_API_GEMINI', ''),
         'cola' => env('MENSAJERO_COLA_IA', 'mensajero_ia'),
+        // Recuperación controlada de publicaciones omitidas, DESACTIVADA por defecto.
+        // Requiere nueva autorización y corte posterior a su aprobación.
+        'conciliacion_automatica' => filter_var(env('MENSAJERO_IA_CONCILIACION_AUTOMATICA', false), FILTER_VALIDATE_BOOLEAN),
+        'conciliacion_fecha_inicio' => env('MENSAJERO_IA_CONCILIACION_FECHA_INICIO', ''),
+        'conciliacion_maximo_dia_grupo' => (int) env('MENSAJERO_IA_CONCILIACION_MAXIMO_DIA_GRUPO', 10),
+        'conciliacion_antiguedad_segundos' => (int) env('MENSAJERO_IA_CONCILIACION_ANTIGUEDAD_SEGUNDOS', 180),
+        'conciliacion_horas_maximas' => (int) env('MENSAJERO_IA_CONCILIACION_HORAS_MAXIMAS', 4),
     ],
 
     'meta_whatsapp' => [
