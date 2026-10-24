@@ -22,9 +22,9 @@
 
         <form class="filtros-panorama centro-filtros" method="get" action="{{ route('mensajes.indice') }}" aria-label="Filtros del panorama">
             <div class="centro-busqueda">
-                <label for="buscar-conversaciones">Buscar en grupos y mensajes recientes</label>
-                <input type="search" id="buscar-conversaciones" placeholder="Buscar grupos o mensajes recientes..." autocomplete="off" data-buscar-conversaciones>
-                <small>Busca entre las tarjetas y sus últimos ocho mensajes.</small>
+                <label for="buscar-conversaciones">Buscar en grupos, eventos y mensajes</label>
+                <input type="search" id="buscar-conversaciones" placeholder="Buscar grupos, eventos o mensajes..." autocomplete="off" data-buscar-conversaciones>
+                <small>Busca entre eventos y los últimos ocho mensajes de cada grupo.</small>
             </div>
             <div class="filtro-grupo">
                 <label for="actividad">Actividad</label>
@@ -43,10 +43,6 @@
                 </select>
             </div>
             <button type="submit" class="filtro-aplicar">Aplicar</button>
-            <div class="centro-modos" role="group" aria-label="Disposición de tarjetas">
-                <button type="button" class="centro-modo" data-modo-tarjetas="cuadricula" aria-pressed="false" title="Vista de cuadrícula">▦</button>
-                <button type="button" class="centro-modo activo" data-modo-tarjetas="lista" aria-pressed="true" title="Vista de lista">☷</button>
-            </div>
             @if($actividad !== 'todos' || $orden !== 'recientes')
                 <a class="filtro-limpiar" href="{{ route('mensajes.indice') }}">Restablecer</a>
             @endif
