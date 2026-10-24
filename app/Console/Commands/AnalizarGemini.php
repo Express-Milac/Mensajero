@@ -102,6 +102,10 @@ final class AnalizarGemini extends Command
             $consultaMensajes->whereKey($mensajeId);
         }
 
+        if ($loteReal) {
+            $consultaMensajes->where('recibido_en', '>=', now('UTC')->subDay()->format('Y-m-d H:i:s.u'));
+        }
+
         if ($loteReal && Schema::hasTable('mensajero_control_publicaciones_gemini')) {
             $consultaMensajes->whereNotExists(function ($consulta): void {
                 $consulta->selectRaw('1')
