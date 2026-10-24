@@ -17,6 +17,24 @@ final class OperacionAccesoTest extends TestCase
         $this->patch('/operacion/1/revision', ['decision' => 'validado'])->assertNotFound();
     }
 
+    public function test_tablero_ia_no_pide_aprobacion_incluso_con_permisos_locales(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+            'mensajero.gestion_local_operacion_habilitada' => true,
+            'mensajero.ia.grupos_autorizados' => [],
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->get('/operacion')
+            ->assertOk()
+            ->assertSee('Bitácora de acontecimientos')
+            ->assertDontSee('Validar interpretación')
+            ->assertDontSee('Descartar interpretación')
+            ->assertDontSee('Por verificar');
+    }
+
     public function test_no_existe_un_procedimiento_de_aprobacion_humana(): void
     {
         config([
