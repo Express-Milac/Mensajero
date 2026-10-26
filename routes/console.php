@@ -21,3 +21,11 @@ if (config('mensajero.ia.conciliacion_automatica', false) === true) {
         ->everyFiveMinutes()
         ->withoutOverlapping();
 }
+
+if (config('mensajero.ia.conciliacion_automatica', false) === true) {
+    // Recuperar proyecciones de resultados ya guardados. Sin Google ni Redis.
+    // Conservar autorizaciones y no crear acontecimientos duplicados.
+    Schedule::command('mensajero:proyectar-operacion --todos --limite=20 --aplicar')
+        ->everyFiveMinutes()
+        ->withoutOverlapping();
+}
