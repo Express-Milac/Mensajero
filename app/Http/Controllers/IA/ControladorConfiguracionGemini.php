@@ -7,6 +7,7 @@ use App\Models\ChatMonitoreado;
 use App\Services\IA\ControlInterpretacionGemini;
 use App\Services\IA\PoliticaEnvioGemini;
 use DomainException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,7 +45,7 @@ final class ControladorConfiguracionGemini extends Controller
         Request $request,
         int $grupo,
         ControlInterpretacionGemini $control,
-    ): RedirectResponse {
+    ): JsonResponse|RedirectResponse {
         $datos = $request->validate([
             'habilitado' => ['required', 'boolean'],
         ]);
