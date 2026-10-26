@@ -102,4 +102,59 @@
             </nav>
         @endif
     </section>
+
+    @if($resultadosLotes !== null)
+        <section class="catalogo-seccion" aria-label="Acontecimientos interpretados por lotes">
+            <div class="catalogo-titulo">
+                <div>
+                    <h2>Acontecimientos de conversaciones</h2>
+                    <p>Interpretaciones contextuales generadas por lotes. Cada hecho conserva sus fuentes y no constituye una confirmación independiente.</p>
+                </div>
+            </div>
+            <div class="catalogo-tarjetas">
+                @forelse($filasLotes as $filaLote)
+                    @php($loteItem = $filaLote['acontecimiento'])
+                    <article id="acontecimiento-lote-{{ $loteItem->id }}" class="catalogo-tarjeta" aria-label="Acontecimiento del lote {{ $loteItem->lote_id }}">
+                        <div class="catalogo-tarjeta-encabezado">
+                            <span class="catalogo-grupo-icono" aria-hidden="true">✧</span>
+                            <div class="catalogo-grupo-titulo">
+                                <h3>{{ $loteItem->titulo }}</h3>
+                                <span>{{ $loteItem->nombre_interno ?: ($loteItem->nombre_grupo ?: 'Grupo sin nombre') }} · {{ ucfirst($loteItem->categoria) }} · Lote #{{ $loteItem->lote_id }}</span>
+                            </div>
+                            <span class="catalogo-estado neutral">Generado por IA</span>
+                        </div>
+                        <div class="catalogo-tarjeta-cuerpo">
+                            <p style="font-size:13px;line-height:1.6;white-space:pre-wrap">{{ $loteItem->resumen }}</p>
+                            <p><span>Identificado (UTC)</span><strong>{{ $loteItem->creado_en }}</strong></p>
+                        </div>
+                        <div class="catalogo-tarjeta-pie" style="display:block">
+                            <strong style="font-size:12px">Mensajes que sustentan este acontecimiento</strong>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
+                                @foreach($filaLote['fuentes'] as $fuente)
+                                    <div style="border:1px solid #e1e7ed;border-radius:10px;padding:9px;max-width:190px;background:#fff">
+                                        <span style="font-size:12px">{{ ucfirst($fuente->tipo_mensaje) }}</span>
+                                        @if($fuente->pie_multimedia)
+                                            <div style="font-size:11px">{{ \Illuminate\Support\Str::limit($fuente->pie_multimedia, 100) }}</div>
+                                        @endif
+                                        <div style="font-size:11px;color:#64748b">Fuente del análisis; archivo no interpretado visualmente</div>
+                                        <a class="centro-ver-evidencia" href="{{ route('mensajes.evento', $fuente->evento_crudo_id) }}">Original #{{ $fuente->mensaje_id }} ↗</a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <section class="catalogo-vacio">
+                        <h3>Sin acontecimientos de conversaciones todavía</h3>
+                        <p>Esta sección aparecerá cuando un lote autorizado finalice y sus resultados estén guardados.</p>
+                    </section>
+                @endforelse
+            </div>
+            @if($resultadosLotes->hasPages())
+                <nav class="catalogo-paginacion" aria-label="Páginas de acontecimientos por lotes">
+                    {{ $resultadosLotes->links() }}
+                </nav>
+            @endif
+        </section>
+    @endif
 </x-layout>

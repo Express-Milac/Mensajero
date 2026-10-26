@@ -74,6 +74,52 @@ final class ControladorOperacion extends Controller
             }
         }
 
-        return view('operacion.indice', compact('filas', 'resumen', 'acontecimientos', 'categoria'));
+        // Los resultados multiacontecimiento conviven con la bitácora del
+        // piloto sin alterar su FK analisis_ia_id ni sus mensajes originales.
+        $filasLotes = [];
+        $resultadosLotes = null;
+        if ($gruposIA !== []
+            && Schema::hasTable('mensajero_lotes_gemini')
+            && Schema::hasTable('mensajero_resultados_lote_gemini')
+            && Schema::hasTable('mensajero_evidencias_resultado_lote_gemini')) {
+            $baseLotes = DB::table('mensajero_resultados_lote_gemini as r')
+                ->join('mensajero_lotes_gemini as l', 'l.id', '=', 'r.lote_id')
+                ->join('mensajero_chats_monitoreados as g', 'g.id', '=', 'l.chat_monitoreado_id')
+                ->where('l.estado', 'finalizado')
+                ->where('r.estado', 'identificado_ia')
+                ->where('g.tipo_chat', 'grupo')
+                ->where('g.es_activo', true)->where('g.es_monitoreado', true)
+                ->where('g.es_visible_tablero', true)
+                ->whereIn('l.chat_monitoreado_id', $gruposIA);
+
+            $resumen['generados'] += (clone $baseLotes)->count();
+
+            if ($categoria !== 'todos') {
+                $baseLotes->where('r.categoria', $categoria);
+            }
+
+            $resultadosLotes = $baseLotes->select([
+                'r.id', 'r.lote_id', 'r.categoria', 'r.titulo',
+                'r.resumen', 'r.creado_en', 'l.chat_monitoreado_id',
+                'g.nombre_interno', 'g.nombre_grupo',
+            ])->orderByDesc('r.creado_en')->orderByDesc('r.id')
+                ->paginate(12, ['*'], 'pagina_lotes')->withQueryString();
+
+            foreach ($resultadosLotes as $resultado) {
+                $fuentes = DB::table('mensajero_evidencias_resultado_lote_gemini as e')
+                    ->join('mensajero_mensajes_whatsapp as m', 'm.id', '=', 'e.mensaje_whatsapp_id')
+                    ->where('e.resultado_lote_id', $resultado->id)
+                    ->where('m.chat_monitoreado_id', $resultado->chat_monitoreado_id)
+                    ->where('m.estado_captura', 'normalizado')
+                    ->select(['m.id as mensaje_id', 'm.evento_crudo_id', 'm.tipo_mensaje', 'm.pie_multimedia'])
+                    ->orderBy('e.id')->limit(6)->get();
+
+                $filasLotes[] = ['acontecimiento' => $resultado, 'fuentes' => $fuentes];
+            }
+        }
+
+        return view('operacion.indice', compact(
+            'filas', 'resumen', 'acontecimientos', 'categoria', 'filasLotes', 'resultadosLotes'
+        ));
     }
 }

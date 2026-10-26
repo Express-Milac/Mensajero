@@ -35,10 +35,11 @@ final class EstadoGemini extends Command
         $control = app(ControlInterpretacionGemini::class);
         $autorizado = $control->estado($grupoId)['habilitado'];
         $inicio = $politica->fechaInicioGrupo($grupoId);
+        $corteGrupo = $control->corteEfectivoGrupo($grupoId);
         $configurada = $politica->configuracionCompleta();
         $globalEncendido = $control->estado(0)['habilitado'];
         $grupoEncendido = $control->estado($grupoId)['habilitado'];
-        $automatica = $configurada && $control->corteEfectivoGrupo($grupoId) !== null;
+        $automatica = $configurada && $corteGrupo !== null;
         $normaliza = config('mensajero.normalizacion.habilitada') === true;
 
         $this->info('ESTADO GEMINI | Grupo interno '.$grupoId);
@@ -49,7 +50,7 @@ final class EstadoGemini extends Command
         $this->line('Normalizacion habilitada (configuracion nueva): '.($normaliza ? 'SI' : 'NO'));
         $this->line('Grupo autorizado desde el panel: '.($autorizado ? 'SI' : 'NO'));
         $this->line('Corte global mínimo: '.($inicio?->format(DATE_ATOM) ?? 'NO CONFIGURADO'));
-        $this->line('Corte web efectivo: '.($control->corteEfectivoGrupo($grupoId)?->format(DATE_ATOM) ?? 'APAGADO'));
+        $this->line('Corte web efectivo: '.($corteGrupo?->format(DATE_ATOM) ?? 'APAGADO'));
         $this->warn('La configuracion NO demuestra que los trabajadores ya iniciados se hayan reiniciado.');
 
         try {
@@ -77,23 +78,39 @@ final class EstadoGemini extends Command
                 foreach ($publicaciones as $publicacion) {
                     $this->line('Control de envíos IA '.$publicacion->estado.': '.$publicacion->total);
                 }
+                $inicioHoy = now('UTC')->startOfDay()->format('Y-m-d H:i:s.u');
+                $hoy = DB::table('mensajero_control_publicaciones_gemini')
+                    ->where('chat_monitoreado_id', $grupoId)
+                    ->where('reservado_en', '>=', $inicioHoy)->count();
+                $limite = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
+                $this->line('Solicitudes reservadas hoy (UTC): '.$hoy.' / '.$limite);
+                if ($limite > 0 && $hoy >= $limite) {
+                    $this->warn('CUPO IA DEL GRUPO AGOTADO: no se publican nuevos mensajes hasta el siguiente día UTC.');
+                }
                 $this->warn('Los estados reservado/publicado sin resultado NO deben reenviarse automáticamente.');
             }
 
-            if ($inicio === null) {
-                $this->warn('Sin corte temporal no es posible seleccionar mensajes recientes autorizados.');
+            if ($inicio === null || $corteGrupo === null) {
+                $this->warn('Sin cortes global y efectivo del grupo no se puede seleccionar contenido autorizado.');
             } else {
-                $fechaUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+                $fechaUtc = max(
+                    $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                    $corteGrupo->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                );
 
                 $base = DB::table('mensajero_mensajes_whatsapp as m')
                     ->where('m.chat_monitoreado_id', $grupoId)
                     ->where('m.estado_captura', 'normalizado')
                     ->where(function ($consulta): void {
-                        $consulta->where('m.tipo_mensaje', 'texto')
-                            ->orWhere(function ($media): void {
-                                $media->whereIn('m.tipo_mensaje', ['foto', 'video', 'documento'])
-                                    ->whereNotNull('m.pie_multimedia');
-                            });
+                        $consulta->where(function ($texto): void {
+                            $texto->where('m.tipo_mensaje', 'texto')
+                                ->whereNotNull('m.contenido_texto')
+                                ->where('m.contenido_texto', '<>', '');
+                        })->orWhere(function ($media): void {
+                            $media->whereIn('m.tipo_mensaje', ['foto', 'video', 'documento'])
+                                ->whereNotNull('m.pie_multimedia')
+                                ->where('m.pie_multimedia', '<>', '');
+                        });
                     })
                     ->where('m.recibido_en', '>=', $fechaUtc);
 
@@ -104,7 +121,8 @@ final class EstadoGemini extends Command
                             ->whereColumn('a.mensaje_whatsapp_id', 'm.id');
                     })->count();
 
-                $this->line('Textos y leyendas normalizados desde el corte sin resultado IA: '.$sinResultado);
+                $this->line('Textos y leyendas posteriores a ambos cortes sin resultado IA: '.$sinResultado);
+                $this->warn('SIN RESULTADO incluye publicaciones reservadas, y no equivale a mensajes autorizados para reenviar.');
 
                 $ultimos = (clone $base)
                     ->leftJoin('mensajero_analisis_operativos_ia as a', 'a.mensaje_whatsapp_id', '=', 'm.id')

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true">
+    <testsuites>
+        <testsuite name="LotesAislados">
+            <file>tests/Unidad/AgruparMensajesGeminiTest.php</file>
+            <file>tests/Unidad/ValidarAcontecimientosLoteGeminiTest.php</file>
+            <file>tests/Unidad/PoliticaLotesGeminiTest.php</file>
+            <file>tests/Funcional/ClienteGeminiLoteTest.php</file>
+            <file>tests/Funcional/ReservarLoteGeminiTest.php</file>
+            <file>tests/Funcional/PresupuestoPublicacionesGeminiTest.php</file>
+            <file>tests/Funcional/PersistirResultadosLoteGeminiTest.php</file>
+            <file>tests/Funcional/SimularLotesGeminiTest.php</file>
+            <file>tests/Funcional/OperacionLotesGeminiTest.php</file>
+            <file>tests/Funcional/ProcesarLoteGeminiTest.php</file>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include><directory>app</directory></include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="IA_HABILITADA" value="false" force="true"/>
+        <env name="MENSAJERO_IA_ENVIO_AUTORIZADO" value="false" force="true"/>
+        <env name="MENSAJERO_IA_SERVICIO_PAGADO_CONFIRMADO" value="false" force="true"/>
+        <env name="MENSAJERO_IA_LOTES_HABILITADOS" value="false" force="true"/>
+        <env name="CLAVE_API_GEMINI" value="clave-ficticia-de-prueba" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+    </php>
+</phpunit>

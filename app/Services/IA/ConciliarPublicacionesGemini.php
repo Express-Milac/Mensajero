@@ -22,7 +22,10 @@ use Throwable;
  */
 final class ConciliarPublicacionesGemini
 {
-    public function __construct(private readonly PoliticaEnvioGemini $politica) {}
+    public function __construct(
+        private readonly PoliticaEnvioGemini $politica,
+        private readonly PresupuestoPublicacionesGemini $presupuesto,
+    ) {}
 
     public function disponible(): bool
     {
@@ -91,6 +94,12 @@ final class ConciliarPublicacionesGemini
             ->whereNotExists(function ($consulta): void {
                 $consulta->selectRaw('1')->from('mensajero_control_publicaciones_gemini as p')
                     ->whereColumn('p.mensaje_whatsapp_id', 'mensajero_mensajes_whatsapp.id');
+            })
+            ->when(Schema::hasTable('mensajero_mensajes_lote_gemini'), function (Builder $consulta): void {
+                $consulta->whereNotExists(function ($subconsulta): void {
+                    $subconsulta->selectRaw('1')->from('mensajero_mensajes_lote_gemini as lote')
+                        ->whereColumn('lote.mensaje_whatsapp_id', 'mensajero_mensajes_whatsapp.id');
+                });
             })
             ->orderBy('recibido_en')->orderBy('id')
             ->limit($limite)->get(['id', 'tipo_mensaje', 'contenido_texto', 'pie_multimedia', 'chat_monitoreado_id', 'recibido_en']);
@@ -174,16 +183,16 @@ final class ConciliarPublicacionesGemini
             if (DB::table('mensajero_analisis_operativos_ia')
                 ->where('mensaje_whatsapp_id', $mensajeId)->exists()
                 || DB::table('mensajero_control_publicaciones_gemini')
-                    ->where('mensaje_whatsapp_id', $mensajeId)->exists()) {
+                    ->where('mensaje_whatsapp_id', $mensajeId)->exists()
+                || (Schema::hasTable('mensajero_mensajes_lote_gemini')
+                    && DB::table('mensajero_mensajes_lote_gemini')
+                        ->where('mensaje_whatsapp_id', $mensajeId)->exists())) {
                 return 'registrado';
             }
 
-            $inicioDia = now('UTC')->startOfDay()->format('Y-m-d H:i:s.u');
-            $totalDia = DB::table('mensajero_control_publicaciones_gemini')
-                ->where('chat_monitoreado_id', $grupoId)
-                ->where('reservado_en', '>=', $inicioDia)->count();
-
-            if ($totalDia >= $this->maximoDiario()) {
+            // Cupo compartido: una reserva de lote también consume
+            // una de las solicitudes máximas autorizadas del grupo.
+            if (! $this->presupuesto->permiteReserva($grupoId)) {
                 return 'limite_diario';
             }
 
@@ -249,7 +258,6 @@ final class ConciliarPublicacionesGemini
 
     private function maximoDiario(): int
     {
-        $valor = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
-        return ($valor >= 1 && $valor <= 30) ? $valor : 0;
+        return $this->presupuesto->limiteDiario();
     }
 }

@@ -41,6 +41,11 @@ return [
         'conciliacion_maximo_dia_grupo' => (int) env('MENSAJERO_IA_CONCILIACION_MAXIMO_DIA_GRUPO', 10),
         'conciliacion_antiguedad_segundos' => (int) env('MENSAJERO_IA_CONCILIACION_ANTIGUEDAD_SEGUNDOS', 180),
         'conciliacion_horas_maximas' => (int) env('MENSAJERO_IA_CONCILIACION_HORAS_MAXIMAS', 4),
+        // Fase experimental de lotes: cerrada y sin tareas programadas.
+        // Su activación futura requiere nuevo consentimiento contextual y presupuesto.
+        'lotes_habilitados' => filter_var(env('MENSAJERO_IA_LOTES_HABILITADOS', false), FILTER_VALIDATE_BOOLEAN),
+        'lotes_fecha_inicio' => env('MENSAJERO_IA_LOTES_FECHA_INICIO', ''),
+        'lotes_maximo_dia_grupo' => (int) env('MENSAJERO_IA_LOTES_MAXIMO_DIA_GRUPO', 10),
     ],
 
     'meta_whatsapp' => [
