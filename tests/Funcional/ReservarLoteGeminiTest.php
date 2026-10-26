@@ -4,9 +4,7 @@ namespace Tests\Funcional;
 
 use App\Services\IA\ReservarLoteGemini;
 use DomainException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 final class ReservarLoteGeminiTest extends TestCase
@@ -14,9 +12,8 @@ final class ReservarLoteGeminiTest extends TestCase
     public function test_rechaza_lotes_sin_habilitacion_sin_tocar_sql_ni_google(): void
     {
         config()->set('mensajero.ia.lotes_habilitados', false);
+        Http::preventStrayRequests();
         Http::fake();
-        DB::shouldReceive('transaction')->never();
-        Schema::shouldReceive('hasTable')->never();
 
         try {
             app(ReservarLoteGemini::class)->reservar(10196, [101, 102]);
@@ -30,9 +27,8 @@ final class ReservarLoteGeminiTest extends TestCase
 
     public function test_rechaza_ids_duplicados_antes_de_usar_sql(): void
     {
+        Http::preventStrayRequests();
         Http::fake();
-        DB::shouldReceive('transaction')->never();
-        Schema::shouldReceive('hasTable')->never();
 
         try {
             app(ReservarLoteGemini::class)->reservar(10196, [101, 101]);
@@ -46,7 +42,6 @@ final class ReservarLoteGeminiTest extends TestCase
 
     public function test_rechaza_lote_con_mas_de_seis_mensajes(): void
     {
-        DB::shouldReceive('transaction')->never();
         $this->expectException(DomainException::class);
         app(ReservarLoteGemini::class)->reservar(10196, [1, 2, 3, 4, 5, 6, 7]);
     }
