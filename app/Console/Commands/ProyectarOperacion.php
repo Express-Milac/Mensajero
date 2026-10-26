@@ -22,7 +22,10 @@ final class ProyectarOperacion extends Command
         $limite = filter_var($this->option('limite'), FILTER_VALIDATE_INT);
 
         if ($grupo === false || $grupo <= 0 || $limite === false || $limite < 1 || $limite > 100
-            || ! in_array($grupo, (array) config('mensajero.ia.grupos_autorizados', []), true)) {
+            || ! DB::table('mensajero_chats_monitoreados')
+                ->where('id', $grupo)->where('tipo_chat', 'grupo')
+                ->where('es_activo', true)->where('es_monitoreado', true)
+                ->where('es_visible_tablero', true)->exists()) {
             $this->error('Grupo o límite no autorizado; no se realizó ningún cambio.');
             return self::FAILURE;
         }
