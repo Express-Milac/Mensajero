@@ -71,7 +71,16 @@ final class ProcesarAnalisisGemini
                 return 'no_elegible';
             }
 
-            $fechaInicio = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+            $corteAutorizacion = app(ControlInterpretacionGemini::class)
+                ->corteEfectivoGrupo((int) $mensaje->chat_monitoreado_id);
+            if ($corteAutorizacion === null) {
+                return 'no_elegible';
+            }
+
+            $fechaInicio = max(
+                $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                $corteAutorizacion->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+            );
             $fecha = $mensaje->recibido_en->utc()->format('Y-m-d H:i:s.u');
 
             $desdeVentana = $mensaje->recibido_en->copy()->subMinutes(5)->format('Y-m-d H:i:s.u');
