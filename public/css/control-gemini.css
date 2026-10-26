@@ -14,3 +14,10 @@
 .panorama-claro .control-gemini-accion-grupo>strong{color:#a15422;font-size:12px}
 .panorama-claro .control-gemini-accion-grupo small{font-size:11px;color:#7b8b99}
 @media(max-width:720px){.panorama-claro .control-gemini-fila{grid-template-columns:minmax(0,1fr)}}
+
+/* La actualización AJAX cambia exclusivamente el contenido de las tarjetas. */
+.panorama-claro .control-gemini-form [data-gemini-consentimiento][hidden]{display:none!important}
+.panorama-claro .control-gemini-aviso{margin:12px 0 4px;min-height:0;color:#166044;font-size:12px;font-weight:650}
+.panorama-claro .control-gemini-aviso:empty{display:none}
+.panorama-claro .control-gemini-aviso[data-tipo="error"]{color:#9a2e24}
+.panorama-claro [data-gemini-boton][aria-busy="true"]{opacity:.65;cursor:progress}
