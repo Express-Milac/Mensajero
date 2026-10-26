@@ -22,7 +22,10 @@ use Throwable;
  */
 final class ConciliarPublicacionesGemini
 {
-    public function __construct(private readonly PoliticaEnvioGemini $politica) {}
+    public function __construct(
+        private readonly PoliticaEnvioGemini $politica,
+        private readonly PresupuestoPublicacionesGemini $presupuesto,
+    ) {}
 
     public function disponible(): bool
     {
@@ -187,12 +190,9 @@ final class ConciliarPublicacionesGemini
                 return 'registrado';
             }
 
-            $inicioDia = now('UTC')->startOfDay()->format('Y-m-d H:i:s.u');
-            $totalDia = DB::table('mensajero_control_publicaciones_gemini')
-                ->where('chat_monitoreado_id', $grupoId)
-                ->where('reservado_en', '>=', $inicioDia)->count();
-
-            if ($totalDia >= $this->maximoDiario()) {
+            // Cupo compartido: una reserva de lote también consume
+            // una de las solicitudes máximas autorizadas del grupo.
+            if (! $this->presupuesto->permiteReserva($grupoId)) {
                 return 'limite_diario';
             }
 
@@ -258,7 +258,6 @@ final class ConciliarPublicacionesGemini
 
     private function maximoDiario(): int
     {
-        $valor = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
-        return ($valor >= 1 && $valor <= 30) ? $valor : 0;
+        return $this->presupuesto->limiteDiario();
     }
 }
