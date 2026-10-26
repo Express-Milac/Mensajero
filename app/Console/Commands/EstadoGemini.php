@@ -32,13 +32,13 @@ final class EstadoGemini extends Command
         }
 
         $ia = (array) config('mensajero.ia', []);
-        $autorizado = in_array($grupoId, $ia['grupos_autorizados'] ?? [], true);
+        $control = app(ControlInterpretacionGemini::class);
+        $autorizado = $control->estado($grupoId)['habilitado'];
         $inicio = $politica->fechaInicioGrupo($grupoId);
         $configurada = $politica->configuracionCompleta();
-        $control = app(ControlInterpretacionGemini::class);
         $globalEncendido = $control->estado(0)['habilitado'];
         $grupoEncendido = $control->estado($grupoId)['habilitado'];
-        $automatica = $configurada && $globalEncendido && $grupoEncendido;
+        $automatica = $configurada && $control->corteEfectivoGrupo($grupoId) !== null;
         $normaliza = config('mensajero.normalizacion.habilitada') === true;
 
         $this->info('ESTADO GEMINI | Grupo interno '.$grupoId);
@@ -47,8 +47,9 @@ final class EstadoGemini extends Command
         $this->line('Control de este grupo: '.($grupoEncendido ? 'ENCENDIDO' : 'APAGADO'));
         $this->line('Interpretacion automatica efectiva: '.($automatica ? 'SI' : 'NO'));
         $this->line('Normalizacion habilitada (configuracion nueva): '.($normaliza ? 'SI' : 'NO'));
-        $this->line('Grupo incluido en IA: '.($autorizado ? 'SI' : 'NO'));
-        $this->line('Fecha de corte: '.($inicio?->format(DATE_ATOM) ?? 'NO CONFIGURADA'));
+        $this->line('Grupo autorizado desde el panel: '.($autorizado ? 'SI' : 'NO'));
+        $this->line('Corte global mínimo: '.($inicio?->format(DATE_ATOM) ?? 'NO CONFIGURADO'));
+        $this->line('Corte web efectivo: '.($control->corteEfectivoGrupo($grupoId)?->format(DATE_ATOM) ?? 'APAGADO'));
         $this->warn('La configuracion NO demuestra que los trabajadores ya iniciados se hayan reiniciado.');
 
         try {
