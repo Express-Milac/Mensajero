@@ -80,10 +80,17 @@ final class EstadoGemini extends Command
                 $this->warn('Los estados reservado/publicado sin resultado NO deben reenviarse automáticamente.');
             }
 
-            if ($inicio === null) {
-                $this->warn('Sin corte temporal no es posible seleccionar mensajes recientes autorizados.');
+            $corteWeb = $control->corteEfectivoGrupo($grupoId);
+            if ($inicio === null || $corteWeb === null) {
+                $this->warn('No hay corte efectivo activo: los mensajes anteriores no son trabajos pendientes de Gemini.');
             } else {
-                $fechaUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+                // Un mensaje solo es elegible desde la ÚLTIMA activación
+                // general y de grupo, nunca desde el antiguo corte global.
+                $fechaUtc = max(
+                    $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                    $corteWeb->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u')
+                );
+                $this->line('Mensajes evaluados desde el corte efectivo UTC: '.$fechaUtc);
 
                 $base = DB::table('mensajero_mensajes_whatsapp as m')
                     ->where('m.chat_monitoreado_id', $grupoId)
@@ -104,7 +111,7 @@ final class EstadoGemini extends Command
                             ->whereColumn('a.mensaje_whatsapp_id', 'm.id');
                     })->count();
 
-                $this->line('Textos y leyendas normalizados desde el corte sin resultado IA: '.$sinResultado);
+                $this->line('Textos y leyendas DESDE ACTIVACION ACTUAL sin resultado IA: '.$sinResultado);
 
                 $ultimos = (clone $base)
                     ->leftJoin('mensajero_analisis_operativos_ia as a', 'a.mensaje_whatsapp_id', '=', 'm.id')
@@ -113,7 +120,7 @@ final class EstadoGemini extends Command
                     ->get(['m.id', 'm.recibido_en', 'a.estado']);
 
                 if ($ultimos->isEmpty()) {
-                    $this->warn('No se encontraron textos o leyendas posteriores al corte.');
+                    $this->warn('No se encontraron textos o leyendas posteriores a la activacion actual.');
                 } else {
                     $this->table(
                         ['ID de mensaje', 'Recibido (UTC)', 'Resultado IA en SQL'],
