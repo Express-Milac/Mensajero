@@ -19,6 +19,7 @@ final class ReservarLoteGemini
         private readonly PoliticaEnvioGemini $politica,
         private readonly PoliticaLotesGemini $politicaLotes,
         private readonly ControlInterpretacionGemini $control,
+        private readonly PresupuestoPublicacionesGemini $presupuesto,
     ) {}
 
     /**
@@ -123,22 +124,7 @@ final class ReservarLoteGemini
                 throw new DomainException('El lote contiene mensajes ya reservados o analizados.');
             }
 
-            $inicioDia = now('UTC')->startOfDay()->format('Y-m-d H:i:s.u');
-            $consumoPiloto = DB::table('mensajero_control_publicaciones_gemini')
-                ->where('chat_monitoreado_id', $grupoId)
-                ->where('reservado_en', '>=', $inicioDia)->count();
-            $consumoLotes = DB::table('mensajero_lotes_gemini')
-                ->where('chat_monitoreado_id', $grupoId)
-                ->where('reservado_en', '>=', $inicioDia)->count();
-
-            // Mantener además el techo del piloto hasta reemplazarlo con
-            // un control único de presupuesto por solicitud/tokens.
-            $limitePiloto = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
-            if ($limitePiloto < 1 || $limitePiloto > 30) {
-                throw new DomainException('Límite de publicaciones del piloto inválido.');
-            }
-            $limite = min($this->politicaLotes->maximoDiario(), $limitePiloto);
-            if ($consumoPiloto + $consumoLotes >= $limite) {
+            if (! $this->presupuesto->permiteReserva($grupoId)) {
                 throw new DomainException('Límite diario compartido de Gemini alcanzado.');
             }
 
