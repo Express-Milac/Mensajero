@@ -67,7 +67,9 @@ final class ControladorConfiguracionGemini extends Controller
                 is_numeric($actorId) ? (int) $actorId : null,
             );
         } catch (DomainException $error) {
-            return back()->withErrors(['habilitado' => $error->getMessage()]);
+            return $request->expectsJson()
+                ? response()->json(['mensaje' => $error->getMessage()], 422)
+                : back()->withErrors(['habilitado' => $error->getMessage()]);
         }
 
         $ambito = $grupo === 0 ? 'Interpretación general' : 'Interpretación del grupo #'.$grupo;
