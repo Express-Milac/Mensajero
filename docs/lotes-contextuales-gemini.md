@@ -34,35 +34,43 @@ Desde una copia de trabajo con Composer instalado:
 php .\\vendor\\bin\\phpunit --configuration=phpunit-lotes.xml --testsuite=LotesAislados
 ```
 
-`phpunit-lotes.xml` restringe los tests a los seis archivos de esta fase y fuerza SQLite en memoria, autorización IA desactivada y clave de prueba. Ninguna prueba intenta ejecutar las migraciones ni usar Google real. Antes de considerar aprobada la rama deben ejecutarse todas y registrar resultado.
+`phpunit-lotes.xml` restringe los tests a los archivos de esta fase y fuerza SQLite en memoria, autorización IA desactivada y clave de prueba. Ninguna prueba intenta ejecutar las migraciones ni usar Google real. Antes de considerar aprobada la rama deben ejecutarse todas y registrar resultado.
 
 **Aún falta la cadena de producción:** la reserva no se despacha a Redis; no existe trabajo de Gemini para lotes ni proyección de los resultados múltiples hacia la bitácora. Los límites diarios aún tienen un máximo compartido con el piloto, por lo que esta versión **no resuelve todavía** el volumen de cientos de mensajes. No habilitar `MENSAJERO_IA_LOTES_HABILITADOS` ni ejecutar migraciones en SQL activo.
 
 ## Pendientes antes de habilitar procesamiento real
 
 1. Definir y autorizar un nuevo corte específico para tratamiento contextual entre remitentes, distinto de los permisos del piloto de un solo mensaje.
-2. Implementar persistencia SQL Server para identidad y reservas únicas por lote, estado de publicación, resultados múltiples, evidencias, y estados inciertos no reintentables.
+2. **Pendiente validación SQL Server:** probar tablas, reserva única y persistencia de resultados ya codificadas; preparar manejo manual de estados inciertos no reintentables.
 3. Introducir un trabajo de cola Redis que relea y revalide permisos y cortes antes de transmitir. Nunca ejecutar Google dentro de una transacción SQL.
-4. Crear un contrato nuevo de solicitud y respuesta de Gemini para **varios** acontecimientos del mismo lote. El contrato actual identifica uno asociado al último mensaje y NO puede reutilizarse.
+4. **Creado, pendiente integración:** conectar el nuevo contrato multiacontecimiento a un trabajador autorizado. El contrato individual existente NO puede reutilizarse.
 5. Adaptar la proyección: un lote puede originar varios acontecimientos, cada uno con su propia identidad e IDs de evidencia, sin contradecir la restricción de un análisis por mensaje del piloto.
-6. Presupuesto explícito por grupo de solicitudes y tokens, alertas de acumulación y retención. No sustituir el límite de seguridad existente por una cifra ilimitada.
+6. **Implementado en reservas:** cupo compartido de solicitudes por grupo y UTC. Pendientes topes por tokens, alertas y retención. No sustituir el límite de seguridad existente por una cifra ilimitada.
 7. Pruebas con SQL Server **aislado**, Redis simulado, HTTP falso, cancelaciones de consentimiento, fallas de red, concurrencia, idempotencia y ausencia de fugas entre grupos.
 8. Activación gradual únicamente en grupos autorizados, sin enviar mensajes históricos ni volver a interpretar IDs ya publicados.
 
+## Avance: persistencia y presupuesto compartido
+
+- `PresupuestoPublicacionesGemini`: el circuito individual y los lotes consultan las reservas combinadas del día UTC bajo el bloqueo transaccional que ya usan ambos publicadores. Las reservas inciertas consumen cupo de seguridad.
+- `PersistirResultadosLoteGemini`: recibe exclusivamente respuestas ya obtenidas, exige estado `publicado`, valida pertenencia de todas las fuentes al mismo lote y grupo, persiste hasta seis acontecimientos con sus evidencias en una transacción y finaliza el lote. Repetir su ejecución devuelve `ya_finalizado` sin duplicar filas.
+- Se agregó columna `modelo` para auditoría de consumo. La migración **no se ha ejecutado**.
+- Las pruebas de persistencia y presupuesto usan esquemas mínimos de SQLite en memoria, sin migraciones de MILAC, SQL Server real, Redis o Google. **Se deben ejecutar en la copia de trabajo; todavía no están validadas en Windows.** Si PDO SQLite no está instalado, PHPUnit mostrará pruebas omitidas que deben resolverse antes de dar por aprobada esta fase.
+- Todavía no existe trabajo Redis para llamar al cliente nuevo ni proyección desde resultados de lote a `mensajero_acontecimientos_operativos`; por ello no reemplaza el piloto.
+
 ## Seguridad de este cambio
 
-- No modifica `.env`, migraciones, programador, cola de IA ni recolector.
-- No crea solicitudes Gemini ni reservas.
+- No modifica `.env`, programador, cola de IA ni recolector; añade una migración nueva pero NO la ejecuta.
+- No crea solicitudes Gemini ni reservas automáticamente; no hay despacho ni ejecución de los servicios nuevos.
 - No elimina mensajes ni transfiere adjuntos.
 - No amplía consentimiento, cupos diarios ni ventanas de recuperación.
 - Los resultados del simulador **no son** acontecimientos ni publicaciones reales.
 
 ## Pruebas aisladas
 
-Con Composer instalado y `DB_CONNECTION=sqlite` forzado en configuración temporal de PHPUnit, ejecutar:
+Con Composer instalado, usar el XML versionado:
 
 ```powershell
-php .\vendor\bin\phpunit --configuration=phpunit-aislado.local.xml --filter='AgruparMensajesGeminiTest|ValidarAcontecimientosLoteGeminiTest|SimularLotesGeminiTest'
+php .\\vendor\\bin\\phpunit --configuration=phpunit-lotes.xml --testsuite=LotesAislados
 ```
 
-Estas pruebas no necesitan ejecutar migraciones ni conectar SQL Server. Antes de usarlas, verificar que el archivo XML temporal exista y que no contenga credenciales ni conexiones reales. El simulador SQL de datos reales es **opcional y exclusivamente de lectura**, pero requiere entorno autorizado; no es necesario para probar las clases puras.
+El XML fuerza SQLite en memoria, servicio Gemini deshabilitado y cliente HTTP simulado. Esta suite no ejecuta migraciones corporativas y no requiere una base SQL Server. El simulador de datos reales es opcional y solo de lectura.
