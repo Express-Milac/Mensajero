@@ -56,8 +56,7 @@ final class ControlGeminiWebTest extends TestCase
 
         $filas = collect([[
             'grupo' => $grupo,
-            'preautorizado' => true,
-            'estado' => ['habilitado' => false, 'inicio_en' => null],
+                'estado' => ['habilitado' => false, 'inicio_en' => null],
         ]]);
         $general = ['habilitado' => false, 'inicio_en' => null];
         $disponible = true;
@@ -73,6 +72,31 @@ final class ControlGeminiWebTest extends TestCase
         $this->assertStringContainsString('Encender Gemini', $html);
         $this->assertStringContainsString('Activar', $html);
         $this->assertStringNotContainsString('CLAVE_API_GEMINI', $html);
+        $this->assertStringNotContainsString('No autorizado', $html);
+        $this->assertStringContainsString('Autorizo enviar a Google Gemini', $html);
+    }
+
+    public function test_un_grupo_nuevo_tiene_boton_de_autorizacion_sin_editar_env(): void
+    {
+        $grupo = new ChatMonitoreado();
+        $grupo->id = 10198;
+        $grupo->nombre_interno = 'Logística Guaymas';
+
+        $filas = collect([[
+            'grupo' => $grupo,
+            'estado' => ['habilitado' => false, 'inicio_en' => null],
+        ]]);
+        $general = ['habilitado' => false, 'inicio_en' => null];
+        $disponible = true;
+        $listo = true;
+        $maximo = 10;
+
+        $html = view('ia.configuracion', compact('filas', 'general', 'disponible', 'listo', 'maximo'))->render();
+
+        $this->assertStringContainsString('Logística Guaymas', $html);
+        $this->assertStringContainsString('configuracion/gemini/10198', $html);
+        $this->assertStringContainsString('Autorizo enviar a Google Gemini', $html);
+        $this->assertStringNotContainsString('No autorizado', $html);
     }
 
     public function test_la_activacion_requiere_confirmacion_del_usuario_sin_acceder_a_sql(): void
