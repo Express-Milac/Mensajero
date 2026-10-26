@@ -17,6 +17,27 @@ El 26/10/2026 los grupos 10196, 10197 y 10198 no tenían análisis identificados
 
 **Advertencia:** la cercanía temporal no demuestra que los mensajes pertenezcan a una misma operación, y un conjunto cronológico puede contener operaciones distintas. El modelo futuro debe distinguirlas por sus evidencias, no fusionarlas ciegamente.
 
+
+## Avance posterior: cliente, política y reserva (aún sin activación)
+
+- `ClienteGeminiLote`: contrato HTTP nuevo de cero a seis acontecimientos; re-limpia contenido antes de formar la solicitud, no envía archivos ni nombres reales, valida referencias y errores de respuesta. Los tests de HTTP usan `Http::fake` y no generan costos.
+- `PoliticaLotesGemini`: habilitación independiente **false** por defecto, fecha posterior de consentimiento y cupo entre 1 y 30 solicitudes por grupo/día. Además debe mantenerse la política general y el interruptor SQL del grupo.
+- `ReservarLoteGemini`: **no llama Google ni Redis**. Reserva bajo transacción/bloqueo por grupo, valida uno a seis mensajes normalizados del mismo grupo, cortes global/grupo/lote, máximo cuatro horas de antigüedad, pausa 90 s y ventana 5 min. Excluye mensajes ya analizados o reservados por el piloto y cuenta sus publicaciones para un techo diario compartido.
+- Nueva migración `2026_10_26_000300_crear_lotes_gemini.php` para reserva, asociación única mensaje-lote, resultados múltiples y evidencia. **No ejecutar esta migración todavía**; falta validar el esquema en SQL Server de prueba aislado y preparar reversión.
+- El publicador individual comprueba la asociación a lote, solo si la tabla nueva existe, para evitar envíos duplicados de ese mismo mensaje.
+
+### Ejecución de pruebas sin SQL Server
+
+Desde una copia de trabajo con Composer instalado:
+
+```powershell
+php .\\vendor\\bin\\phpunit --configuration=phpunit-lotes.xml --testsuite=LotesAislados
+```
+
+`phpunit-lotes.xml` restringe los tests a los seis archivos de esta fase y fuerza SQLite en memoria, autorización IA desactivada y clave de prueba. Ninguna prueba intenta ejecutar las migraciones ni usar Google real. Antes de considerar aprobada la rama deben ejecutarse todas y registrar resultado.
+
+**Aún falta la cadena de producción:** la reserva no se despacha a Redis; no existe trabajo de Gemini para lotes ni proyección de los resultados múltiples hacia la bitácora. Los límites diarios aún tienen un máximo compartido con el piloto, por lo que esta versión **no resuelve todavía** el volumen de cientos de mensajes. No habilitar `MENSAJERO_IA_LOTES_HABILITADOS` ni ejecutar migraciones en SQL activo.
+
 ## Pendientes antes de habilitar procesamiento real
 
 1. Definir y autorizar un nuevo corte específico para tratamiento contextual entre remitentes, distinto de los permisos del piloto de un solo mensaje.
