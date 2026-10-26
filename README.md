@@ -1,6 +1,6 @@
 # Mensajero MILAC
 
-> **Control de Gemini desde la interfaz (24/oct/2026):** página `/configuracion/gemini`, con interruptor general y por grupo preautorizado, consentimiento expreso, auditoría SQL Server y corte temporal para no transmitir historial. No depende de modificar `.env` en cada encendido. Primera instalación requiere una migración aislada y habilitar el permiso local una sola vez. Ver [Control de interpretación Gemini](docs/control-interpretacion-gemini.md).
+> **Control de Gemini desde la interfaz (24/oct/2026):** página `/configuracion/gemini`, con interruptor general y opción de autorizar y activar **cualquier grupo monitoreado** desde la interfaz, consentimiento expreso individual, auditoría SQL Server y corte temporal para no transmitir historial. No depende de modificar `.env` en cada encendido. Primera instalación requiere una migración aislada y habilitar el permiso local una sola vez. Ver [Control de interpretación Gemini](docs/control-interpretacion-gemini.md).
 
 > **Actualización de diseño (24/oct/2026):** Mensajero genera y muestra acontecimientos de Gemini sin pedir validación humana. Los estados nuevos son `identificado_ia` (análisis) y `generado_ia` (bitácora). Las referencias antiguas a `pendiente_revision` y aprobación se conservan como historial del piloto y no describen el funcionamiento vigente. Véase [Bitácora automática](docs/bitacora-automatica.md).
 
