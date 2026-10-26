@@ -5,6 +5,12 @@ namespace App\Services\IA;
 use DateTimeImmutable;
 use DateTimeInterface;
 
+/**
+ * Barrera técnica global: consentimiento general, credencial y corte mínimo.
+ * La autorización INDIVIDUAL se guarda y comprueba en SQL Server mediante
+ * ControlInterpretacionGemini. Nunca interpretar esta política como permiso
+ * suficiente para publicar trabajos de un grupo.
+ */
 final class PoliticaEnvioGemini
 {
     public function configuracionCompleta(): bool
@@ -13,8 +19,7 @@ final class PoliticaEnvioGemini
             && config('mensajero.ia.envio_autorizado') === true
             && config('mensajero.ia.servicio_pagado_confirmado') === true
             && strlen((string) config('mensajero.ia.clave_api', '')) >= 10
-            && $this->fechaInicio() !== null
-            && count((array) config('mensajero.ia.grupos_autorizados', [])) > 0;
+            && $this->fechaInicio() !== null;
     }
 
     public function autoriza(int $grupoId, DateTimeInterface $recibidoEn): bool
@@ -23,7 +28,6 @@ final class PoliticaEnvioGemini
 
         return $this->configuracionCompleta()
             && $inicio !== null
-            && in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)
             && $recibidoEn->getTimestamp() >= $inicio->getTimestamp();
     }
 
