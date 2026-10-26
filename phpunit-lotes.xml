@@ -13,6 +13,7 @@
             <file>tests/Funcional/PresupuestoPublicacionesGeminiTest.php</file>
             <file>tests/Funcional/PersistirResultadosLoteGeminiTest.php</file>
             <file>tests/Funcional/SimularLotesGeminiTest.php</file>
+            <file>tests/Funcional/OperacionLotesGeminiTest.php</file>
         </testsuite>
     </testsuites>
     <source>
