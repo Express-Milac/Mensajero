@@ -21,6 +21,7 @@ $rutas = @(
     'tests/Integracion/ControlInterpretacionGeminiSqlServerTest.php',
     'resources/views/ia/configuracion.blade.php',
     'public/css/control-gemini.css',
+    'public/js/control-gemini.js',
     'tests/Funcional/ControlGeminiWebTest.php',
     'docs/control-interpretacion-gemini.md',
     'app/Http/Controllers/Mensajes/ControladorMensajes.php',
@@ -184,6 +185,11 @@ try {
             throw 'Error de sintaxis JavaScript en public/js/panorama.js'
         }
         Write-Host 'Sintaxis correcta: public/js/panorama.js'
+        & node --check 'public/js/control-gemini.js'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Error de sintaxis JavaScript en public/js/control-gemini.js'
+        }
+        Write-Host 'Sintaxis correcta: public/js/control-gemini.js'
     }
 
     Write-Host ''
