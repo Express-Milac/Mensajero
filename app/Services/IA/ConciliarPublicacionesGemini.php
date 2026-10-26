@@ -45,12 +45,16 @@ final class ConciliarPublicacionesGemini
             return [];
         }
 
-        $inicio = $this->politica->fechaInicioGrupo($grupoId);
-        if ($inicio === null) {
+        $inicioGeneral = $this->politica->fechaInicioGrupo($grupoId);
+        $inicioGrupo = app(ControlInterpretacionGemini::class)->corteEfectivoGrupo($grupoId);
+        if ($inicioGeneral === null || $inicioGrupo === null) {
             return [];
         }
 
-        $inicioUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+        $inicioUtc = max(
+            $inicioGeneral->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+            $inicioGrupo->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+        );
 
         if ($soloNuevos) {
             $corte = $this->corteConciliacion();
@@ -224,7 +228,8 @@ final class ConciliarPublicacionesGemini
 
     private function grupoPermitido(int $grupoId): bool
     {
-        return in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)
+        return app(ControlInterpretacionGemini::class)->estado($grupoId)['habilitado']
+            && app(ControlInterpretacionGemini::class)->estado(0)['habilitado']
             && DB::table('mensajero_chats_monitoreados')
                 ->where('id', $grupoId)->where('tipo_chat', 'grupo')
                 ->where('es_activo', true)->where('es_monitoreado', true)
