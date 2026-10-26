@@ -57,10 +57,20 @@ php .\\vendor\\bin\\phpunit --configuration=phpunit-lotes.xml --testsuite=LotesA
 - Las pruebas de persistencia y presupuesto usan esquemas mínimos de SQLite en memoria, sin migraciones de MILAC, SQL Server real, Redis o Google. **Se deben ejecutar en la copia de trabajo; todavía no están validadas en Windows.** Si PDO SQLite no está instalado, PHPUnit mostrará pruebas omitidas que deben resolverse antes de dar por aprobada esta fase.
 - Todavía no existe trabajo Redis para llamar al cliente nuevo ni proyección desde resultados de lote a `mensajero_acontecimientos_operativos`; por ello no reemplaza el piloto.
 
+## Integración preparatoria de ejecución y bitácora (sin activar)
+
+- `ProcesarLoteGemini`: reclama de forma exclusiva un lote con estado `publicado`, consulta nuevamente los mensajes, comprueba grupo activo, consentimiento técnico por grupo y fechas, construye seudónimos y solo después invoca `ClienteGeminiLote` fuera de la transacción SQL. Transita a `procesando`; si Google o la persistencia fallan, marca `requiere_revision` y no reintenta ciegamente.
+- `AnalizarLoteGeminiTrabajo`: trabajo Redis en cola **separada** `mensajero_ia_lotes`, con `tries=1` y `timeout=45`. No está programado ni es despachado automáticamente. No arrancar un trabajador de esta cola todavía.
+- `PersistirResultadosLoteGemini` exige ahora estado exclusivo `procesando`, no `publicado`, para evitar que dos consumidores guarden resultados simultáneamente.
+- La pantalla existente `/operacion` incluye una sección de acontecimientos por lotes finalizados, cada uno con referencias a los mensajes originales. Los resultados se consultan desde tablas separadas y **no se añaden a la tabla antigua**, que exige una sola FK de análisis IA.
+- Prueba SQLite `OperacionLotesGeminiTest` y pruebas de la cola `ProcesarLoteGeminiTest` añadidas a `phpunit-lotes.xml`.
+
+**Pendientes fundamentales:** falta implementar el despachador que cambie una reserva a `publicado` y coloque exactamente un trabajo en Redis; no existe tarea automática de lotes. Faltan controles de coste por tokens, integración SQL Server de prueba, prueba de concurrencia entre trabajadores y aprobación de nuevo corte de contexto. No ejecutar migración en SQL vivo ni fusionar el PR hasta completar validaciones.
+
 ## Seguridad de este cambio
 
 - No modifica `.env`, programador, cola de IA ni recolector; añade una migración nueva pero NO la ejecuta.
-- No crea solicitudes Gemini ni reservas automáticamente; no hay despacho ni ejecución de los servicios nuevos.
+- No crea solicitudes Gemini ni reservas automáticamente; el nuevo trabajo Redis no se despacha ni se ejecuta mediante programador.
 - No elimina mensajes ni transfiere adjuntos.
 - No amplía consentimiento, cupos diarios ni ventanas de recuperación.
 - Los resultados del simulador **no son** acontecimientos ni publicaciones reales.
