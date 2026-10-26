@@ -44,7 +44,8 @@ final class ControlInterpretacionGeminiSqlServerTest extends TestCase
                 'mensajero.ia.servicio_pagado_confirmado' => true,
                 'mensajero.ia.clave_api' => 'clave-ficticia-pruebas',
                 'mensajero.ia.fecha_inicio' => '2026-10-21T00:00:00-06:00',
-                'mensajero.ia.grupos_autorizados' => [$id],
+                // Ningún ID necesita pertenecer a la lista fija anterior.
+                'mensajero.ia.grupos_autorizados' => [],
             ]);
 
             $control = app(ControlInterpretacionGemini::class);
