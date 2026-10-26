@@ -88,6 +88,8 @@ final class ReservarLoteGemini
             }
 
             $ordenados = [];
+            $primeraMarca = null;
+            $marcaAnterior = null;
             foreach ($mensajes as $mensaje) {
                 $fecha = $mensaje->recibido_en;
                 $texto = $mensaje->tipo_mensaje === 'texto'
@@ -102,6 +104,13 @@ final class ReservarLoteGemini
                     || ! $this->control->permite($grupoId, $fecha, true)) {
                     throw new DomainException('Lote fuera de cortes, con contenido inválido o desautorizado.');
                 }
+                $marca = $fecha->getTimestamp();
+                if (($primeraMarca !== null && $marca - $primeraMarca > AgruparMensajesGemini::MAXIMO_VENTANA_SEGUNDOS)
+                    || ($marcaAnterior !== null && $marca - $marcaAnterior > AgruparMensajesGemini::MAXIMO_SEPARACION_SEGUNDOS)) {
+                    throw new DomainException('El lote supera la ventana o pausa máxima entre mensajes.');
+                }
+                $primeraMarca ??= $marca;
+                $marcaAnterior = $marca;
                 $ordenados[] = (int) $mensaje->id;
             }
 
