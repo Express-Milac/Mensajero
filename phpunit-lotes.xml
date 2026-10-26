@@ -10,6 +10,8 @@
             <file>tests/Unidad/PoliticaLotesGeminiTest.php</file>
             <file>tests/Funcional/ClienteGeminiLoteTest.php</file>
             <file>tests/Funcional/ReservarLoteGeminiTest.php</file>
+            <file>tests/Funcional/PresupuestoPublicacionesGeminiTest.php</file>
+            <file>tests/Funcional/PersistirResultadosLoteGeminiTest.php</file>
             <file>tests/Funcional/SimularLotesGeminiTest.php</file>
         </testsuite>
     </testsuites>
