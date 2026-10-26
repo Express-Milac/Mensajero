@@ -99,7 +99,7 @@ final class GeminiContratoTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_gemini_permanece_cerrado_sin_todas_las_autorizaciones(): void
+    public function test_gemini_permanece_cerrado_sin_los_permisos_tecnicos_globales(): void
     {
         config()->set('mensajero.ia', [
             'habilitada' => true,
@@ -116,7 +116,9 @@ final class GeminiContratoTest extends TestCase
 
         config()->set('mensajero.ia.envio_autorizado', true);
         $this->assertTrue($politica->autoriza(10020, new DateTimeImmutable('2026-10-21T13:00:00-06:00')));
-        $this->assertFalse($politica->autoriza(10021, new DateTimeImmutable('2026-10-21T13:00:00-06:00')));
+        // El permiso por grupo ahora lo asigna y comprueba SQL Server. Esta
+        // política solo asegura consentimiento técnico y corte temporal global.
+        $this->assertTrue($politica->autoriza(10021, new DateTimeImmutable('2026-10-21T13:00:00-06:00')));
         $this->assertFalse($politica->autoriza(10020, new DateTimeImmutable('2026-10-20T13:00:00-06:00')));
     }
 
