@@ -52,7 +52,10 @@ final class ControladorConfiguracionGemini extends Controller
         $habilitar = $request->boolean('habilitado');
 
         if ($habilitar && ! $request->boolean('confirmo_envio')) {
-            return back()->withErrors(['habilitado' => 'Confirma expresamente el envío de nuevos mensajes de este ámbito a Gemini.']);
+            $mensaje = 'Confirma expresamente el envío de nuevos mensajes de este ámbito a Gemini.';
+            return $request->expectsJson()
+                ? response()->json(['mensaje' => $mensaje], 422)
+                : back()->withErrors(['habilitado' => $mensaje]);
         }
 
         $actorId = auth()->id();
