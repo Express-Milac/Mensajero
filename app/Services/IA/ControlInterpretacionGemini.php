@@ -43,8 +43,7 @@ final class ControlInterpretacionGemini
      */
     public function permite(int $grupoId, DateTimeInterface $recibidoEn, bool $bloquear = false): bool
     {
-        if ($grupoId < 1 || ! $this->disponible()
-            || ! in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)) {
+        if ($grupoId < 1 || ! $this->disponible()) {
             return false;
         }
 
@@ -73,8 +72,55 @@ final class ControlInterpretacionGemini
     }
 
     /**
-     * 0: control global. Un grupo solo se puede habilitar si ya está autorizado
-     * para Gemini en configuración, activo y monitoreado.
+     * Fecha mínima efectiva del grupo, UTC, exclusivamente cuando tanto el
+     * permiso global como el individual están encendidos.
+     */
+    public function corteEfectivoGrupo(int $grupoId): ?\DateTimeImmutable
+    {
+        if ($grupoId < 1 || ! $this->disponible()) {
+            return null;
+        }
+
+        $general = $this->estado(0);
+        $individual = $this->estado($grupoId);
+        if (! $general['habilitado'] || ! $individual['habilitado']
+            || $general['inicio_en'] === null || $individual['inicio_en'] === null) {
+            return null;
+        }
+
+        try {
+            $global = new \DateTimeImmutable($general['inicio_en'].' UTC');
+            $grupo = new \DateTimeImmutable($individual['inicio_en'].' UTC');
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $global >= $grupo ? $global : $grupo;
+    }
+
+    /** @return array<int, int> IDs de grupos activos, visibles y consentidos. */
+    public function gruposHabilitados(): array
+    {
+        if (! $this->disponible()) {
+            return [];
+        }
+
+        return DB::table(self::TABLA.' as control')
+            ->join('mensajero_chats_monitoreados as g', 'g.id', '=', 'control.chat_monitoreado_id')
+            ->where('control.habilitado', true)
+            ->where('g.tipo_chat', 'grupo')
+            ->where('g.es_monitoreado', true)
+            ->where('g.es_visible_tablero', true)
+            ->where('g.es_activo', true)
+            ->orderBy('control.chat_monitoreado_id')
+            ->pluck('control.chat_monitoreado_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
+     * 0: control global. Cada grupo requiere activación explícita desde la UI,
+     * validación de captura y fecha individual que no incluye historial.
      */
     public function cambiar(int $grupoId, bool $habilitar, string $actor, ?int $actorId): void
     {
@@ -87,10 +133,6 @@ final class ControlInterpretacionGemini
         if ($habilitar && ! app(PoliticaEnvioGemini::class)->configuracionCompleta()) {
             throw new DomainException('Antes de habilitar Gemini deben existir consentimiento, clave y servicio autorizado.');
         }
-        if ($grupoId > 0 && ! in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)) {
-            throw new DomainException('Este grupo todavía no tiene autorización para enviar datos a Google.');
-        }
-
         DB::transaction(function () use ($grupoId, $habilitar, $actor, $actorId): void {
             if ($grupoId > 0) {
                 $chat = DB::table('mensajero_chats_monitoreados')
