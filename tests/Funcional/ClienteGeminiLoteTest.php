@@ -29,6 +29,7 @@ final class ClienteGeminiLoteTest extends TestCase
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
         config()->set('mensajero.ia.clave_api', 'clave-ficticia-para-prueba');
 
+        Http::preventStrayRequests();
         Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
             'candidates' => [[
                 'finishReason' => 'STOP',
@@ -77,6 +78,7 @@ final class ClienteGeminiLoteTest extends TestCase
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
         config()->set('mensajero.ia.clave_api', 'clave-ficticia-para-prueba');
 
+        Http::preventStrayRequests();
         Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
             'candidates' => [[
                 'finishReason' => 'STOP',
@@ -97,6 +99,7 @@ final class ClienteGeminiLoteTest extends TestCase
 
     public function test_descarta_ids_repetidos_antes_de_enviar_a_google(): void
     {
+        Http::preventStrayRequests();
         Http::fake();
         $contexto = $this->contexto();
         $contexto[1]['id'] = 101;
@@ -112,6 +115,7 @@ final class ClienteGeminiLoteTest extends TestCase
 
     public function test_rechaza_seudonimo_que_contiene_identificador_privado(): void
     {
+        Http::preventStrayRequests();
         Http::fake();
         $contexto = $this->contexto();
         $contexto[0]['emisor'] = '5551234567@s.whatsapp.net';
@@ -128,6 +132,7 @@ final class ClienteGeminiLoteTest extends TestCase
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
         config()->set('mensajero.ia.clave_api', 'clave-ficticia-para-prueba');
+        Http::preventStrayRequests();
         Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
             'error' => [
                 'status' => 'RESOURCE_EXHAUSTED',
@@ -144,6 +149,7 @@ final class ClienteGeminiLoteTest extends TestCase
     {
         config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
         config()->set('mensajero.ia.clave_api', 'clave-ficticia-para-prueba');
+        Http::preventStrayRequests();
         Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
             'candidates' => [[
                 'finishReason' => 'MAX_TOKENS',
