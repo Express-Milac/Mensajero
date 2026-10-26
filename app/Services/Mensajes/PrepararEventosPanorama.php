@@ -33,8 +33,9 @@ final class PrepararEventosPanorama
             return $resultado;
         }
 
-        $autorizados = array_map('intval', (array) config('mensajero.ia.grupos_autorizados', []));
-        $identificadores = array_values(array_intersect(array_keys($resultado), $autorizados));
+        // Estos grupos ya fueron filtrados por los permisos de lectura del
+        // tablero. Un evento histórico no desaparece al apagar su IA.
+        $identificadores = array_keys($resultado);
         if ($identificadores === []) {
             return $resultado;
         }
