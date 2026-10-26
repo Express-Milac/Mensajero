@@ -1,8 +1,17 @@
 # Control de Gemini desde Mensajero MILAC
 
+## Cambio de octubre de 2026: autorización completa en la interfaz
+
+La pantalla ahora incorpora los grupos **Logística Guaymas (#10198)** y **LOGÍSTICA NOGALES (#10196)** con botón Activar, además de **Logística de Patios Milac (#10197)** y **Mensajero milac Prueba (#10020)**. Los cuatro permanecen apagados hasta que el operador autorice explícitamente su interpretación.
+
+El consentimiento se registra con fecha actual en UTC y no produce publicaciones ni recupera el historial al hacer clic. Los trabajos nuevos solo se despachan con la normalización de mensajes posteriores a ese corte, si tanto el interruptor general como el individual están encendidos y el servicio de Google está correctamente configurado. Las pantallas de acontecimientos muestran resultados históricos de grupos visibles aunque Gemini sea pausado.
+
+Esta actualización NO necesita una migración adicional porque reutiliza las tablas que ya creó 2026_10_24_000200. Debe actualizarse el código y reiniciar **ambos trabajadores** PHP (normalizador y Gemini); el recolector de WhatsApp sigue funcionando. Antes de activar, comprobar que ambos trabajadores estén actualizados y sin tareas antiguas. Si se están procesando trabajos, no detener un proceso Gemini durante una solicitud facturable.
+
+
 ## Finalidad
 
-El menú **Control de Gemini** permite encender o apagar la interpretación de mensajes sin editar .env, reiniciar WhatsApp ni operar comandos diariamente. Contiene un control general y un control por grupo autorizado.
+El menú **Control de Gemini** permite autorizar, encender y apagar la interpretación de mensajes de cualquier grupo monitoreado sin editar .env, reiniciar WhatsApp ni operar comandos diariamente. Contiene un control general y un control por grupo.
 
 - Captura de WhatsApp: permanece independiente.
 - Interpretación: depende del control general, el control individual, el consentimiento previo de Google y las fechas de corte.
@@ -13,7 +22,7 @@ El menú **Control de Gemini** permite encender o apagar la interpretación de m
 
 ## Restricciones y privacidad
 
-La lista de grupos previamente autorizados a enviar información a Gemini sigue siendo la lista explícita MENSAJERO_IA_GRUPOS_AUTORIZADOS. Los demás grupos aparecen en el panel con estado «Sin autorización externa» y no pueden habilitarse hasta completar una autorización específica. El interruptor general nunca autoriza grupos adicionales.
+Todos los grupos de WhatsApp que tengan captura habilitada, estén activos y sean visibles se muestran con su propio control. La autorización del envío a Google Gemini se concede al marcar la confirmación del grupo y pulsar Activar. Esa aprobación individual, con fecha UTC de inicio, se almacena en mensajero_control_interpretacion_ia y se audita en mensajero_auditoria_interpretacion_ia. El antiguo MENSAJERO_IA_GRUPOS_AUTORIZADOS no limita los controles del panel y no hay que editar .env para incorporar un grupo. El interruptor general por sí solo nunca autoriza un grupo: también se necesita el control individual.
 
 Cada clic de activación requiere confirmación explícita en la página. Los cambios se registran en SQL Server mediante la tabla de auditoría y solo pueden ejecutarlos administradores autenticados. Para el piloto local sin autenticación, existe el permiso independiente MENSAJERO_GESTION_LOCAL_IA_HABILITADA, restringido a localhost. Nunca usar esta excepción con acceso de red o en producción.
 
@@ -62,7 +71,7 @@ Abrir http://127.0.0.1:8000/configuracion/gemini. Si se desea habilitar Gemini, 
 - **Apagado:** permiso individual desactivado, sin envíos de ese grupo.
 - **Pausado:** permiso individual encendido, interruptor general apagado.
 - **Activo:** ambos controles encendidos y autorización externa completa.
-- **No autorizado:** grupo no incorporado a la autorización previa de Gemini.
+- **No autorizado:** ya no es un estado del panel; los grupos nuevos aparecen apagados hasta su autorización explícita desde la misma página.
 
 No habilitar interpretaciones en grupos con contenidos de terceros sin su autorización aplicable. El almacenamiento original sigue privado y los mensajes no necesitan aprobación humana.
 
