@@ -74,6 +74,10 @@ final class ControlGeminiWebTest extends TestCase
         $this->assertStringNotContainsString('CLAVE_API_GEMINI', $html);
         $this->assertStringNotContainsString('No autorizado', $html);
         $this->assertStringContainsString('Autorizo enviar a Google Gemini', $html);
+        $this->assertStringContainsString('data-gemini-form', $html);
+        $this->assertStringContainsString('data-gemini-aviso', $html);
+        $this->assertStringContainsString('js/control-gemini.js', $html);
+        $this->assertStringContainsString('data-gemini-boton', $html);
     }
 
     public function test_un_grupo_nuevo_tiene_boton_de_autorizacion_sin_editar_env(): void
@@ -97,6 +101,20 @@ final class ControlGeminiWebTest extends TestCase
         $this->assertStringContainsString('configuracion/gemini/10198', $html);
         $this->assertStringContainsString('Autorizo enviar a Google Gemini', $html);
         $this->assertStringNotContainsString('No autorizado', $html);
+    }
+
+    public function test_el_control_ajax_rechaza_sin_consentimiento_sin_redireccion(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+            'mensajero.gestion_local_ia_habilitada' => true,
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->patchJson('/configuracion/gemini/10198', ['habilitado' => '1'])
+            ->assertStatus(422)
+            ->assertJsonPath('mensaje', 'Confirma expresamente el envío de nuevos mensajes de este ámbito a Gemini.');
     }
 
     public function test_la_activacion_requiere_confirmacion_del_usuario_sin_acceder_a_sql(): void
