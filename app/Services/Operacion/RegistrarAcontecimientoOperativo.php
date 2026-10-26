@@ -34,7 +34,7 @@ final class RegistrarAcontecimientoOperativo
                     ->where('id', $analisis->chat_monitoreado_id)
                     ->where('es_activo', true)->where('es_monitoreado', true)
                     ->where('es_visible_tablero', true)->first(['id']);
-                if ($grupo === null || ! in_array((int) $grupo->id, (array) config('mensajero.ia.grupos_autorizados', []), true)) {
+                if ($grupo === null) {
                     return null;
                 }
 
