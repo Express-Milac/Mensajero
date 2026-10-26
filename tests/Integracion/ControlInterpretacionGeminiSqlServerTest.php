@@ -59,6 +59,23 @@ final class ControlInterpretacionGeminiSqlServerTest extends TestCase
             $this->assertTrue($control->permite($id, CarbonImmutable::now('UTC')));
             $this->assertFalse($control->permite($id, CarbonImmutable::now('UTC')->subMinutes(5)));
 
+            // Prueba HTTP/JSON: encender y apagar mediante AJAX, sin 302.
+            config([
+                'mensajero.autenticacion.modo' => 'deshabilitado',
+                'mensajero.consulta_local_sin_autenticacion' => true,
+                'mensajero.gestion_local_ia_habilitada' => true,
+            ]);
+            $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1']);
+            $respuestaApagado = $this->patchJson('/configuracion/gemini/'.$id, ['habilitado' => false]);
+            $respuestaApagado->assertOk()->assertJsonPath('general', true);
+            $this->assertNotContains($id, $respuestaApagado->json('grupos_habilitados'));
+            $respuestaEncendido = $this->patchJson('/configuracion/gemini/'.$id, [
+                'habilitado' => true,
+                'confirmo_envio' => true,
+            ]);
+            $respuestaEncendido->assertOk()->assertJsonPath('general', true);
+            $this->assertContains($id, $respuestaEncendido->json('grupos_habilitados'));
+
             $control->cambiar($id, false, 'prueba_sql', null);
             $this->assertFalse($control->permite($id, CarbonImmutable::now('UTC')));
             $control->cambiar($id, true, 'prueba_sql', null);
