@@ -28,7 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!boton) continue;
             boton.disabled = ocupado || (!listo && !encendido);
             boton.setAttribute('aria-busy', ocupado ? 'true' : 'false');
-            if (ocupado) boton.textContent = 'Guardando...';
+            boton.textContent = ocupado
+                ? 'Guardando...'
+                : (formulario.dataset.geminiId === '0'
+                    ? (encendido ? 'Apagar Gemini' : 'Encender Gemini')
+                    : (encendido ? 'Desactivar' : 'Activar'));
         }
     };
 
