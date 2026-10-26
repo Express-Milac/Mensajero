@@ -62,4 +62,13 @@ final class ConciliacionGeminiTest extends TestCase
         $this->assertSame(1, $trabajo->tries);
         $this->assertSame('redis', $trabajo->connection);
     }
+    public function test_proyeccion_rechaza_limite_invalido_sin_consultar_google(): void
+    {
+        Http::fake();
+
+        $this->artisan('mensajero:proyectar-operacion', ['--todos' => true, '--limite' => '101'])
+            ->assertExitCode(1);
+
+        Http::assertNothingSent();
+    }
 }
