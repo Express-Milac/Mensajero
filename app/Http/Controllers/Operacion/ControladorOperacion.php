@@ -17,7 +17,11 @@ final class ControladorOperacion extends Controller
         ]);
 
         $categoria = $filtros['categoria'] ?? 'todos';
-        $gruposIA = (array) config('mensajero.ia.grupos_autorizados', []);
+        // Permisos de lectura vigentes, independientes de que Gemini esté apagado.
+        $gruposIA = DB::table('mensajero_chats_monitoreados')
+            ->where('tipo_chat', 'grupo')->where('es_activo', true)
+            ->where('es_monitoreado', true)->where('es_visible_tablero', true)
+            ->pluck('id')->map(static fn ($id): int => (int) $id)->all();
         $acontecimientos = null;
         $filas = [];
         $resumen = ['generados' => 0, 'adjuntos_posibles' => 0];
