@@ -47,14 +47,8 @@ final class AnalizarGemini extends Command
             return self::FAILURE;
         }
 
-        if ($loteReal) {
-            $fechas = config('mensajero.ia.fechas_inicio_grupos', []);
-            if (! is_array($fechas) || ! isset($fechas[(string) $grupoId])) {
-                $this->error('El lote real requiere una fecha de autorización individual para este grupo.');
-                return self::FAILURE;
-            }
-        }
-
+        // La fecha individual ahora se asigna al activar el grupo desde UI.
+        // La publicación manual continúa protegida por la reserva SQL.
         $grupo = ChatMonitoreado::query()
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
@@ -62,8 +56,8 @@ final class AnalizarGemini extends Command
             ->where('es_activo', true)
             ->find($grupoId);
 
-        if ($grupo === null || ! in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true)) {
-            $this->error('Grupo inexistente, inactivo o no incluido en la autorización de IA.');
+        if ($grupo === null || ! app(\App\Services\IA\ControlInterpretacionGemini::class)->estado($grupoId)['habilitado']) {
+            $this->error('Grupo inexistente, inactivo o no habilitado desde Control de Gemini.');
             return self::FAILURE;
         }
 
@@ -78,7 +72,15 @@ final class AnalizarGemini extends Command
             return self::FAILURE;
         }
 
-        $fechaUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+        $corteUi = app(\App\Services\IA\ControlInterpretacionGemini::class)->corteEfectivoGrupo($grupoId);
+        if ($corteUi === null) {
+            $this->error('Interpretación general o individual apagada. Actívala desde Control de Gemini.');
+            return self::FAILURE;
+        }
+        $fechaUtc = max(
+            $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+            $corteUi->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+        );
 
         $consultaMensajes = MensajeWhatsapp::query()
             ->where('chat_monitoreado_id', $grupoId)
