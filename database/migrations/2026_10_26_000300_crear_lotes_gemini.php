@@ -21,6 +21,7 @@ return new class extends Migration
             $tabla->dateTime('reservado_en', 6);
             $tabla->dateTime('publicado_en', 6)->nullable();
             $tabla->dateTime('finalizado_en', 6)->nullable();
+            $tabla->string('modelo', 90)->nullable();
             $tabla->unsignedInteger('tokens_entrada')->nullable();
             $tabla->unsignedInteger('tokens_salida')->nullable();
             $tabla->string('error_tipo', 120)->nullable();
