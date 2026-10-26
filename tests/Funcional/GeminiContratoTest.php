@@ -86,13 +86,15 @@ final class GeminiContratoTest extends TestCase
         $this->assertFalse($politica->autoriza(10197, new DateTimeImmutable('2026-10-24T10:00:00-06:00')));
     }
 
-    public function test_lote_real_requiere_autorizacion_temporal_individual_y_no_publica_por_defecto(): void
+    public function test_lote_real_rechaza_parametros_contradictorios_sin_acceder_a_google(): void
     {
         Http::fake();
-        config()->set('mensajero.ia.fechas_inicio_grupos', []);
+        // No consultar SQL vivo en una prueba funcional: fallo anterior
+        // al acceso a grupos, Redis, Google y contenido de mensajes.
         $this->artisan('mensajero:analizar-gemini', [
             '--grupo' => '10197',
             '--lote-real' => true,
+            '--mensaje-id' => '1574',
             '--aplicar' => true,
         ])->assertExitCode(1);
 
