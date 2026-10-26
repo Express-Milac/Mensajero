@@ -92,6 +92,12 @@ final class ConciliarPublicacionesGemini
                 $consulta->selectRaw('1')->from('mensajero_control_publicaciones_gemini as p')
                     ->whereColumn('p.mensaje_whatsapp_id', 'mensajero_mensajes_whatsapp.id');
             })
+            ->when(Schema::hasTable('mensajero_mensajes_lote_gemini'), function (Builder $consulta): void {
+                $consulta->whereNotExists(function ($subconsulta): void {
+                    $subconsulta->selectRaw('1')->from('mensajero_mensajes_lote_gemini as lote')
+                        ->whereColumn('lote.mensaje_whatsapp_id', 'mensajero_mensajes_whatsapp.id');
+                });
+            })
             ->orderBy('recibido_en')->orderBy('id')
             ->limit($limite)->get(['id', 'tipo_mensaje', 'contenido_texto', 'pie_multimedia', 'chat_monitoreado_id', 'recibido_en']);
 
@@ -174,7 +180,10 @@ final class ConciliarPublicacionesGemini
             if (DB::table('mensajero_analisis_operativos_ia')
                 ->where('mensaje_whatsapp_id', $mensajeId)->exists()
                 || DB::table('mensajero_control_publicaciones_gemini')
-                    ->where('mensaje_whatsapp_id', $mensajeId)->exists()) {
+                    ->where('mensaje_whatsapp_id', $mensajeId)->exists()
+                || (Schema::hasTable('mensajero_mensajes_lote_gemini')
+                    && DB::table('mensajero_mensajes_lote_gemini')
+                        ->where('mensaje_whatsapp_id', $mensajeId)->exists())) {
                 return 'registrado';
             }
 
