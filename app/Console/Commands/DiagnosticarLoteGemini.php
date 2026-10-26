@@ -44,7 +44,8 @@ final class DiagnosticarLoteGemini extends Command
         $this->info('Diagnóstico local de elegibilidad Gemini (solo lectura).');
         $this->line('Grupo: '.$grupoId);
         $this->line('Política completa: '.($politicaCompleta ? 'SI' : 'NO'));
-        $this->line('Grupo autorizado: '.(in_array($grupoId, (array) config('mensajero.ia.grupos_autorizados', []), true) ? 'SI' : 'NO'));
+        $control = app(\App\Services\IA\ControlInterpretacionGemini::class);
+        $this->line('Grupo habilitado en panel: '.($control->estado($grupoId)['habilitado'] ? 'SI' : 'NO'));
         $this->line('Contexto conversacional autorizado: '.(config('mensajero.ia.solo_mensaje_objetivo', true) === false ? 'SI' : 'NO'));
         $this->line('Corte efectivo: '.($inicio?->format(\DateTimeInterface::ATOM) ?? 'NO VALIDO'));
         $this->warn('Este comando comprueba la configuración de esta ejecución; no puede reconstruir la configuración anterior del trabajador Redis.');
@@ -67,7 +68,8 @@ final class DiagnosticarLoteGemini extends Command
                     || in_array($mensaje->tipo_mensaje, ['foto', 'video', 'documento'], true);
                 $tieneTexto = $tipoPermitido && trim((string) $texto) !== '';
                 $permiso = $mensaje->recibido_en !== null
-                    && $politica->autoriza($grupoId, $mensaje->recibido_en);
+                    && $politica->autoriza($grupoId, $mensaje->recibido_en)
+                    && $control->permite($grupoId, $mensaje->recibido_en);
 
                 $estadoPublicacion = Schema::hasTable('mensajero_control_publicaciones_gemini')
                     ? (string) (DB::table('mensajero_control_publicaciones_gemini')
@@ -97,7 +99,11 @@ final class DiagnosticarLoteGemini extends Command
                     if (config('mensajero.ia.solo_mensaje_objetivo', true) !== false) {
                         $consultaContexto->whereKey($id);
                     } else {
-                        $fechaInicioUtc = $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+                        $corteUi = $control->corteEfectivoGrupo($grupoId);
+                        $fechaInicioUtc = max(
+                            $inicio->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                            $corteUi->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                        );
                         $fechaUtc = $mensaje->recibido_en->utc()->format('Y-m-d H:i:s.u');
                         $inicioVentana = $mensaje->recibido_en->copy()->subMinutes(5)->format('Y-m-d H:i:s.u');
                         $consultaContexto->where('recibido_en', '>=', max($fechaInicioUtc, $inicioVentana))
