@@ -21,7 +21,9 @@ final class FiltroMensajeEntrante
             return DisposicionEntrada::IgnorarInactivo;
         }
 
-        if (! $chat->es_monitoreado) {
+        // La habilitación única exige captura autorizada Y visibilidad.
+        // También protege grupos heredados con banderas contradictorias.
+        if (! $chat->es_monitoreado || ! $chat->es_visible_tablero) {
             return DisposicionEntrada::IgnorarNoMonitoreado;
         }
 

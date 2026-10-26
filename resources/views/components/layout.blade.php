@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="{{ asset('css/panorama-claro.css') }}?v={{ filemtime(public_path('css/panorama-claro.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/catalogo-grupos.css') }}?v={{ filemtime(public_path('css/catalogo-grupos.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/interfaz-unificada.css') }}?v={{ filemtime(public_path('css/interfaz-unificada.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/panorama-eventos.css') }}?v={{ filemtime(public_path('css/panorama-eventos.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/control-gemini.css') }}?v={{ filemtime(public_path('css/control-gemini.css')) }}">
 </head>
 <body @class([
     'panorama-claro',
@@ -36,10 +38,22 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
                         <span>Centro de mando</span>
                     </a>
-                    <a class="nav {{ request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}" @if(request()->routeIs('mensajes.indice', 'mensajes.grupo', 'mensajes.evento')) aria-current="page" @endif>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.5-.8L4 20l1.8-5A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h7"/></svg>
-                        <span>Conversaciones</span>
+
+                    <a class="nav {{ request()->routeIs('mensajes.*') && ! request()->routeIs('mensajes.ia.*') ? 'active' : '' }}" href="{{ route('mensajes.indice') }}" @if(request()->routeIs('mensajes.indice')) aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h7"/></svg>
+                        <span>Mensajes originales</span>
                     </a>
+                    <a class="nav {{ request()->routeIs('operacion.*') || request()->routeIs('mensajes.ia.*') ? 'active' : '' }}" href="{{ route('operacion.indice') }}" @if(request()->routeIs('operacion.*')) aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>
+                        <span>Operación interpretada</span>
+                    </a>
+                    @if((config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar')) || (config('mensajero.autenticacion.modo') === 'deshabilitado' && app()->environment(['local', 'testing']) && config('mensajero.consulta_local_sin_autenticacion') === true && config('mensajero.gestion_local_ia_habilitada') === true && in_array(request()->ip(), ['127.0.0.1','::1'], true)))
+                        <a class="nav {{ request()->routeIs('gemini.configuracion*') ? 'active' : '' }}" href="{{ route('gemini.configuracion') }}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v4m0 12v4m10-10h-4M6 12H2m17.1-7.1-2.8 2.8M7.7 16.3l-2.8 2.8m14.2 0-2.8-2.8M7.7 7.7 4.9 4.9"/><circle cx="12" cy="12" r="5"/></svg>
+                            <span>Control de Gemini</span>
+                        </a>
+                    @endif
+
                     <a class="nav {{ request()->routeIs('remitentes.*') ? 'active' : '' }}" href="{{ route('remitentes.indice') }}" @if(request()->routeIs('remitentes.*')) aria-current="page" @endif>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
                         <span>Remitentes</span>
@@ -49,11 +63,7 @@
                         <span>Gestor de grupos</span>
                     </a>
                     <span class="centro-menu-separador" aria-hidden="true"></span>
-                    <span class="centro-menu-subtitulo">ACCESOS DEL TABLERO</span>
-                    <a class="nav" href="{{ route('tablero') }}#temas-clave"><span class="centro-nav-icono" aria-hidden="true">▤</span><span>Temas clave</span></a>
-                    <a class="nav" href="{{ route('tablero') }}#acuerdos-explicitos"><span class="centro-nav-icono" aria-hidden="true">✓</span><span>Posibles acuerdos</span></a>
-                    <a class="nav" href="{{ route('tablero') }}#menciones-revision"><span class="centro-nav-icono" aria-hidden="true">⚑</span><span>Menciones para revisar</span></a>
-                    @if(config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar'))
+                                        @if(config('mensajero.autenticacion.modo') === 'local' && auth()->check() && auth()->user()->can('administrar'))
                         <span class="centro-menu-separador" aria-hidden="true"></span>
                         <a class="nav {{ request()->routeIs('mensajes.tecnico') ? 'active' : '' }}" href="{{ route('mensajes.tecnico') }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg>

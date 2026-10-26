@@ -9,10 +9,13 @@ use App\Models\MensajeWhatsapp;
 use App\Models\PeriodoIntegridadWhatsapp;
 use App\Services\Mensajes\AnalizarPanoramaContenido;
 use App\Services\Mensajes\IdentificarRemitente;
+use App\Services\Mensajes\NotificadorTiempoReal;
+use App\Services\Mensajes\PrepararEventosPanorama;
 use App\Services\Normalizacion\ExtraerContenidoWhatsapp;
 use App\Services\Seguridad\PrepararContenidoEvidencia;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -39,8 +42,26 @@ final class ControladorMensajes extends Controller
     }
 
     /**
-     * El navegador consulta periódicamente este fragmento, sin recargar
-     * la página y sin exponer rutas ni datos adicionales.
+     * Credencial efímera únicamente para recibir avisos de cambios, sin contenido.
+     * La autorización de los mensajes sigue verificándose en cada GET a Laravel.
+     */
+    public function credencialTiempoReal(NotificadorTiempoReal $notificador): JsonResponse
+    {
+        if (! $notificador->habilitado()) {
+            return response()->json(['mensaje' => 'Tiempo real no habilitado.'], 503);
+        }
+
+        try {
+            return response()->json($notificador->credencial())
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        } catch (\RuntimeException $error) {
+            return response()->json(['mensaje' => $error->getMessage()], 503);
+        }
+    }
+
+    /**
+     * Fragmento actualizado únicamente cuando llega un aviso nuevo,
+     * se restablece la conexión o vuelve a mostrarse la pestaña.
      */
     public function actualizacion(Request $request, ExtraerContenidoWhatsapp $extraer, AnalizarPanoramaContenido $analizador, IdentificarRemitente $identificador): Response
     {
@@ -70,9 +91,13 @@ final class ControladorMensajes extends Controller
             ->with('conexion')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->where('es_visible_tablero', true)
             ->get();
+
+        // Lectura local; no envía mensajes a Gemini ni modifica la base de datos.
+        $eventosPorGrupo = app(PrepararEventosPanorama::class)->ejecutar($grupos);
 
         $identificadores = $grupos->pluck('id')->all();
         $conteos = $identificadores === []
@@ -89,7 +114,7 @@ final class ControladorMensajes extends Controller
                 ->groupBy('chat_monitoreado_id')
                 ->pluck('total', 'chat_monitoreado_id');
 
-        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos, $identificador): array {
+        $tarjetas = $grupos->map(function (ChatMonitoreado $grupo) use ($extraer, $conteos, $identificador, $eventosPorGrupo): array {
             // Se limita la consulta de contenido a ocho mensajes más
             // recientes por grupo. Nunca se descargan todos los eventos.
             $recientes = EventoCrudoWhatsapp::query()
@@ -107,6 +132,7 @@ final class ControladorMensajes extends Controller
                 'grupo' => $grupo,
                 'hoy' => (int) ($conteos[$grupo->id] ?? 0),
                 'ultima' => $recientes->first()?->recibido_en,
+                'eventos' => $eventosPorGrupo[(int) $grupo->id] ?? [],
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
                     'remitente' => $identificador->nombre($evento),
@@ -195,6 +221,7 @@ final class ControladorMensajes extends Controller
             ->withCount('eventosCrudos')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->orderByDesc('eventos_crudos_count')
             ->orderBy('id')
@@ -233,6 +260,7 @@ final class ControladorMensajes extends Controller
             ->with('conexion')
             ->where('tipo_chat', 'grupo')
             ->where('es_monitoreado', true)
+            ->where('es_visible_tablero', true)
             ->where('es_activo', true)
             ->findOrFail($chat);
 
@@ -315,6 +343,7 @@ final class ControladorMensajes extends Controller
             ->whereHas('chat', function ($consulta) {
                 $consulta->where('tipo_chat', 'grupo')
                     ->where('es_monitoreado', true)
+                    ->where('es_visible_tablero', true)
                     ->where('es_activo', true);
             })
             ->findOrFail($evento);

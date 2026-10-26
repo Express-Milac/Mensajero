@@ -15,7 +15,7 @@ class ConsultaEvidenciaAccesoTest extends TestCase
 
         $this->get('/tablero')->assertForbidden();
         $this->get('/grupos')->assertForbidden();
-        $this->patch('/grupos/10020/visibilidad', ['es_visible_tablero' => 0])->assertForbidden();
+        $this->patch('/grupos/10020/monitoreo', ['es_monitoreado' => 0])->assertForbidden();
         $this->get('/mensajes')->assertForbidden();
         $this->get('/mensajes/remitentes')->assertForbidden();
         $this->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])->assertForbidden();
@@ -45,7 +45,7 @@ class ConsultaEvidenciaAccesoTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_gestion_de_visibilidad_exige_opcion_local_explicita_y_rechaza_red(): void
+    public function test_gestion_de_captura_y_tablero_exige_opcion_local_explicita_y_rechaza_red(): void
     {
         config([
             'mensajero.autenticacion.modo' => 'deshabilitado',
@@ -54,13 +54,13 @@ class ConsultaEvidenciaAccesoTest extends TestCase
         ]);
 
         $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
-            ->patch('/grupos/99999/visibilidad', ['es_visible_tablero' => 0])
+            ->patch('/grupos/99999/monitoreo', ['es_monitoreado' => 0])
             ->assertForbidden();
 
         config(['mensajero.gestion_local_grupos_habilitada' => true]);
 
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
-            ->patch('/grupos/99999/visibilidad', ['es_visible_tablero' => 0])
+            ->patch('/grupos/99999/monitoreo', ['es_monitoreado' => 0])
             ->assertForbidden();
     }
 

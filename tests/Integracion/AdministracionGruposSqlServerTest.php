@@ -37,6 +37,7 @@ class AdministracionGruposSqlServerTest extends TestCase
 
             $chat = ChatMonitoreado::query()->where('id_chat_proveedor', 'grupo-operacion@g.us')->firstOrFail();
             $this->assertFalse($chat->es_monitoreado);
+            $this->assertFalse($chat->es_visible_tablero);
             $this->assertSame(0, $chat->version_autorizacion);
 
             $cambiar = app(CambiarMonitoreoChat::class);
@@ -46,6 +47,7 @@ class AdministracionGruposSqlServerTest extends TestCase
                 ->count();
 
             $this->assertTrue($chat->es_monitoreado);
+            $this->assertTrue($chat->es_visible_tablero);
             $this->assertSame(1, $chat->version_autorizacion);
             $this->assertSame(1, $auditoriasChat());
             $this->assertDatabaseHas('mensajero_auditoria_monitoreo_chats', [
@@ -73,6 +75,7 @@ class AdministracionGruposSqlServerTest extends TestCase
 
             $chat = $cambiar->ejecutar($chat->id, false, 'consola', null, 'Retiro de prueba');
             $this->assertFalse($chat->es_monitoreado);
+            $this->assertFalse($chat->es_visible_tablero);
             $this->assertSame(2, $chat->version_autorizacion);
             $this->assertSame(2, $auditoriasChat());
         } finally {

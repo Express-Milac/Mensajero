@@ -7,6 +7,14 @@ use App\Models\ChatMonitoreado;
 use App\Models\ContactoWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeWhatsapp;
+use App\Jobs\AnalizarMensajeGeminiTrabajo;
+use App\Services\IA\PoliticaEnvioGemini;
+use App\Services\IA\ControlInterpretacionGemini;
+use App\Services\IA\ConciliarPublicacionesGemini;
+use Illuminate\Support\Facades\Schema;
+use App\Services\Operacion\VincularEvidenciasOperativas;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -20,7 +28,7 @@ final class NormalizarEventoWhatsapp
 
     public function ejecutar(int $eventoCrudoId): string
     {
-        return DB::transaction(function () use ($eventoCrudoId): string {
+        $resultado = DB::transaction(function () use ($eventoCrudoId): string {
             $evento = EventoCrudoWhatsapp::query()
                 ->whereKey($eventoCrudoId)
                 ->lockForUpdate()
@@ -39,6 +47,7 @@ final class NormalizarEventoWhatsapp
                 ->where('conexion_id', $evento->conexion_id)
                 ->where('tipo_chat', 'grupo')
                 ->where('es_monitoreado', true)
+                ->where('es_visible_tablero', true)
                 ->where('es_activo', true)
                 ->lockForUpdate()
                 ->first();
@@ -154,5 +163,61 @@ final class NormalizarEventoWhatsapp
 
             return 'normalizado';
         }, 3);
+
+        // Operación desacoplada: ninguna falla de IA o de sugerencias de
+        // adjuntos revierte el COMMIT de los mensajes originales.
+        if ($resultado === 'normalizado') {
+            try {
+                $proyeccion = MensajeWhatsapp::query()
+                    ->where('evento_crudo_id', $eventoCrudoId)
+                    ->first(['id', 'chat_monitoreado_id', 'tipo_mensaje', 'contenido_texto',
+                        'pie_multimedia', 'recibido_en']);
+
+                if ($proyeccion !== null) {
+                    // Una falla de vinculación de multimedia NO debe impedir
+                    // la publicación independiente del trabajo Gemini.
+                    try {
+                        app(VincularEvidenciasOperativas::class)->alNormalizar((int) $proyeccion->id);
+                    } catch (Throwable $errorAdjunto) {
+                        Log::warning('Vinculación de evidencia operativa pendiente.', [
+                            'mensaje_id' => $proyeccion->id,
+                            'tipo_error' => get_class($errorAdjunto),
+                        ]);
+                    }
+
+                    $textoAnalizable = $proyeccion->tipo_mensaje === 'texto'
+                        ? trim((string) $proyeccion->contenido_texto) !== ''
+                        : (in_array($proyeccion->tipo_mensaje, ['foto','video','documento'], true)
+                            && trim((string) $proyeccion->pie_multimedia) !== '');
+
+                    if ($textoAnalizable
+                        && $proyeccion->recibido_en !== null
+                        && app(PoliticaEnvioGemini::class)->autoriza(
+                            (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
+                        )
+                        && app(ControlInterpretacionGemini::class)->permite(
+                            (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
+                        )) {
+                        if (Schema::hasTable('mensajero_control_publicaciones_gemini')) {
+                            $estadoPublicacion = app(ConciliarPublicacionesGemini::class)
+                                ->publicarNuevo((int) $proyeccion->id, (int) $proyeccion->chat_monitoreado_id);
+                            if ($estadoPublicacion !== 'publicado' && $estadoPublicacion !== 'registrado') {
+                                Log::notice('Publicación Gemini omitida por control preventivo.', [
+                                    'mensaje_id' => $proyeccion->id,
+                                    'estado' => $estadoPublicacion,
+                                ]);
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable $error) {
+                Log::warning('Falló una tarea operativa posterior a normalización; evidencia conservada.', [
+                    'evento_crudo_id' => $eventoCrudoId,
+                    'tipo_error' => get_class($error),
+                ]);
+            }
+        }
+
+        return $resultado;
     }
 }

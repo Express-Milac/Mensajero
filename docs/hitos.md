@@ -1,6 +1,22 @@
 # Hitos funcionales de Mensajero MILAC
 
-Actualización: 20/10/2026.
+Actualización: 22/10/2026.
+
+## Estado más reciente — Gemini
+
+| Hito | Estado comprobado |
+|---|---|
+| Captura WhatsApp en grupo piloto 10020 | Aprobada con mensaje ficticio #74 |
+| Normalización y publicación Redis | Trabajo IA finalizó DONE |
+| Google Gemini y contrato JSON | Evento incidencia válido; 223 tokens entrada y 84 salida |
+| SQL Server y UI de eventos | pendiente_revision y evidencia #74 visibles |
+| Pruebas de contrato Gemini | 9 pruebas, 19 aserciones aprobadas en Windows |
+| Activación automática | Código disponible; requiere .env local, servicios supervisados y autorización |
+| Aprobación humana / costos / seguridad 24x7 | **Pendiente de implementación y certificación** |
+
+**Importante:** el resto de este documento conserva hitos históricos de la fase 1 del 20/10/2026. Cuando contradigan el estado Gemini del 22/10/2026, prevalece este apartado. La activación por defecto en .env.example sigue cerrada; véase [operación continua](operacion-gemini-permanente.md).
+
+
 
 Esta hoja sustituye la validación repetitiva de infraestructura por
 **entregables funcionales**, con una revisión agrupada por bloque.
@@ -63,9 +79,7 @@ criterios no estén comprobados.
 
 ## Fase 2 — Interpretación con IA
 
-Gemini solo después de capturar/consultar con integridad y permisos.
-Toda interpretación deberá conservar enlace a eventos fuente y permitir
-revisión humana antes de alimentar decisiones operativas.
+**Piloto funcional validado 22/10/2026** con mensaje #74, JSON Gemini, persistencia SQL Server y evidencia vinculada en /mensajes/ia. El despacho automático por mensaje nuevo está implementado pero necesita configuración local y trabajadores permanentes. Siguen pendientes revisión humana operativa, límites de consumo, conciliación de errores y certificación para los grupos reales; ver [canalización de IA](canalizacion-ia.md).
 
 ## Enfoque directivo del dashboard — 20/10/2026
 

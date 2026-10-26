@@ -10,15 +10,20 @@
         return;
     }
 
-    const intervalo = Number(pantalla.dataset.panoramaIntervalo) || 12000;
-    const botonActualizar = document.querySelector('[data-actualizar-manual]');
+    const rutaCredencial = pantalla.dataset.credencialTiempoReal;
+    let canal = null;
+    let reintento = null;
+    let cantidadReintentos = 0;
+    let revisionProgramada = null;
+    let revisarDespues = false;
     const campoBusqueda = document.querySelector('[data-buscar-conversaciones]');
     const resultadoBusqueda = document.querySelector('[data-resultado-busqueda]');
     const botonesModo = Array.from(document.querySelectorAll('[data-modo-tarjetas]'));
-    let modoActual = 'cuadricula';
+    let modoActual = 'lista';
     let consultando = false;
+    const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Búsqueda deliberadamente acotada a los mensajes visibles de cada
+    // Búsqueda deliberadamente acotada a los mensajes y eventos visibles de cada
     // tarjeta. No consulta ni expone JSON completo ni grupos no autorizados.
     function normalizar(valor) {
         return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -40,7 +45,7 @@
             resultadoBusqueda.textContent = consulta === ''
                 ? ''
                 : visibles + (visibles === 1 ? ' grupo coincide' : ' grupos coinciden') +
-                    ' con la búsqueda entre los mensajes recientes.';
+                    ' con la búsqueda entre los eventos y mensajes recientes.';
         }
     }
 
@@ -57,19 +62,22 @@
         });
     }
 
-    // Los botones solo desplazan mensajes de su propio grupo.
+    // Los botones desplazan eventos o mensajes solo dentro de su grupo.
     zonaGrupos.addEventListener('click', (evento) => {
-        const boton = evento.target.closest('[data-mover-grupo]');
+        const boton = evento.target.closest('[data-mover-grupo], [data-mover-eventos]');
         if (!boton || !zonaGrupos.contains(boton)) {
             return;
         }
 
-        const carrusel = boton.closest('[data-grupo-id]')?.querySelector('[data-carrusel-mensajes]');
+        const esEventos = boton.hasAttribute('data-mover-eventos');
+        const carrusel = boton.closest('[data-grupo-id]')?.querySelector(
+            esEventos ? '[data-carrusel-eventos]' : '[data-carrusel-mensajes]',
+        );
         if (!carrusel) {
             return;
         }
 
-        const direccion = boton.dataset.moverGrupo === 'arriba' ? -1 : 1;
+        const direccion = (esEventos ? boton.dataset.moverEventos : boton.dataset.moverGrupo) === 'arriba' ? -1 : 1;
         const movimiento = Math.max(120, Math.round(carrusel.clientHeight * 0.75));
         const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -164,7 +172,16 @@
                 tarjetaActual = tarjetaRecibida.cloneNode(true);
                 cambio = true;
             } else if (tarjetaActual.outerHTML !== tarjetaRecibida.outerHTML) {
+                const anteriorEventos = tarjetaActual.querySelector('[data-carrusel-eventos]');
+                const desplazamientoEventos = anteriorEventos?.scrollTop ?? 0;
                 const anterior = tarjetaActual.querySelector('[data-carrusel-mensajes]');
+                const posicionesAnteriores = new Map(
+                    Array.from(anterior?.querySelectorAll('[data-mensaje-id]') ?? [])
+                        .map((elemento) => [
+                            elemento.dataset.mensajeId,
+                            elemento.getBoundingClientRect().top,
+                        ]),
+                );
                 const desplazamiento = anterior?.scrollTop ?? 0;
                 const caja = anterior?.getBoundingClientRect();
                 const anclaVisible = desplazamiento > 8
@@ -178,16 +195,63 @@
                 const foco = tarjetaActual.contains(document.activeElement) ? document.activeElement : null;
                 const botonActivo = foco?.getAttribute('data-mover-grupo');
                 const focoCarrusel = foco === anterior;
+                const focoEventos = foco === anteriorEventos;
+                const botonEventosActivo = foco?.getAttribute('data-mover-eventos');
                 const focoEnlace = foco?.closest('a[href]')?.getAttribute('href');
 
                 const reemplazo = tarjetaRecibida.cloneNode(true);
                 tarjetaActual.replaceWith(reemplazo);
                 tarjetaActual = reemplazo;
                 const nuevoCarrusel = reemplazo.querySelector('[data-carrusel-mensajes]');
+                const nuevoEventos = reemplazo.querySelector('[data-carrusel-eventos]');
 
                 restaurarPosicionCarrusel(anterior, nuevoCarrusel, desplazamiento, ancla);
+                // Conservar la lectura de eventos incluso si llegan mensajes
+                // nuevos y se sustituye la tarjeta completa del grupo.
+                if (nuevoEventos) {
+                    nuevoEventos.scrollTop = desplazamientoEventos;
+                }
 
-                if (focoCarrusel) {
+                // FLIP: el mensaje recién llegado desciende suavemente y los
+                // existentes se desplazan. No mover el carrusel si alguien lee el historial.
+                if (!movimientoReducido && desplazamiento <= 8 && nuevoCarrusel) {
+                    requestAnimationFrame(() => {
+                        for (const elemento of nuevoCarrusel.querySelectorAll('[data-mensaje-id]')) {
+                            const id = elemento.dataset.mensajeId;
+                            const anteriorY = posicionesAnteriores.get(id);
+                            const rectangulo = elemento.getBoundingClientRect();
+                            if (rectangulo.bottom < 0 || rectangulo.top > window.innerHeight) continue;
+
+                            if (anteriorY === undefined) {
+                                elemento.animate(
+                                    [
+                                        { opacity: 0, transform: 'translateY(-20px) scale(.98)', backgroundColor: '#fff0e1' },
+                                        { opacity: 1, transform: 'translateY(0) scale(1)', backgroundColor: 'transparent' },
+                                    ],
+                                    { duration: 360, easing: 'cubic-bezier(.2,.75,.25,1)' },
+                                );
+                            } else {
+                                const diferencia = anteriorY - rectangulo.top;
+                                if (Math.abs(diferencia) > 3 && Math.abs(diferencia) < 240) {
+                                    elemento.animate(
+                                        [
+                                            { transform: 'translateY(' + diferencia + 'px)' },
+                                            { transform: 'translateY(0)' },
+                                        ],
+                                        { duration: 320, easing: 'cubic-bezier(.2,.75,.25,1)' },
+                                    );
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (focoEventos) {
+                    nuevoEventos?.focus({ preventScroll: true });
+                } else if (botonEventosActivo) {
+                    reemplazo.querySelector('[data-mover-eventos="' + botonEventosActivo + '"]')
+                        ?.focus({ preventScroll: true });
+                } else if (focoCarrusel) {
                     nuevoCarrusel?.focus({ preventScroll: true });
                 } else if (botonActivo) {
                     reemplazo.querySelector('[data-mover-grupo="' + botonActivo + '"]')
@@ -228,15 +292,18 @@
     }
 
     async function comprobar() {
-        if (consultando || document.visibilityState !== 'visible') {
+        if (document.visibilityState !== 'visible') {
+            revisarDespues = true;
+            return;
+        }
+        if (consultando) {
+            revisarDespues = true;
             return;
         }
 
         consultando = true;
-        if (botonActualizar) {
-            botonActualizar.disabled = true;
-        }
-        estado.textContent = 'Consultando nuevos mensajes...';
+        revisarDespues = false;
+        estado.textContent = 'Sincronizando mensajes...';
 
         try {
             const url = new URL(pantalla.dataset.panoramaUrl, window.location.origin);
@@ -281,26 +348,86 @@
                 second: '2-digit',
             }).format(new Date());
 
-            estado.textContent = (indicadores || tarjetas ? 'Mensajes actualizados' : 'Sin cambios') +
-                ' · Última consulta ' + horaConsulta;
+            estado.textContent = (canal?.readyState === EventSource.OPEN ? 'En vivo' : 'Última consulta') +
+                ' · ' + (indicadores || tarjetas ? 'Mensajes actualizados ' : 'Sin cambios ') +
+                horaConsulta;
             estado.classList.remove('actualizacion-fallida');
         } catch {
-            estado.textContent = 'No se pudo actualizar la información. Reintentando automáticamente.';
+            estado.textContent = 'No se pudo sincronizar el tablero. Se reintentará al reconectar.';
             estado.classList.add('actualizacion-fallida');
         } finally {
             consultando = false;
-            if (botonActualizar) {
-                botonActualizar.disabled = false;
+            if (revisarDespues && document.visibilityState === 'visible') {
+                revisarDespues = false;
+                programarRevision();
             }
         }
     }
 
-    botonActualizar?.addEventListener('click', comprobar);
+    function programarRevision() {
+        if (revisionProgramada !== null) return;
+        // Agrupar avisos de ráfaga, sin esperar a un intervalo fijo de sondeo.
+        revisionProgramada = window.setTimeout(() => {
+            revisionProgramada = null;
+            void comprobar();
+        }, 150);
+    }
+
+    async function conectarTiempoReal() {
+        if (!rutaCredencial || canal) return;
+        try {
+            const respuesta = await fetch(rutaCredencial, {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'application/json' },
+            });
+            if (!respuesta.ok || respuesta.redirected) throw new Error('Credencial no disponible.');
+            const datos = await respuesta.json();
+            if (typeof datos.url !== 'string' || !datos.url) throw new Error('URL SSE inválida.');
+
+            canal = new EventSource(datos.url);
+            canal.addEventListener('cambio', () => programarRevision());
+            canal.onopen = () => {
+                cantidadReintentos = 0;
+                estado.classList.remove('actualizacion-fallida');
+                programarRevision(); // Reconcilia avisos no vistos durante la desconexión.
+            };
+            canal.onerror = () => {
+                canal?.close();
+                canal = null;
+                estado.textContent = 'Canal en vivo desconectado · reconectando…';
+                estado.classList.add('actualizacion-fallida');
+                reconectar();
+            };
+        } catch {
+            estado.textContent = 'Canal en vivo no disponible · reconectando…';
+            estado.classList.add('actualizacion-fallida');
+            reconectar();
+        }
+    }
+
+    function reconectar() {
+        if (reintento !== null) return;
+        const espera = Math.min(30000, 1500 * Math.pow(2, Math.min(cantidadReintentos++, 4)));
+        reintento = window.setTimeout(() => {
+            reintento = null;
+            void conectarTiempoReal();
+        }, espera);
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            void comprobar();
+            programarRevision();
+            if (!canal && reintento === null) void conectarTiempoReal();
         }
     });
-    window.setInterval(comprobar, intervalo);
+
+    // Respaldo cada 60 s si un aviso se pierde durante una falla transitoria;
+    // el flujo normal es inmediato mediante SSE, nunca por sondeo de 12 s.
+    window.setInterval(() => {
+        if (document.visibilityState === 'visible') programarRevision();
+    }, 60000);
+
     void comprobar();
+    void conectarTiempoReal();
 })();

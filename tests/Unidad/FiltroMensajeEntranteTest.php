@@ -19,13 +19,24 @@ class FiltroMensajeEntranteTest extends TestCase
 
     public function test_chat_monitoreado_y_activo_es_aceptado(): void
     {
-        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_activo' => true]);
+        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_visible_tablero' => true, 'es_activo' => true]);
         $this->assertSame(DisposicionEntrada::Aceptar, $this->filtro->decidir($chat, 'texto'));
     }
 
     public function test_chat_no_monitoreado_se_rechaza_por_defecto(): void
     {
         $chat = new ChatMonitoreado(['es_monitoreado' => false, 'es_activo' => true]);
+        $this->assertSame(DisposicionEntrada::IgnorarNoMonitoreado, $this->filtro->decidir($chat, 'texto'));
+    }
+
+    public function test_grupo_oculto_no_se_captura_aunque_arrastre_monitoreo_heredado(): void
+    {
+        $chat = new ChatMonitoreado([
+            'es_monitoreado' => true,
+            'es_visible_tablero' => false,
+            'es_activo' => true,
+        ]);
+
         $this->assertSame(DisposicionEntrada::IgnorarNoMonitoreado, $this->filtro->decidir($chat, 'texto'));
     }
 
@@ -42,14 +53,14 @@ class FiltroMensajeEntranteTest extends TestCase
 
     public function test_pegatina_se_rechaza_siempre_incluso_si_proveedor_envia_sticker(): void
     {
-        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_activo' => true]);
+        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_visible_tablero' => true, 'es_activo' => true]);
         $this->assertSame(DisposicionEntrada::IgnorarPegatina, $this->filtro->decidir($chat, 'STICKER'));
         $this->assertSame(DisposicionEntrada::IgnorarPegatina, $this->filtro->decidir($chat, 'pegatina'));
     }
 
     public function test_tipo_desconocido_se_conserva_si_chat_esta_autorizado(): void
     {
-        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_activo' => true]);
+        $chat = new ChatMonitoreado(['es_monitoreado' => true, 'es_visible_tablero' => true, 'es_activo' => true]);
         $this->assertSame(DisposicionEntrada::Aceptar, $this->filtro->decidir($chat, 'tipo_futuro_whatsapp'));
     }
 }

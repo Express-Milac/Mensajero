@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Autenticacion\ControladorSesion;
 use App\Http\Controllers\Grupos\ControladorGrupos;
+use App\Http\Controllers\IA\ControladorAnalisisIA;
+use App\Http\Controllers\IA\ControladorConfiguracionGemini;
+use App\Http\Controllers\Operacion\ControladorOperacion;
 use App\Http\Controllers\Mensajes\ControladorArchivosWhatsapp;
 use App\Http\Controllers\Mensajes\ControladorMensajes;
 use App\Http\Controllers\Remitentes\ControladorRemitentes;
@@ -31,17 +34,26 @@ Route::middleware('mensajero.acceso')->group(function () {
         ->middleware('mensajero.consulta_evidencia')
         ->name('grupos.indice');
 
-    Route::patch('/grupos/{chat}/visibilidad', [ControladorGrupos::class, 'actualizarVisibilidad'])
-        ->whereNumber('chat')
-        ->middleware(['mensajero.consulta_evidencia', 'mensajero.gestion_grupos', 'throttle:30,1'])
-        ->name('grupos.visibilidad.actualizar');
-
     Route::middleware('mensajero.consulta_evidencia')->group(function () {
         Route::get('/mensajes', [ControladorMensajes::class, 'conversaciones'])
             ->name('mensajes.indice');
+        Route::get('/mensajes/credencial-tiempo-real', [ControladorMensajes::class, 'credencialTiempoReal'])
+            ->middleware('throttle:30,1')
+            ->name('mensajes.credencial.tiempo-real');
         Route::get('/mensajes/actualizacion', [ControladorMensajes::class, 'actualizacion'])
-            ->middleware('throttle:15,1')
+            ->middleware('throttle:240,1')
             ->name('mensajes.actualizacion');
+        Route::get('/operacion', [ControladorOperacion::class, 'indice'])
+            ->name('operacion.indice');
+        Route::get('/mensajes/ia', [ControladorAnalisisIA::class, 'indice'])
+            ->name('mensajes.ia.indice');
+        Route::get('/configuracion/gemini', [ControladorConfiguracionGemini::class, 'indice'])
+            ->middleware('mensajero.gestion_ia')
+            ->name('gemini.configuracion');
+        Route::patch('/configuracion/gemini/{grupo}', [ControladorConfiguracionGemini::class, 'cambiar'])
+            ->whereNumber('grupo')
+            ->middleware(['mensajero.gestion_ia', 'throttle:20,1'])
+            ->name('gemini.configuracion.cambiar');
         Route::get('/mensajes/remitentes', [ControladorRemitentes::class, 'indice'])
             ->name('remitentes.indice');
         Route::get('/mensajes/remitentes/eventos/{evento}', [ControladorRemitentes::class, 'editar'])
@@ -70,9 +82,10 @@ Route::middleware('mensajero.acceso')->group(function () {
             ->name('mensajes.archivo.descargar');
     });
 
+    // Un solo interruptor gestiona captura y visibilidad de forma auditada.
     Route::patch('/grupos/{chat}/monitoreo', [ControladorGrupos::class, 'actualizarMonitoreo'])
         ->whereNumber('chat')
-        ->middleware('mensajero.acceso:administrador')
+        ->middleware(['mensajero.consulta_evidencia', 'mensajero.gestion_grupos', 'throttle:30,1'])
         ->name('grupos.monitoreo.actualizar');
 
     Route::get('/estado', function (DiagnosticoInfraestructura $diagnostico) {

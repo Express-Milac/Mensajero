@@ -9,6 +9,7 @@ use App\Models\ArchivoWhatsapp;
 use App\Models\ChatMonitoreado;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeBuzonSalida;
+use App\Services\Mensajes\NotificadorTiempoReal;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
@@ -17,14 +18,17 @@ final class CapturarEventoWhatsappEntrante
     public function __construct(
         private readonly FiltroMensajeEntrante $filtro,
         private readonly VerificarArchivoWhatsappEntrante $verificadorArchivo,
+        private readonly NotificadorTiempoReal $notificador,
     ) {}
 
     public function ejecutar(EventoWhatsappEntrante $evento): ResultadoCaptura
     {
         $claveDeduplicacion = $evento->claveDeduplicacion();
 
+        $grupoAceptadoId = null;
+
         try {
-            return DB::transaction(function () use ($evento, $claveDeduplicacion): ResultadoCaptura {
+            $resultado = DB::transaction(function () use ($evento, $claveDeduplicacion, &$grupoAceptadoId): ResultadoCaptura {
                 $chat = ChatMonitoreado::query()
                     ->where('conexion_id', $evento->conexionId)
                     ->where('id_chat_proveedor', $evento->chatId)
@@ -109,8 +113,16 @@ final class CapturarEventoWhatsappEntrante
                     'creado_en' => now('UTC'),
                 ]);
 
+                $grupoAceptadoId = (int) $chat->getKey();
                 return ResultadoCaptura::aceptado((int) $crudo->getKey());
             }, 3);
+
+            // Solo después del COMMIT; ni duplicados ni rechazos generan avisos.
+            if ($grupoAceptadoId !== null && $evento->tipoEvento === 'mensaje' && $resultado->eventoCrudoId !== null) {
+                $this->notificador->avisar($grupoAceptadoId, $resultado->eventoCrudoId);
+            }
+
+            return $resultado;
         } catch (QueryException $excepcion) {
             if (! $this->esClaveDuplicadaSqlServer($excepcion)) {
                 throw $excepcion;

@@ -26,3 +26,25 @@ Los archivos no se guardan como binarios en SQL Server. Se usa almacenamiento pr
 
 ## Acceso
 `MENSAJERO_MODO_AUTENTICACION=deshabilitado` permite temporalmente el tablero ordinario dentro de una red controlada, pero no funciones administrativas. `corporativo` falla cerrado hasta implementar la identidad MILAC.
+
+
+## Fase 2 — Canalización Gemini comprobada (22/10/2026)
+
+Después del commit de normalización SQL Server, y **fuera de la ruta crítica de captura**, se comprueba la política Gemini. Si está habilitada la ejecución automática en .env, el mensaje es **nuevo, normalizado, texto**, pertenece a grupo activo/monitoreado expresamente autorizado y supera la fecha de corte, se encola AnalizarMensajeGeminiTrabajo en **mensajero_ia**. Esta cola se atiende **separadamente** de mensajero_normalizacion.
+
+El cliente HTTPS Google envía solo texto limpiado e identificadores internos del mensaje objetivo por defecto (MENSAJERO_IA_SOLO_MENSAJE_OBJETIVO=true), nunca JID ni multimedia. El modelo devuelve un único evento JSON sustentado por mensajes fuente. El validador PHP verifica estructura, categoría, longitudes, referencias y mensaje objetivo antes de registrar el análisis. Los resultados residen en **mensajero_analisis_operativos_ia**: pendiente_revision o sin_evento, con tokens, modelo, resumen, fecha UTC y evidencias; los originales permanecen intactos.
+
+La operación continua exige .env autorizado, trabajador IA, supervisor de procesos y política de Google aprobada; **no basta establecer una variable en una terminal ni actualizar GitHub**. La primera prueba real #74 y su visualización se verificaron el 22/10/2026. Los acuerdos detectados no son confirmados sin evidencia explícita y toda decisión requiere revisión humana.
+
+**Límites conocidos:** el disparo IA posterior al commit no tiene aún un buzón transaccional propio para recuperar todos los fallos de publicación; múltiples reintentos pueden consumir varias llamadas de Google aunque solo se permita una fila resultado por mensaje. No existen topes internos de costo ni aprobación humana auditable. No declarar lista esta fase para producción.
+
+Ver [Instrucciones exactas de Gemini](canalizacion-ia.md) y [Operación permanente](operacion-gemini-permanente.md).
+
+
+## Primera cara operativa — octubre 2026
+
+El registro WhatsApp crudo permanece inalterable. La tabla mensajero_analisis_operativos_ia conserva cada respuesta validada de Gemini; una proyección separada a mensajero_acontecimientos_operativos genera una tarjeta operativa y mensajero_evidencias_acontecimientos enlaza los mensajes fuente o posibles archivos cercanos, sin confundir evidencia con interpretación.
+
+La vista /operacion no sustituye /mensajes. El asociador de adjuntos exige mismo grupo, mismo remitente, ventana ±90 segundos y exactamente un acontecimiento posible; los archivos siguen privados, sin transmisión visual a Google. Al revisar una interpretación, se registra una auditoría distinta, sin alterar el mensaje WhatsApp original.
+
+El código piloto permite contexto textual acotado solo con autorización explícita; por defecto se transmite el mensaje objetivo. No existe todavía consolidación semántica de todas las conversaciones ni análisis visual. Ver [cara operativa](cara-operativa.md).

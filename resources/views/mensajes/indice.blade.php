@@ -1,5 +1,5 @@
 <x-layout title="Mensajero MILAC">
-    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-panorama-intervalo="12000">
+    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-credencial-tiempo-real="{{ route('mensajes.credencial.tiempo-real', [], false) }}">
         <div class="centro-hero-texto">
             <span class="centro-hero-marca">EXPRESS MILAC</span>
             <h1>Mensajero <span>MILAC</span></h1>
@@ -7,9 +7,6 @@
             <div class="centro-estado" id="estado-actualizacion" role="status" aria-live="polite">Comprobando mensajes...</div>
         </div>
         <div class="centro-hero-imagen" role="img" aria-label="Tractocamión de carga de Express MILAC representado en una ilustración"></div>
-        <div class="centro-hero-herramientas">
-            <button type="button" class="centro-actualizar" data-actualizar-manual aria-label="Consultar mensajes nuevos ahora">↻ Actualizar ahora</button>
-        </div>
     </section>
 
     @include('mensajes.partes.panorama-indicadores')
@@ -25,9 +22,9 @@
 
         <form class="filtros-panorama centro-filtros" method="get" action="{{ route('mensajes.indice') }}" aria-label="Filtros del panorama">
             <div class="centro-busqueda">
-                <label for="buscar-conversaciones">Buscar en grupos y mensajes recientes</label>
-                <input type="search" id="buscar-conversaciones" placeholder="Buscar grupos o mensajes recientes..." autocomplete="off" data-buscar-conversaciones>
-                <small>Busca entre las tarjetas y sus últimos ocho mensajes.</small>
+                <label for="buscar-conversaciones">Buscar en grupos, eventos y mensajes</label>
+                <input type="search" id="buscar-conversaciones" placeholder="Buscar grupos, eventos o mensajes..." autocomplete="off" data-buscar-conversaciones>
+                <small>Busca entre eventos y los últimos ocho mensajes de cada grupo.</small>
             </div>
             <div class="filtro-grupo">
                 <label for="actividad">Actividad</label>
@@ -46,10 +43,6 @@
                 </select>
             </div>
             <button type="submit" class="filtro-aplicar">Aplicar</button>
-            <div class="centro-modos" role="group" aria-label="Disposición de tarjetas">
-                <button type="button" class="centro-modo activo" data-modo-tarjetas="cuadricula" aria-pressed="true" title="Vista de cuadrícula">▦</button>
-                <button type="button" class="centro-modo" data-modo-tarjetas="lista" aria-pressed="false" title="Vista de lista">☷</button>
-            </div>
             @if($actividad !== 'todos' || $orden !== 'recientes')
                 <a class="filtro-limpiar" href="{{ route('mensajes.indice') }}">Restablecer</a>
             @endif

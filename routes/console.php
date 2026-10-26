@@ -13,3 +13,11 @@ if (config('mensajero.normalizacion.habilitada', false)) {
         ->everyMinute()
         ->withoutOverlapping();
 }
+
+if (config('mensajero.ia.conciliacion_automatica', false) === true) {
+    // Nunca programar por omisión: solo grupos aprobados, con corte nuevo,
+    // máximo de dos publicaciones por grupo y cada cinco minutos.
+    Schedule::command('mensajero:conciliar-gemini --todos --limite=2 --aplicar')
+        ->everyFiveMinutes()
+        ->withoutOverlapping();
+}

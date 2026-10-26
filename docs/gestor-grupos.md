@@ -1,97 +1,68 @@
-# Gestor de grupos — visibilidad ejecutiva y captura independientes
+# Gestor de grupos — Interruptor único de captura y tablero
 
-## Alcance implementado
+Actualizado: 23/10/2026.
 
-En `/grupos` se pueden consultar **todos los grupos detectados** en la
-tabla `mensajero_chats_monitoreados` (tipo `grupo`). Se muestran el nombre,
-origen, última detección, estado de captura y **visibilidad del tablero**.
-La lista conserva filtros por estado, origen, nombre y nueva preferencia
-`visibilidad=visibles|ocultos|todos`, paginada de 50 en 50.
+## Regla funcional aprobada
 
-**Visibilidad** (`es_visible_tablero`) únicamente controla aparecer en
-`/tablero` y `/mensajes`, incluyendo indicadores y paneles de contenido.
-Un grupo oculto permanece **registrado en el gestor**, conserva todos sus
-mensajes y, si `es_monitoreado` es verdadero, **continúa capturando**.
-Las rutas de historial individuales siguen protegidas por autorización y
-permiten al usuario autorizado consultar los mensajes de un grupo oculto.
+**Cada grupo tiene un solo interruptor** en /grupos:
 
-**Captura** (`es_monitoreado`) continúa independiente. El único control
-para activar o desactivar captura usa el mecanismo original auditado
-`CambiarMonitoreoChat` y requiere administrador autenticado.
-El permiso de gestionar únicamente la visibilidad en el prototipo local
-**no permite activar captura ni desactivarla**.
+- **Habilitado:** se autoriza captar los mensajes nuevos y se muestra el grupo en /tablero, /mensajes y sus conversaciones consultables.
+- **Deshabilitado:** no se captan mensajes nuevos, no se envía ese grupo en la lista permitida del recolector y no aparece en tablero ni conversaciones. **Los mensajes registrados previamente se conservan** en SQL Server, sin posibilidad de borrado por el interruptor.
+- Los grupos inactivos no pueden habilitarse. Los grupos nuevos descubiertos aparecen deshabilitados de manera predeterminada.
+- La vista de administración de grupos continúa listando habilitados y deshabilitados para permitir cambiar su estado; no es una conversación visible en el tablero.
+- La autorización de envío a **Google Gemini** es distinta: habilitar la captura NO añade automáticamente un grupo a MENSAJERO_IA_GRUPOS_AUTORIZADOS.
 
-La migración
-`database/migrations/2026_10_20_190000_agregar_visibilidad_tablero_chats.php`
-agrega una columna booleana por defecto `true` (no cambia nada de los
-grupos existentes al aplicarla) y la tabla de auditoría
-`mensajero_auditoria_visibilidad_grupos`, con valores anterior/nuevo,
-actor y fecha UTC. No borra datos ni altera la autorización de captura.
+## Implementación
 
-Se eliminó exclusivamente la franja de **cinco indicadores superiores**
-del centro de mando, que no era útil para los directivos. Los paneles
-de lectura de temas, participación, posibles acuerdos y menciones
-con evidencia permanecen.
+Por compatibilidad con el esquema existente permanecen los campos booleanos es_monitoreado y es_visible_tablero en mensajero_chats_monitoreados, pero **no se administran por separado**. La única operación autorizada para cambiar estos valores es CambiarMonitoreoChat, que aplica ambos dentro de la **misma transacción SQL Server**, con bloqueo de fila, actualización de versión de autorización y registros de auditoría.
 
-## Seguridad temporal de desarrollo
+La ruta PATCH /grupos/{chat}/monitoreo sustituye a la antigua PATCH /grupos/{chat}/visibilidad. La llamada exige token CSRF, límites de peticiones y permisos administrativos. En el POC local se puede optar por el permiso de gestión local de grupos bajo localhost exclusivamente; fuera de ese entorno permanece cerrado.
 
-Por defecto, **Mostrar en tablero** y **Ocultar del tablero** están
-restringidos a administradores autenticados. Como la versión local del
-proyecto aún opera sin login, existe una excepción **solo para desarrollo
-local**, cerrada por defecto, para gestionar visibilidad, nunca captura:
+Todas las decisiones de captura aplican simultáneamente es_activo=true, es_monitoreado=true y es_visible_tablero=true. Esto incluye:
+- Lista de grupos autorizados del recolector WhatsApp.
+- Filtro de recepción y creación de evidencia SQL Server.
+- Normalización, despacho automático Gemini y acceso a conversaciones.
+- Tarjetas del tablero y eventos IA.
 
-```dotenv
+### Situaciones heredadas y privacidad
+
+El diseño anterior podía dejar es_monitoreado=true y es_visible_tablero=false (capturaba estando oculto) o viceversa. Para proteger los datos, **solo se considera habilitado cuando los dos valores son verdaderos y el grupo está activo**. No se ejecuta una actualización masiva sobre grupos existentes: al utilizar el nuevo interruptor, el servicio alinea ambos campos con el estado elegido y registra cualquier cambio.
+
+Esto implica que grupos previamente ocultos dejan de entrar en la lista del recolector, incluso si estaban marcados como monitoreados. Revisar su estado en el gestor antes de volver a autorizarlos: nunca habilitar grupos reales sin confirmación de la empresa.
+
+## Permisos del POC local
+
+Durante pruebas solo en localhost, sin login corporativo, deben estar explícitamente activadas las opciones existentes:
+
+~~~dotenv
 APP_ENV=local
 MENSAJERO_MODO_AUTENTICACION=deshabilitado
 MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION=true
 MENSAJERO_GESTION_LOCAL_GRUPOS_HABILITADA=true
-```
+~~~
 
-Aplica **solo a localhost 127.0.0.1 / ::1**, con `php artisan serve
---host=127.0.0.1`; requiere POST/PATCH, token CSRF, control de frecuencia y
-confirmación en navegador. El servidor corporativo o la red compartida
-deben usar autenticación; **no habilitar** el permiso de gestión temporal
-en producción.
+Este permiso de desarrollo **ahora permite cambiar captura y vista juntas**, por lo que no debe activarse en un servidor expuesto a la red. En producción se requiere autenticación corporativa administrativa y límites de acceso estrictos.
 
-Al terminar el ensayo, devolver
-`MENSAJERO_GESTION_LOCAL_GRUPOS_HABILITADA=false` y también
-`MENSAJERO_CONSULTA_LOCAL_SIN_AUTENTICACION=false` cuando
-ya no se necesite el acceso de consulta temporal.
+## Verificación controlada
 
-**No se ocultan grupos por nombres que parezcan prueba** ni se
-hacen desactivaciones masivas. El responsable elige cada grupo en
-el gestor y confirma el cambio. Se protegen así los grupos que
-realmente estén en operación.
+Actualizar código y ejecutar pruebas sin enviar llamadas Gemini reales:
 
-## Instalación y validación en Windows (solo mensajero_test)
-
-Verificar **antes de ejecutar** que la conexión SQL Server apunta a
-`mensajero_test`, nunca a la BD corporativa en producción.
-
-```powershell
-git pull origin codex/raw-foundation-no-auth
-php artisan migrate --path=database/migrations/2026_10_20_190000_agregar_visibilidad_tablero_chats.php --force
-php artisan config:clear
+~~~powershell
+php artisan test --filter=FiltroMensajeEntranteTest
+php artisan test --filter=ConsultaEvidenciaAccesoTest
+php artisan route:list --path=grupos
+node --check public/js/gestor-grupos.js
 php artisan view:clear
-vendor\bin\pint --test app\Services\Grupos\CambiarVisibilidadTablero.php app\Http\Middleware\AutorizarGestionGrupos.php app\Http\Controllers\Grupos\ControladorGrupos.php tests\Integracion\VistaMensajesSqlServerTest.php tests\Funcional\ConsultaEvidenciaAccesoTest.php
+~~~
+
+Las pruebas con SQL Server deben ejecutarse **solo en la base terminada en _test** y siempre después de verificar su nombre:
+
+~~~powershell
 vendor\bin\phpunit -c phpunit.integracion.xml --filter VistaMensajesSqlServerTest
-vendor\bin\phpunit --filter ConsultaEvidenciaAccesoTest
-node --check public\js\gestor-grupos.js
-```
+vendor\bin\phpunit -c phpunit.integracion.xml --filter AdministracionGruposSqlServerTest
+vendor\bin\phpunit -c phpunit.integracion.xml --filter RecolectorWhatsappSqlServerTest
+~~~
 
-La suite de integración ejecuta migraciones para `mensajero_test`,
-crea grupos sintéticos y realiza sus cambios dentro de transacciones que
-se revierten. No toca los grupos reales ni ejecuta Redis.
+Probar manualmente desde /grupos con un **grupo de prueba**: apagarlo y comprobar que desaparece de /tablero y de la lista del recolector; volver a encenderlo y confirmar que reaparece en ambos. El sistema no debe aceptar nuevos mensajes mientras está apagado, no debe borrar evidencia previa ni iniciar Gemini sobre otros grupos no autorizados.
 
-Inspección visual en `http://127.0.0.1:8000/grupos`:
-
-1. Buscar el grupo sintético deseado, comprobar su estado de captura.
-2. Ocultarlo con confirmación; verificar que deja de estar en
-   `/tablero` y `/mensajes`, pero sigue apareciendo en el gestor al
-   filtrar por «Ocultos».
-3. Comprobar que no se pierden sus mensajes.
-4. Volver a mostrarlo cuando se necesite.
-5. Restaurar el permiso local temporal a `false`.
-
-No iniciar recolectores adicionales, colas o normalización ni publicar
-o despachar los 40 avisos históricos como parte de esta tarea.
+No modificar las banderas directamente con SQL, no ejecutar correcciones masivas sin autorización y no usar esta prueba para activar grupos operativos reales.
