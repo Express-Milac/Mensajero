@@ -14,6 +14,7 @@
             <file>tests/Funcional/PersistirResultadosLoteGeminiTest.php</file>
             <file>tests/Funcional/SimularLotesGeminiTest.php</file>
             <file>tests/Funcional/OperacionLotesGeminiTest.php</file>
+            <file>tests/Funcional/ProcesarLoteGeminiTest.php</file>
         </testsuite>
     </testsuites>
     <source>
