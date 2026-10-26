@@ -59,7 +59,7 @@ final class PersistirResultadosLoteGeminiTest extends TestCase
         });
 
         DB::table('mensajero_lotes_gemini')->insert([
-            'id' => 7, 'chat_monitoreado_id' => 10196, 'estado' => 'publicado',
+            'id' => 7, 'chat_monitoreado_id' => 10196, 'estado' => 'procesando',
         ]);
         DB::table('mensajero_mensajes_whatsapp')->insert([
             ['id' => 101, 'chat_monitoreado_id' => 10196],
@@ -129,7 +129,7 @@ final class PersistirResultadosLoteGeminiTest extends TestCase
         }
 
         $this->assertSame(0, DB::table('mensajero_resultados_lote_gemini')->count());
-        $this->assertSame('publicado', DB::table('mensajero_lotes_gemini')->where('id', 7)->value('estado'));
+        $this->assertSame('procesando', DB::table('mensajero_lotes_gemini')->where('id', 7)->value('estado'));
     }
 
     public function test_rechaza_guardar_un_lote_que_aun_no_fue_publicado(): void
