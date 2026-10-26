@@ -48,7 +48,7 @@ final class PersistirResultadosLoteGemini
             if ($lote->estado === 'finalizado') {
                 return 'ya_finalizado';
             }
-            if ($lote->estado !== 'publicado') {
+            if ($lote->estado !== 'procesando') {
                 // Nunca volver a publicar una reserva o resultado incierto.
                 throw new DomainException('El lote no está confirmado como publicado.');
             }
@@ -105,7 +105,7 @@ final class PersistirResultadosLoteGemini
 
             DB::table('mensajero_lotes_gemini')
                 ->where('id', $loteId)
-                ->where('estado', 'publicado')
+                ->where('estado', 'procesando')
                 ->update([
                     'estado' => 'finalizado',
                     'modelo' => $respuesta['modelo'],
