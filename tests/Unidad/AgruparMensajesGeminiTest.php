@@ -19,14 +19,23 @@ final class AgruparMensajesGeminiTest extends TestCase
         ];
     }
 
-    public function test_nunca_mezcla_grupos_aunque_lleguen_simultaneamente(): void
+    public function test_agrupa_por_grupo_sin_mezclar_mensajes_intercalados(): void
     {
         $lotes = (new AgruparMensajesGemini)->agrupar([
             $this->mensaje(3, 10196, '12:00:20'),
             $this->mensaje(2, 10197, '12:00:10'),
             $this->mensaje(1, 10196, '12:00:00'),
         ]);
-        $this->assertSame([[1], [2], [3]], $lotes);
+        $this->assertSame([[1, 3], [2]], $lotes);
+    }
+
+    public function test_ordenacion_por_grupo_preserva_las_fechas_y_no_solo_los_ids(): void
+    {
+        $this->assertSame([[2, 1], [3]], (new AgruparMensajesGemini)->agrupar([
+            $this->mensaje(1, 10196, '12:00:10'),
+            $this->mensaje(3, 10197, '12:00:05'),
+            $this->mensaje(2, 10196, '12:00:00'),
+        ]));
     }
 
     public function test_limita_seis_mensajes_y_preserva_orden(): void
