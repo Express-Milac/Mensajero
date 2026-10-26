@@ -4,10 +4,10 @@ namespace Tests\Unidad;
 
 use App\Services\IA\PoliticaLotesGemini;
 use DateTimeImmutable;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 /**
- * Pruebas puras; la configuración de Laravel se sustituye sin acceder a SQL.
+ * Inicializa solamente el contenedor de Laravel, sin consultar SQL ni Redis.
  */
 final class PoliticaLotesGeminiTest extends TestCase
 {
