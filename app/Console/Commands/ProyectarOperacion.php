@@ -33,7 +33,7 @@ final class ProyectarOperacion extends Command
             return self::FAILURE;
         }
 
-        $autorizados = app(\\App\\Services\\IA\\ControlInterpretacionGemini::class)->gruposHabilitados();
+        $autorizados = app(\App\Services\IA\ControlInterpretacionGemini::class)->gruposHabilitados();
         $grupos = $this->option('todos') ? $autorizados : [$grupo];
         if ($grupos === [] || count($grupos) > 6) {
             $this->error('No existen grupos habilitados válidos.');
@@ -53,7 +53,7 @@ final class ProyectarOperacion extends Command
 
         $creados = 0;
         foreach ($grupos as $idGrupo) {
-        $registros = DB::table('mensajero_analisis_operativos_ia as a')
+            $registros = DB::table('mensajero_analisis_operativos_ia as a')
             ->where('a.chat_monitoreado_id', $idGrupo)
             ->whereIn('a.estado', ['identificado_ia', 'pendiente_revision'])
             ->whereNotExists(function ($consulta): void {
