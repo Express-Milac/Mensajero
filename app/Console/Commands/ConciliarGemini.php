@@ -36,18 +36,17 @@ final class ConciliarGemini extends Command
             return self::FAILURE;
         }
 
-        $idsAutorizados = array_values(array_unique(array_map('intval',
-            (array) config('mensajero.ia.grupos_autorizados', []))));
+        $idsAutorizados = app(\App\Services\IA\ControlInterpretacionGemini::class)->gruposHabilitados();
 
         $grupos = $this->option('todos') ? $idsAutorizados : [$grupoId];
         if ($grupos === [] || count($grupos) > 6) {
-            $this->error('No existe una lista válida de hasta seis grupos explícitamente autorizados.');
+            $this->error('No existe una lista válida de hasta seis grupos activados desde el panel.');
             return self::FAILURE;
         }
 
         foreach ($grupos as $id) {
             if (! in_array($id, $idsAutorizados, true)) {
-                $this->error('Grupo '.$id.' no incluido en la política Gemini.');
+                $this->error('Grupo '.$id.' no activado desde Control de Gemini.');
                 return self::FAILURE;
             }
         }
