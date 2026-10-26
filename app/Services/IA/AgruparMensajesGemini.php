@@ -47,8 +47,11 @@ final class AgruparMensajesGemini
             ];
         }
 
+        // Primero por grupo: mensajes intercalados de grupos diferentes
+        // no deben fragmentar una conversación dentro de su propio grupo.
         usort($ordenados, static fn (array $a, array $b): int =>
-            ($a['marca'] <=> $b['marca']) ?: ($a['id'] <=> $b['id'])
+            ($a['grupo_id'] <=> $b['grupo_id'])
+                ?: (($a['marca'] <=> $b['marca']) ?: ($a['id'] <=> $b['id']))
         );
 
         $lotes = [];
