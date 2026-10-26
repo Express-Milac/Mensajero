@@ -23,26 +23,24 @@
   <p class="control-gemini-nota">Al apagar se detienen nuevos análisis; una solicitud ya iniciada puede terminar. No se procesan mensajes anteriores a la última activación.</p>
 </section>
 <section class="catalogo-seccion control-gemini">
-  <div class="catalogo-titulo"><div><h2>Interpretación por grupo</h2><p>Cada grupo se puede activar por separado.</p></div></div>
+  <div class="catalogo-titulo"><div><h2>Interpretación por grupo</h2><p>Puedes habilitar cualquier grupo que ya estés monitoreando. La autorización se guarda en este panel, sin editar archivos ni enviar historial.</p></div></div>
   <div class="control-gemini-lista">
   @forelse($filas as $fila)
     @php($grupo = $fila['grupo'])
     @php($activo = $fila['estado']['habilitado'])
     <article class="control-gemini-fila">
       <div><h3>{{ $grupo->nombre_interno ?: ($grupo->nombre_grupo ?: 'Grupo sin nombre') }}</h3>
-        <p>Grupo #{{ $grupo->id }} · {{ $fila['preautorizado'] ? 'Autorizado para Gemini' : 'Sin autorización externa' }}</p></div>
+        <p>Grupo #{{ $grupo->id }} · Mensajes conservados de forma independiente</p></div>
       <div class="control-gemini-accion-grupo">
-        <strong>{{ ! $fila['preautorizado'] ? 'No autorizado' : ($activo ? ($general['habilitado'] ? 'Activo' : 'Pausado') : 'Apagado') }}</strong>
-        @if($fila['preautorizado'])
-          <form method="post" action="{{ route('gemini.configuracion.cambiar', $grupo->id) }}" class="control-gemini-form">
-            @csrf @method('PATCH')
-            <input type="hidden" name="habilitado" value="{{ $activo ? '0' : '1' }}">
-            @if(! $activo)
-              <label><input type="checkbox" name="confirmo_envio" value="1" required> Confirmo activar este grupo.</label>
-            @endif
-            <button type="submit" class="catalogo-aplicar" @disabled(! $disponible || (! $activo && ! $listo))>{{ $activo ? 'Desactivar' : 'Activar' }}</button>
-          </form>
-        @else<small>Requiere autorización específica.</small>@endif
+        <strong>{{ $activo ? ($general['habilitado'] ? 'Activo' : 'Pausado') : 'Apagado' }}</strong>
+        <form method="post" action="{{ route('gemini.configuracion.cambiar', $grupo->id) }}" class="control-gemini-form">
+          @csrf @method('PATCH')
+          <input type="hidden" name="habilitado" value="{{ $activo ? '0' : '1' }}">
+          @if(! $activo)
+            <label><input type="checkbox" name="confirmo_envio" value="1" required> Autorizo enviar a Google Gemini los mensajes nuevos de este grupo a partir de ahora.</label>
+          @endif
+          <button type="submit" class="catalogo-aplicar" @disabled(! $disponible || (! $activo && ! $listo))>{{ $activo ? 'Desactivar' : 'Activar' }}</button>
+        </form>
       </div>
     </article>
   @empty<p>Sin grupos monitorizados.</p>
