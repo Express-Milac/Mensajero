@@ -73,8 +73,18 @@ final class ControladorConfiguracionGemini extends Controller
         }
 
         $ambito = $grupo === 0 ? 'Interpretación general' : 'Interpretación del grupo #'.$grupo;
-        return back()->with('estado', $ambito.($habilitar
+        $mensaje = $ambito.($habilitar
             ? ' activada. Solo mensajes recibidos desde la activación; no se recupera historial.'
-            : ' desactivada. No se iniciarán nuevos análisis de este ámbito.'));
+            : ' desactivada. No se iniciarán nuevos análisis de este ámbito.');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'mensaje' => $mensaje,
+                'general' => $control->estado(0)['habilitado'],
+                'grupos_habilitados' => $control->gruposHabilitados(),
+            ]);
+        }
+
+        return back()->with('estado', $mensaje);
     }
 }
