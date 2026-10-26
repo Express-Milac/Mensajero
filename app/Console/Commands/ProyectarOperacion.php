@@ -54,29 +54,29 @@ final class ProyectarOperacion extends Command
         $creados = 0;
         foreach ($grupos as $idGrupo) {
             $registros = DB::table('mensajero_analisis_operativos_ia as a')
-            ->where('a.chat_monitoreado_id', $idGrupo)
-            ->whereIn('a.estado', ['identificado_ia', 'pendiente_revision'])
-            ->whereNotExists(function ($consulta): void {
-                $consulta->selectRaw('1')->from('mensajero_acontecimientos_operativos as o')
-                    ->whereColumn('o.analisis_ia_id', 'a.id');
-            })
-            ->orderBy('a.id')->limit($limite)->get(['a.id', 'a.mensaje_whatsapp_id']);
+                ->where('a.chat_monitoreado_id', $idGrupo)
+                ->whereIn('a.estado', ['identificado_ia', 'pendiente_revision'])
+                ->whereNotExists(function ($consulta): void {
+                    $consulta->selectRaw('1')->from('mensajero_acontecimientos_operativos as o')
+                        ->whereColumn('o.analisis_ia_id', 'a.id');
+                })
+                ->orderBy('a.id')->limit($limite)->get(['a.id', 'a.mensaje_whatsapp_id']);
 
-        $this->info('Grupo '.$idGrupo.' | análisis sin acontecimiento: '.$registros->count());
-        foreach ($registros as $fila) {
-            $this->line('Análisis #'.$fila->id.' | Mensaje #'.$fila->mensaje_whatsapp_id);
-        }
-
-        if (! $this->option('aplicar')) {
-            $this->comment('Simulación: no se cambió SQL Server y no se consultó Google.');
-            continue;
-        }
-
-        foreach ($registros as $fila) {
-            if ($registrar->desdeAnalisis((int) $fila->id) !== null) {
-                $creados++;
+            $this->info('Grupo '.$idGrupo.' | análisis sin acontecimiento: '.$registros->count());
+            foreach ($registros as $fila) {
+                $this->line('Análisis #'.$fila->id.' | Mensaje #'.$fila->mensaje_whatsapp_id);
             }
-        }
+
+            if (! $this->option('aplicar')) {
+                $this->comment('Simulación: no se cambió SQL Server y no se consultó Google.');
+                continue;
+            }
+
+            foreach ($registros as $fila) {
+                if ($registrar->desdeAnalisis((int) $fila->id) !== null) {
+                    $creados++;
+                }
+            }
         }
         $this->info('Acontecimientos creados o reconciliados: '.$creados.'. Sin llamadas a Gemini.');
         return self::SUCCESS;
