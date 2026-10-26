@@ -15,8 +15,6 @@ final class ControladorConfiguracionGemini extends Controller
 {
     public function indice(ControlInterpretacionGemini $control, PoliticaEnvioGemini $politica): View
     {
-        $autorizados = array_map('intval', (array) config('mensajero.ia.grupos_autorizados', []));
-
         $grupos = ChatMonitoreado::query()
             ->where('tipo_chat', 'grupo')
             ->where('es_activo', true)
@@ -26,10 +24,9 @@ final class ControladorConfiguracionGemini extends Controller
             ->orderBy('nombre_grupo')
             ->get(['id', 'nombre_grupo', 'nombre_interno', 'es_activo', 'es_monitoreado', 'es_visible_tablero']);
 
-        $filas = $grupos->map(static function (ChatMonitoreado $grupo) use ($autorizados, $control): array {
+        $filas = $grupos->map(static function (ChatMonitoreado $grupo) use ($control): array {
             return [
                 'grupo' => $grupo,
-                'preautorizado' => in_array((int) $grupo->id, $autorizados, true),
                 'estado' => $control->estado((int) $grupo->id),
             ];
         });
