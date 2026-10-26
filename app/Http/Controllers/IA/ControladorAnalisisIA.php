@@ -14,7 +14,10 @@ final class ControladorAnalisisIA extends Controller
 {
     public function indice(PoliticaEnvioGemini $politica): View
     {
-        $permitidos = (array) config('mensajero.ia.grupos_autorizados', []);
+        $permitidos = DB::table('mensajero_chats_monitoreados')
+            ->where('tipo_chat', 'grupo')->where('es_activo', true)
+            ->where('es_monitoreado', true)->where('es_visible_tablero', true)
+            ->pluck('id')->map(static fn ($id): int => (int) $id)->all();
         $analisis = null;
         // Esta vista distingue entre resultado sin evento y ausencia de resultado.
         // La configuracion no demuestra que el trabajador siga encendido.
