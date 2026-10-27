@@ -128,7 +128,7 @@
                                     <div class="centro-mensaje-cuerpo">
                                         <div class="fragmento-datos">
                                             <span class="fragmento-remitente">{{ $mensaje['remitente'] }}@if($mensaje['telefono_remitente'] && ! str_starts_with($mensaje['remitente'], 'Teléfono +')) <small class="telefono-participante">+{{ $mensaje['telefono_remitente'] }}</small>@endif</span>
-                                            <time datetime="{{ $mensaje['fecha']?->toIso8601String() }}">{{ $mensaje['fecha']?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin fecha' }}</time>
+                                            <time datetime="{{ ($mensaje['fecha'] !== null ? $mensaje['fecha']->toIso8601String() : '') }}">{{ ($mensaje['fecha'] !== null ? $mensaje['fecha']->timezone(config('app.timezone'))->format('d/m H:i') : 'Sin fecha') }}</time>
                                         </div>
                                         <p>{{ $mensaje['texto'] }}</p>
                                         <a class="centro-ver-evidencia" href="{{ route('mensajes.evento', $mensaje['id']) }}">Ver mensaje original ↗</a>
@@ -145,7 +145,7 @@
                 </div>
 
                 <div class="pie-tarjeta-directiva">
-                    <span>{{ number_format($tarjeta['hoy']) }} {{ $tarjeta['hoy'] === 1 ? 'mensaje hoy' : 'mensajes hoy' }} · {{ $tarjeta['ultima']?->timezone(config('app.timezone'))->format('d/m H:i') ?? 'Sin actividad registrada' }}</span>
+                    <span>{{ number_format($tarjeta['hoy']) }} {{ $tarjeta['hoy'] === 1 ? 'mensaje hoy' : 'mensajes hoy' }} · {{ ($tarjeta['ultima'] !== null ? $tarjeta['ultima']->timezone(config('app.timezone'))->format('d/m H:i') : 'Sin actividad registrada') }}</span>
                     <a href="{{ route('mensajes.grupo', $grupo->id) }}">Abrir conversación <span aria-hidden="true">→</span></a>
                 </div>
             </article>
