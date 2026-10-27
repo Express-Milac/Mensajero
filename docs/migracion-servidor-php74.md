@@ -216,3 +216,21 @@ Correcciones funcionales adicionales dentro de **Mensajero**:
 
 Estos cambios **solo están revisados por lectura de código**. Los scripts automáticos y Blade compilado aún NO han sido ejecutados con PHP 7.4 y Laravel8, porque GitHub Actions continúa con fallo antes de obtener runner o registrar pasos. Por ello las pruebas de integración SQL Server y la revisión completa siguen PENDIENTES y está prohibido desplegar.
 
+
+## Resolución segura del composer.lock (27/oct/2026, complemento)
+
+Se agregó `herramientas/resolver-lock-php74.sh` **exclusivamente al repositorio Mensajero**. Usa Composer 2 (binario independiente o `COMPOSER_PHAR`), verifica que `composer.json` fije PHP `7.4.13` y Laravel `^8.83`, crea una carpeta temporal con solo `composer.json`, resuelve paquetes con `composer update --no-install --no-scripts --no-plugins` y comprueba que el `composer.lock` resultante contenga Laravel 8. **No modifica el lock heredado ni instala paquetes en el proyecto**; se revisa manualmente el resultado temporal antes de incluirlo en el PR.
+
+Ejemplo para un **equipo de desarrollo con PHP/Composer 2 y acceso a paquetes**, NUNCA para el servidor corporativo:
+
+```bash
+cd /ruta/al/clon-aislado/Mensajero
+# Si Composer 2 ya es el comando "composer":
+bash herramientas/resolver-lock-php74.sh
+
+# O, si existe un Composer2 PHAR privado en el equipo de desarrollo:
+COMPOSER_PHAR=/ruta/privada/composer2.phar bash herramientas/resolver-lock-php74.sh
+```
+
+Este procedimiento **todavía no se ha ejecutado con éxito**: el entorno de trabajo disponible tiene PHP 8.4 pero no Composer ni acceso DNS a GitHub/Packagist, y GitHub Actions sigue sin asignar ejecutor. Aunque genere un lock, se requiere después probarlo físicamente con **PHP 7.4.13** y pasar los tests; el valor de `config.platform.php` es solo una simulación del solucionador de Composer.
+
