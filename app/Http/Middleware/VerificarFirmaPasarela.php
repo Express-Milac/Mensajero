@@ -12,9 +12,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerificarFirmaPasarela
 {
-    public function __construct(
-        private readonly ValidadorFirmaPasarela $validador,
-    ) {}
+    private ValidadorFirmaPasarela $validador;
+
+    public function __construct(ValidadorFirmaPasarela $validador)
+    {
+        $this->validador = $validador;
+    }
 
     public function handle(Request $request, Closure $siguiente, string $protegerRepeticion = 'si'): Response
     {
