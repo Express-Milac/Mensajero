@@ -38,8 +38,7 @@ class ControladorWebhookWhatsapp extends Controller
     public function recibir(
         Request $request,
         CapturarEventoWhatsappEntrante $capturar,
-        SincronizarChatsDescubiertos $sincronizar,
-    ): JsonResponse {
+        SincronizarChatsDescubiertos $sincronizar) : JsonResponse {
         $carga = $request->json()->all();
 
         if (($carga['object'] ?? null) !== 'whatsapp_business_account') {
@@ -184,8 +183,7 @@ class ControladorWebhookWhatsapp extends Controller
     private function sincronizarGrupos(
         ConexionWhatsapp $conexion,
         $grupos,
-        SincronizarChatsDescubiertos $sincronizar,
-    ): int {
+        SincronizarChatsDescubiertos $sincronizar) : int {
         if (! is_array($grupos)) {
             return 0;
         }
