@@ -13,6 +13,7 @@ require __DIR__.'/../app/Enums/DisposicionEntrada.php';
 require __DIR__.'/../app/Enums/Rol.php';
 require __DIR__.'/../app/Data/WhatsApp/ArchivoWhatsappEntrante.php';
 require __DIR__.'/../app/Data/WhatsApp/ResultadoCaptura.php';
+require __DIR__.'/../app/Services/Capture/FiltroMensajeEntrante.php';
 
 use App\Enums\DisposicionEntrada;
 use App\Enums\Rol;
@@ -51,5 +52,17 @@ $archivo = new ArchivoWhatsappEntrante(
 );
 comprobar($archivo->tamanoBytes === 120, 'metadatos de archivos');
 comprobar($archivo->rutaRelativa === 'pruebas/archivo-ficticio.jpg', 'ruta relativa');
+
+// Si el tipo de retorno siguiera siendo la antigua clase enum,
+// este llamado generaría TypeError porque ahora devuelve una cadena.
+$filtro = new \App\Services\Capture\FiltroMensajeEntrante;
+comprobar(
+    $filtro->decidir(null, 'texto') === DisposicionEntrada::IgnorarChatDesconocido,
+    'rechazar chats desconocidos sin errores de tipos'
+);
+comprobar(
+    $filtro->decidir(null, 'STICKER') === DisposicionEntrada::IgnorarPegatina,
+    'excluir pegatinas aunque no exista el chat'
+);
 
 fwrite(STDOUT, "OK: contratos base PHP 7.4 sin llamadas externas.\n");
