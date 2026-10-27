@@ -47,7 +47,7 @@ final class DiagnosticarLoteGemini extends Command
         $control = app(\App\Services\IA\ControlInterpretacionGemini::class);
         $this->line('Grupo habilitado en panel: '.($control->estado($grupoId)['habilitado'] ? 'SI' : 'NO'));
         $this->line('Contexto conversacional autorizado: '.(config('mensajero.ia.solo_mensaje_objetivo', true) === false ? 'SI' : 'NO'));
-        $this->line('Corte efectivo: '.($inicio?->format(\DateTimeInterface::ATOM) ?? 'NO VALIDO'));
+        $this->line('Corte efectivo: '.($inicio !== null ? $inicio->format(\DateTimeInterface::ATOM) : 'NO VALIDO'));
         $this->warn('Este comando comprueba la configuración de esta ejecución; no puede reconstruir la configuración anterior del trabajador Redis.');
 
         try {
