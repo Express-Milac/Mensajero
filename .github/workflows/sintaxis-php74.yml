@@ -32,3 +32,22 @@ jobs:
 
       - name: Detectar archivos incompatibles sin cargar Laravel ni BD
         run: bash herramientas/comprobar-sintaxis-php74.sh
+
+  contratos-base:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Contratos de WhatsApp y roles sin Laravel
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 7.4 real
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: none
+
+      - name: Probar valores de contratos originales en PHP 7.4
+        run: php herramientas/probar-contratos-php74.php
