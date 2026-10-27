@@ -12,7 +12,7 @@ return [
         ],
     ],
     // Mensajero comparte una base corporativa y aísla también su historial de migraciones.
-    'migrations' => ['table' => 'mensajero_migraciones', 'update_date_on_publish' => true],
+    'migrations' => 'mensajero_migraciones',
     'redis' => [
         'client' => env('REDIS_CLIENT', 'predis'),
         'options' => ['prefix' => env('REDIS_PREFIX', 'mensajero:')],
