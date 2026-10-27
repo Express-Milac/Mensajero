@@ -126,3 +126,21 @@ grep -RinE 'SetHandler|ProxyPassMatch|php[0-9][.]|AddHandler|FilesMatch' \
 ```
 
 No crear un archivo `phpinfo()` público ni ejecutar `composer install` o `artisan migrate` en la instancia activa para diagnosticar el PHP web.
+
+## Resolución de SAPI Apache (27/oct/2026)
+
+La inspección de módulos habilitados confirmó estos enlaces y directivas:
+
+```text
+/etc/apache2/mods-enabled/php7.4.load
+LoadModule php7_module /usr/lib/apache2/modules/libphp7.4.so
+/etc/apache2/mods-enabled/php7.4.conf
+SetHandler application/x-httpd-php
+/etc/apache2/mods-enabled/rewrite.load
+```
+
+**Resultado:** Apache tiene configurado **mod_php 7.4** para PHP. El PHP-FPM 7.3 en `/run/php/php7.3-fpm.sock` existe, pero no se encontraron `SetHandler`, `ProxyPassMatch` ni directivas PHP-FPM por sitio. Por ello el objetivo de Mensajero se mantiene **PHP 7.4.13 / Laravel 8**; no migrar a PHP 7.3 solo por encontrar dicho proceso. Falta una comprobación final desde un vhost restringido con PHP web para confirmar la versión exacta de ejecución.
+
+El usuario `sistemas` recibió en `apache2ctl -t` una advertencia de certificado privado SSL no accesible. No afirmar que falta el archivo; podría ser falta de permisos de lectura. No reiniciar/recargar Apache hasta que un administrador autorizado valide su sintaxis como usuario privilegiado.
+
+**Precaución adicional:** el hecho de que `readlink -f /var/www/html/Mensajero` apunte a `public` no demuestra por sí solo que el virtual host sirva el directorio correcto ni que el dominio tenga autenticación. Verificar ambos antes de publicar WhatsApp.
