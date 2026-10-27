@@ -95,3 +95,34 @@ ls -ld /home /home/sistemas /home/sistemas/laravelProjects /home/sistemas/larave
 La página oficial `https://getcomposer.org/download/` describe el canal Composer 2.2 LTS y el instalador con `--install-dir`, `--filename` y `--2.2`. Este canal funciona con PHP 7.4. Para construir Mensajero, preferir el Composer 2 estable más reciente admitido por PHP 7.4, siempre en **una ruta privada y aislada**, sin `self-update` sobre el Composer global de 1.6.5. Validar firma y cadena de certificados HTTPS; jamás usar `--disable-tls`, `secure-http=false` o `--ignore-platform-reqs`.
 
 **No ejecutar aún Composer 2 sobre el directorio de despliegue**: primero terminar el port completo, regenerar lock y verificar módulos web.
+
+
+## Advertencia Apache / PHP web detectada (27/oct/2026)
+
+El servidor respondió a `/usr/sbin/apache2ctl -t` ejecutado por el usuario `sistemas`:
+
+```text
+AH00526: Syntax error on line 33 of /etc/apache2/sites-enabled/default-ssl.conf:
+SSLCertificateKeyFile: file '/etc/ssl/private/track_milac_com_mx.key' does not exist or is empty
+```
+
+**No está demostrado que falte la llave**: ese resultado puede deberse a que la prueba se ejecutó sin privilegios para leer archivos privados de SSL. Se prohíbe reiniciar, recargar, modificar permisos del archivo o desactivar SSL hasta que el administrador verifique `sudo /usr/sbin/apache2ctl -t`. Tampoco debe difundirse ni copiarse el contenido de la llave.
+
+El proceso `php-fpm7.3` está activo y existe `/run/php/php7.3-fpm.sock`. La instalación contiene directorios `/etc/php/5.6` a `/etc/php/7.4`, pero **no se observó** `php7.4-fpm.sock` ni proceso `php-fpm7.4`. PHP CLI 7.4 **NO demuestra PHP web 7.4**. No cambiar el objetivo a PHP 7.3 sin identificar cómo Apache maneja realmente el vhost de Mensajero.
+
+Para diagnóstico de solo lectura, sin exponer llaves:
+
+```bash
+# Ejecutar solo si Francisco tiene privilegios administrativos ya autorizados:
+sudo -n /usr/sbin/apache2ctl -t
+# Si no tiene sudo, solicitar esta comprobación al administrador; no tocar certificados.
+
+ls -1 /etc/apache2/mods-enabled/ | grep -Ei 'php|proxy|fcgi|rewrite'
+readlink -f /run/php/php-fpm.sock
+ls -l /etc/php/7.4/fpm /etc/php/7.3/fpm 2>&1
+ls -l /etc/apache2/sites-enabled/
+grep -RinE 'SetHandler|ProxyPassMatch|php[0-9][.]|AddHandler|FilesMatch' \
+  /etc/apache2/sites-enabled /etc/apache2/conf-enabled 2>/dev/null
+```
+
+No crear un archivo `phpinfo()` público ni ejecutar `composer install` o `artisan migrate` en la instancia activa para diagnosticar el PHP web.
