@@ -2,11 +2,14 @@
 
 namespace App\Enums;
 
-enum DisposicionEntrada: string
+/** Valores estables de contrato; equivalentes a los enums de PHP 8. */
+final class DisposicionEntrada
 {
-    case Aceptar = 'aceptar';
-    case IgnorarPegatina = 'ignorar_pegatina';
-    case IgnorarChatDesconocido = 'ignorar_chat_desconocido';
-    case IgnorarNoMonitoreado = 'ignorar_no_monitoreado';
-    case IgnorarInactivo = 'ignorar_inactivo';
+    public const Aceptar = 'aceptar';
+    public const IgnorarPegatina = 'ignorar_pegatina';
+    public const IgnorarChatDesconocido = 'ignorar_chat_desconocido';
+    public const IgnorarNoMonitoreado = 'ignorar_no_monitoreado';
+    public const IgnorarInactivo = 'ignorar_inactivo';
+
+    private function __construct() {}
 }
