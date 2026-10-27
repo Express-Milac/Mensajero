@@ -92,6 +92,9 @@ jobs:
       - name: Resolver dependencias con plataforma PHP 7.4.13 (sin scripts)
         run: composer update --no-scripts --no-interaction --prefer-dist --no-progress
 
+      - name: Impedir lock de Laravel 13 o plataforma distinta
+        run: php herramientas/verificar-lock-php74.php
+
       - name: Verificar requisitos físicos del runner
         run: composer check-platform-reqs
 
