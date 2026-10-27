@@ -72,12 +72,12 @@ class PasarelaSeguraSqlServerTest extends TestCase
                 ->assertJsonPath('mensaje', 'Solicitud de pasarela repetida.');
 
             $idFirmaIncorrecta = 'firma-incorrecta-'.$sufijo;
-            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, firmaValida: false)
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, false)
                 ->assertUnauthorized();
             $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idFirmaIncorrecta)->exists());
 
             $idCaducada = 'firma-caducada-'.$sufijo;
-            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, desfaseSegundos: -301)
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, true, -301)
                 ->assertUnauthorized();
             $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idCaducada)->exists());
 
