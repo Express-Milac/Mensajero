@@ -179,17 +179,17 @@ class NormalizacionLoteSqlServerTest extends TestCase
     {
         $clave = 'lote-'.bin2hex(random_bytes(8));
         $evento = new EventoWhatsappEntrante(
-            conexionId: (int) $grupo->conexion_id,
-            chatId: $grupo->id_chat_proveedor,
-            tipoEvento: 'mensaje',
-            tipoMensaje: 'texto',
-            eventoExternoId: $clave,
-            mensajeProveedorId: $clave,
-            contenidoCrudo: json_encode([
+            (int) $grupo->conexion_id,
+            $grupo->id_chat_proveedor,
+            'mensaje',
+            'texto',
+            $clave,
+            $clave,
+            json_encode([
                 'message' => ['conversation' => 'Texto de prueba sintética'],
             ], JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
+            CarbonImmutable::now('UTC'),
+            'v3-recolector'
         );
 
         $resultado = app(CapturarEventoWhatsappEntrante::class)->ejecutar($evento);
