@@ -1,33 +1,39 @@
-# Guía de contribución
+# Contribuir a Mensajero
 
-Leer AGENTS.md, OBJETIVO.md, RESUMEN.md y TASKS.md. Trabajar por milestone y mantener
-cambios revisables. Branches de trabajo: codex/<descripcion>, salvo instrucción distinta.
-No editar proyectos hermanos ni producción como parte de una tarea local de Mensajero.
+## Antes de modificar
+1. Leer `AGENTS.md`, `OBJETIVO.md`, `RESUMEN.md`, `TASKS.md` y `agentes/`.
+2. Confirmar el hito vigente y preservar cambios ajenos.
+3. Mantener la nomenclatura de negocio en español.
 
-## Preparación
-
-PHP 8.4 y Composer. Ejecutar composer install desde composer.lock; no actualizar todas las
-dependencias para una tarea ajena a ellas. Copiar .env.example a .env solo si este no existe,
-generar APP_KEY y configurar servicios locales. No registrar secretos en commits.
+## Flujo mínimo
+1. Arquitectura valida límites y contratos.
+2. Creación implementa el incremento completo.
+3. Revisión busca referencias rotas y defectos.
+4. Pruebas ejecuta y registra evidencia real.
+5. Seguridad verifica exposición, secretos y permisos.
+6. UI/UX revisa flujo y textos.
 
 ## Validación
+Para cambios que no requieren SQL Server real:
 
-```text
+```bash
+composer validate --strict
+composer install
 php vendor/phpunit/phpunit/phpunit
 php vendor/laravel/pint/builds/pint --test
-php artisan view:cache
 php artisan route:list --except-vendor
-composer validate --strict
-git diff --check
+php artisan view:cache
 ```
 
-En el PHP Windows inspeccionado fileinfo requiere `php -d extension=fileinfo ...`.
-Ver docs/deployment.md para extensiones SQL y comandos de integración. Pruebas aisladas no
-necesitan una base real. No ejecutar phpunit.integration.xml sin base desechable _test.
+Si GitHub Actions termina antes de crear jobs, el resultado no cuenta como ejecución de estas pruebas.
+
+Los cambios de esquema o canal de captura deben probarse además con `phpunit.integracion.xml` exclusivamente contra una base SQL Server desechable cuyo nombre termine en `_test`.
+
+## Reglas de seguridad
+- No guardar secretos, sesiones WhatsApp, payloads privados ni binarios operativos en Git.
+- No ejecutar migraciones de desarrollo contra producción.
+- No conectar el número empresarial como efecto secundario de una entrega de código.
+- El runtime debe disponer de `mbstring` y extensiones SQL Server necesarias.
 
 ## Entrega
-
-Explicar problema, comportamiento resultante, validación y limitaciones. Actualizar TASKS.md,
-RESUMEN.md y docs/milestones.md si cambia el estado. Revisar archivos staged: .env, llaves,
-logs, sesiones de proveedores y evidencia operativa no deben publicarse. Nunca afirmar que
-se desplegó o que un servicio está disponible basándose solo en código o mocks.
+Actualizar `RESUMEN.md`, `TASKS.md`, `docs/verificacion.md` y, cuando corresponda, `docs/revision-previa-integracion.md`. Distinguir siempre lo implementado de lo realmente certificado.

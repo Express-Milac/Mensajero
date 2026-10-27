@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+    <testsuites><testsuite name="SQL Server"><directory>tests/Integracion</directory></testsuite></testsuites>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+    </php>
+</phpunit>

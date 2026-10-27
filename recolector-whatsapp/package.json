@@ -1,0 +1,29 @@
+{
+  "name": "mensajero-recolector-whatsapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/aplicar-parche-baileys.mjs",
+    "desarrollo": "tsx src/principal.ts",
+    "diagnosticar-cola": "tsx src/diagnosticar-cola.ts",
+    "diagnosticar-autorizaciones": "tsx src/diagnosticar-autorizaciones.ts",
+    "drenar-cola": "tsx src/drenar-cola.ts",
+    "verificar": "tsc --noEmit",
+    "construir": "tsc",
+    "pruebas": "tsx --test tests/**/*.test.ts",
+    "iniciar": "node dist/src/principal.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.24",
+    "dotenv": "^17.2.3",
+    "pino": "^9.0.0",
+    "qrcode-terminal": "0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "tsx": "^4.20.0",
+    "typescript": "^5.7.0"
+  }
+}

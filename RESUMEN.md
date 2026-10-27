@@ -1,50 +1,33 @@
 # Estado y traspaso a otra IA
 
-Actualizado: 2026-10-13. Este archivo describe lo implementado, no el producto final.
+Actualizado: 16/10/2026.
 
-## Lo que existe
+## Decisiones confirmadas
+5–6 grupos seleccionados; grupos normales existentes de 30+ participantes; servidor propio; SQL Server corporativo existente; autenticación corporativa pospuesta. Meta Cloud API continúa implementada para canales oficiales compatibles.
 
-- Laravel 13 / PHP 8.4; Composer lock, Livewire y Predis instalables.
-- Login local por email/contraseña, sesión, logout, limitación de intentos y roles.
-- Comandos mensajero:create-admin y mensajero:health.
-- Configuración exclusiva SQL Server y Redis; compose local solo para Redis.
-- Disco privado mensajero_local con raíz configurable y health de lectura/escritura/espacio.
-- Pantallas Blade de acceso e inicio; no muestran datos de operación simulados como reales.
-- Diagnóstico protegido /health y liveness /up.
-- Pruebas aisladas y suite opt-in para SQL Server real con base terminada en _test.
-- Diseño de arquitectura, entidades, allowlist, ingestión/outbox, storage y pipeline IA.
+Para resolver los grupos normales existentes se autorizó un POC separado con un **número recolector corporativo secundario**. Ese número es reemplazable y nunca será el número principal de MILAC.
 
-## Lo que todavía no existe
+## Implementado
+- Dominio, migraciones, rutas principales, estados y pruebas con nomenclatura de negocio en español.
+- Lista permitida por defecto denegada y descarte de pegatinas.
+- `CapturarEventoWhatsappEntrante` persiste evento crudo + buzón de salida de forma transaccional e idempotente.
+- Almacenamiento privado configurable fuera de SQL Server.
+- Webhook oficial Meta Cloud API y cliente Graph API propio.
+- Contrato HMAC interno con protección antirrepetición para operaciones mutables.
+- Administración y auditoría de grupos descubiertos.
+- `recolector-whatsapp/` preparado como componente Node.js/TypeScript aislado.
+- Cola local durable: mensajes autorizados se guardan en disco antes de transmisión y solo se eliminan tras ACK.
+- Caché local de grupos autorizados para sobrevivir indisponibilidad temporal de Laravel.
+- Registro de periodos de integridad para desconexiones y reinicios no limpios.
+- Comando `mensajero:registrar-conexion-recolector`.
 
-Login corporativo, permisos corporativos persistidos, puente MilacServices, tablas operativas,
-allowlist administrable, ingestión RAW/outbox, gateway, descargas multimedia, timeline,
-búsqueda operativa, broadcasting, Gemini y revisión humana. No hay sesión WhatsApp vinculada.
-Livewire instalado no significa vistas operativas Livewire implementadas.
+## Estado de certificación
+La base Laravel previa al recolector está validada localmente con Pint 78 archivos, PHPUnit 32 pruebas/78 aserciones y SQL Server 6 pruebas/100 aserciones repetidas dos veces.
 
-## Descubrimiento que cambia la siguiente implementación
+El incremento del recolector todavía debe ser traído al entorno local y ejecutar `npm install`, `npm run verificar`, `npm run pruebas`, Pint, PHPUnit e integración SQL Server antes de escanear el QR del número recolector.
 
-IAVE valida mediante MilacServices/Iave/api/loginv2. GPSGestor también usa Mml/api/login,
-luego exige autorización propia. Valera carga el bootstrap de MilacServices para recuperar
-dbLis sin copiar secretos. Los contratos y archivos observados están documentados en
-docs/milac-integration-review.md, incluyendo diferencias entre documentación antigua y código.
+## Limitación obligatoria antes de operación real
+El incremento actual preserva el evento y metadatos de mensajes multimedia, pero todavía no descarga de forma durable el binario. Antes de agregar el número recolector a grupos operativos reales se debe implementar y certificar foto, video, audio y documentos, además de carga/reinicio/desconexión/reconciliación.
 
-No se necesita que el usuario entregue credenciales o SSH para continuar desarrollando.
-El login local inicial debe evolucionar al patrón corporativo. No imponer una base nueva.
-La documentación del servidor menciona PHP 7.4; dato aún no verificado en vivo. Laravel
-requiere runtime separado y una frontera compatible con la integración heredada.
-
-## Evidencia y límites
-
-En la entrega inicial: 9 pruebas aisladas / 41 assertions aprobadas; Pint, rutas y vistas
-validados. No se han certificado SQL Server ni Redis reales. Diagnóstico inicial: storage OK,
-SQL/Redis failed, WhatsApp not_implemented, Gemini disabled. Son observaciones históricas,
-no estado garantizado del entorno actual. Ver docs/verification.md para la revisión reciente.
-
-No se ejecutaron migraciones empresariales ni se desplegó en producción. Las referencias a
-repositorios hermanos son evidencia de investigación; no están incluidos en este repositorio.
-
-## Próximo paso
-
-Tarea M1-01 de TASKS.md: diseñar e implementar adaptador de autenticación corporativa con
-pruebas HTTP simuladas y autorización propia, conservando aislamiento de credenciales y
-roles. Después resolver la conexión reutilizable y certificar milestone 1 en entorno disponible.
+## Criterio directivo
+Mensajero no debe presentar un intervalo como completo si existe un periodo registrado de integridad no confirmada. El objetivo es cero pérdida silenciosa, no una promesa técnicamente imposible de pérdida absoluta.

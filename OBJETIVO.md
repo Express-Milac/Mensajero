@@ -1,45 +1,51 @@
 # Objetivo de Mensajero
 
-Convertir conversaciones de WhatsApp de la operación de transporte en evidencia organizada
-y, posteriormente, eventos operativos interpretados por Gemini y verificables por personas.
+Convertir conversaciones de WhatsApp de la operación de transporte en evidencia organizada y, posteriormente, eventos operativos interpretados por Gemini y verificables por personas.
 
-El número es compartido con conversaciones ajenas. Solo aproximadamente 5–6 grupos
-seleccionados deben generar almacenamiento y procesamiento. Su selección será administrable
-por ID real del proveedor, nunca por nombres o IDs hardcodeados.
+Solo los 5–6 grupos seleccionados deben generar almacenamiento y procesamiento. Esos grupos ya existen y pueden tener 30 o más participantes.
 
 ## Principios
 
-WhatsApp es la fuente. RAW conserva evidencia. Gemini interpreta. Mensajero presenta.
-El humano verifica. Primero capturar, conservar y trazar; después interpretar y presentar.
+WhatsApp es la fuente. El evento crudo conserva evidencia. Gemini interpreta. Mensajero presenta. El humano verifica. Primero capturar, conservar y trazar; después interpretar y presentar.
 
-- Allowlist default deny; ignorar chats no autorizados y stickers antes de persistencia.
-- Conservar tipos desconocidos de chats autorizados para poder normalizarlos después.
-- SQL Server almacena datos, metadata y rutas; archivos viven en storage privado portable.
-- Confirmar recepción después de RAW + outbox durable; procesos reintentables e idempotentes.
-- Mantener las vistas Mensajero IA y Mensajes originales permanentemente.
-- Cada evento IA enlaza exactamente a sus mensajes fuente; nunca modifica la evidencia.
-- Gemini caído no impide captura, multimedia ni consulta de originales.
+- Lista permitida por defecto denegada antes de evento crudo, multimedia o IA.
+- Pegatinas se descartan incluso en grupos autorizados.
+- Tipos desconocidos de chats autorizados conservan evento crudo para evolución futura.
+- SQL Server guarda datos, metadatos y rutas; archivos viven en almacenamiento privado portable.
+- Evento crudo + buzón de salida se confirman en una misma transacción antes de considerar durable el evento.
+- Redis y Gemini nunca son condición para aceptar evento crudo.
+- Cada evento IA deberá enlazar exactamente a sus mensajes fuente.
+- La vista Mensajes Originales será permanente.
+- El objetivo de confiabilidad es **cero pérdida silenciosa**: si un intervalo no puede demostrarse completo, se marca como integridad no confirmada y no se usa como base directiva hasta reconciliarlo.
 
-## Primer objetivo funcional: captura RAW controlada
+## Canales de captura
 
-Login corporativo con permisos propios, estado de conexión, descubrimiento y selección de
-grupos, recepción de mensajes, remitentes, fechas UTC, citas y contenido original. Fotografías,
-videos, audio y documentos fuera de SQL. Consulta paginada, búsqueda, filtros, actualizaciones
-en tiempo real y errores visibles. Stickers y chats no monitoreados no generan contenido,
-descargas, procesamiento IA ni eventos.
+1. **Meta Cloud API oficial** para los flujos que Meta expone oficialmente.
+2. **Recolector dedicado de grupos normales** para el POC de grupos existentes: un número corporativo secundario y reemplazable participa como usuario y se vincula a `recolector-whatsapp/`.
 
-## Aceptación operativa
+El número principal de MILAC no se utiliza en el recolector no oficial.
 
-Grupo A y B monitoreados: texto/foto y texto/audio se conservan con identidad, RAW y rutas
-de archivos comprobables. Grupo C ignorado: texto/video no se guardan ni descargan. Sticker
-de A: se descarta. Repetir un evento no duplica el mensaje. Mensajes tardíos se ordenan por
-sent_at; respuestas conservan referencia. Cambiar root de storage no modifica servicios.
+## Infraestructura confirmada
 
-Después: contexto incremental, salida Gemini estructurada validada, eventos con fuentes N:M
-y corrección humana auditada. Nunca considerar una maqueta como aceptación de captura real.
+Mensajero se desplegará en servidor propio de MILAC. Sus tablas vivirán en una base SQL Server corporativa ya existente, aisladas mediante nombres `mensajero_*`; no se crea una base nueva por defecto.
 
-## Alcance tecnológico
+Temporalmente no existe inicio de sesión corporativo. `MENSAJERO_MODO_AUTENTICACION=deshabilitado` permite avanzar en el tablero interno ordinario, sin privilegios administrativos. El modo `corporativo` falla cerrado hasta implementarse.
 
-Laravel/PHP 8.4+, SQL Server, Redis, Flysystem, Blade/Livewire/Alpine. Monolito modular con
-gateway WhatsApp Node/TypeScript separado cuando corresponda. Evitar microservicios extra.
-Los detalles y fases están en docs/architecture.md y docs/milestones.md.
+## Primer objetivo funcional
+
+Captura controlada: conexión, descubrimiento de grupos, lista permitida administrable, recepción, remitente, fecha UTC, citas, contenido original, multimedia fuera de SQL, consulta paginada, búsqueda, filtros y actualización en tiempo real.
+
+Aceptación mínima:
+
+- Grupo A/B monitoreados: texto y multimedia se conservan.
+- Grupo C ignorado: no crea evento crudo, no descarga archivos y no llega a IA.
+- Pegatina de un grupo monitoreado: no se almacena.
+- Repetir un evento: no duplica evento crudo ni buzón de salida.
+- Desactivar un grupo: detiene nuevas capturas sin borrar evidencia previa.
+- Caída de Laravel/SQL/red: la cola local conserva mensajes autorizados pendientes.
+- Caída de Redis/Gemini: no impide persistir evento crudo en SQL.
+- Caída o reinicio del recolector: se registra un periodo de integridad no confirmada.
+
+## Puerta previa a grupos operativos
+
+Antes de incorporar grupos reales deben aprobarse pruebas del recolector sobre una cuenta y grupo de prueba: compilación TypeScript, pruebas, carga, desconexiones, reinicios, cola pendiente, deduplicación, texto, foto, video, audio, documento, citas y recuperación. Multimedia binaria debe quedar almacenada durablemente antes de considerar el canal apto para decisiones directivas.

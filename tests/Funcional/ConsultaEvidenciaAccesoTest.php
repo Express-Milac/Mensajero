@@ -1,0 +1,92 @@
+<?php
+
+namespace Tests\Funcional;
+
+use Tests\TestCase;
+
+class ConsultaEvidenciaAccesoTest extends TestCase
+{
+    public function test_las_conversaciones_no_son_publicas_por_defecto_sin_inicio_de_sesion(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => false,
+        ]);
+
+        $this->get('/tablero')->assertForbidden();
+        $this->get('/grupos')->assertForbidden();
+        $this->patch('/grupos/10020/visibilidad', ['es_visible_tablero' => 0])->assertForbidden();
+        $this->get('/mensajes')->assertForbidden();
+        $this->get('/mensajes/remitentes')->assertForbidden();
+        $this->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])->assertForbidden();
+        $this->get('/mensajes/actualizacion')->assertForbidden();
+        $this->get('/mensajes/tecnico')->assertForbidden();
+        $this->get('/mensajes/grupos/10020')->assertForbidden();
+        $this->get('/mensajes/eventos/11070')->assertForbidden();
+    }
+
+    public function test_una_direccion_remota_no_puede_acceder_aunque_el_poc_local_este_habilitado(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->get('/grupos')
+            ->assertForbidden();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->get('/mensajes')
+            ->assertForbidden();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->get('/mensajes/actualizacion')
+            ->assertForbidden();
+    }
+
+    public function test_gestion_de_visibilidad_exige_opcion_local_explicita_y_rechaza_red(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+            'mensajero.gestion_local_grupos_habilitada' => false,
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->patch('/grupos/99999/visibilidad', ['es_visible_tablero' => 0])
+            ->assertForbidden();
+
+        config(['mensajero.gestion_local_grupos_habilitada' => true]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->patch('/grupos/99999/visibilidad', ['es_visible_tablero' => 0])
+            ->assertForbidden();
+    }
+
+    public function test_edicion_de_remitentes_necesita_permiso_explicito_y_no_admite_red(): void
+    {
+        config([
+            'mensajero.autenticacion.modo' => 'deshabilitado',
+            'mensajero.consulta_local_sin_autenticacion' => true,
+            'mensajero.gestion_local_remitentes_habilitada' => false,
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])
+            ->assertForbidden();
+
+        config(['mensajero.gestion_local_remitentes_habilitada' => true]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.47'])
+            ->patch('/mensajes/remitentes/eventos/99999', ['nombre_interno' => 'No permitido'])
+            ->assertForbidden();
+    }
+
+    public function test_el_modo_corporativo_no_implementado_falla_cerrado(): void
+    {
+        config(['mensajero.autenticacion.modo' => 'corporativo']);
+
+        $this->get('/mensajes')->assertStatus(503);
+    }
+}

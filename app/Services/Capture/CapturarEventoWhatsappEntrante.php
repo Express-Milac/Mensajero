@@ -1,0 +1,138 @@
+<?php
+
+namespace App\Services\Capture;
+
+use App\Data\WhatsApp\EventoWhatsappEntrante;
+use App\Data\WhatsApp\ResultadoCaptura;
+use App\Enums\DisposicionEntrada;
+use App\Models\ArchivoWhatsapp;
+use App\Models\ChatMonitoreado;
+use App\Models\EventoCrudoWhatsapp;
+use App\Models\MensajeBuzonSalida;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+
+final class CapturarEventoWhatsappEntrante
+{
+    public function __construct(
+        private readonly FiltroMensajeEntrante $filtro,
+        private readonly VerificarArchivoWhatsappEntrante $verificadorArchivo,
+    ) {}
+
+    public function ejecutar(EventoWhatsappEntrante $evento): ResultadoCaptura
+    {
+        $claveDeduplicacion = $evento->claveDeduplicacion();
+
+        try {
+            return DB::transaction(function () use ($evento, $claveDeduplicacion): ResultadoCaptura {
+                $chat = ChatMonitoreado::query()
+                    ->where('conexion_id', $evento->conexionId)
+                    ->where('id_chat_proveedor', $evento->chatId)
+                    ->lockForUpdate()
+                    ->first();
+
+                $disposicion = $this->filtro->decidir($chat, $evento->tipoMensaje);
+
+                if ($disposicion !== DisposicionEntrada::Aceptar) {
+                    return ResultadoCaptura::ignorado($disposicion);
+                }
+
+                $existente = EventoCrudoWhatsapp::query()
+                    ->where('conexion_id', $evento->conexionId)
+                    ->where('clave_deduplicacion', $claveDeduplicacion)
+                    ->first();
+
+                if ($existente !== null) {
+                    return ResultadoCaptura::duplicado((int) $existente->getKey());
+                }
+
+                if ($evento->archivo !== null) {
+                    $this->verificadorArchivo->verificar($evento->archivo);
+                }
+
+                $crudo = EventoCrudoWhatsapp::query()->create([
+                    'conexion_id' => $evento->conexionId,
+                    'chat_monitoreado_id' => $chat->getKey(),
+                    'id_evento_externo' => $evento->eventoExternoId,
+                    'clave_deduplicacion' => $claveDeduplicacion,
+                    'tipo_evento' => $evento->tipoEvento,
+                    'tipo_mensaje' => $evento->tipoMensaje,
+                    'id_remitente_proveedor' => $evento->remitenteProveedorId,
+                    'nombre_remitente' => $evento->nombreRemitente,
+                    'fuente_nombre_remitente' => $evento->fuenteNombreRemitente,
+                    'telefono_remitente' => $evento->telefonoRemitente,
+                    'id_mensaje_citado_proveedor' => $evento->mensajeCitadoProveedorId,
+                    'id_mensaje_objetivo_proveedor' => $evento->mensajeObjetivoProveedorId,
+                    'contenido' => $evento->contenidoCrudo,
+                    'hash_contenido_sha256' => $evento->hashContenidoSha256(),
+                    'version_contrato' => $evento->versionContrato,
+                    'estado_procesamiento' => 'capturado',
+                    'intentos' => 0,
+                    'recibido_en' => $evento->recibidoEn,
+                ]);
+
+                $archivoId = null;
+
+                if ($evento->archivo !== null) {
+                    $archivo = ArchivoWhatsapp::query()->create([
+                        'conexion_id' => $evento->conexionId,
+                        'chat_monitoreado_id' => $chat->getKey(),
+                        'evento_crudo_id' => $crudo->getKey(),
+                        'identificador_archivo' => $evento->archivo->identificadorArchivo,
+                        'id_mensaje_proveedor' => $evento->mensajeProveedorId,
+                        'tipo_mensaje' => $evento->tipoMensaje,
+                        'tipo_mime' => $evento->archivo->tipoMime,
+                        'nombre_original' => $evento->archivo->nombreOriginal,
+                        'extension' => $evento->archivo->extension,
+                        'tamano_bytes' => $evento->archivo->tamanoBytes,
+                        'hash_sha256' => $evento->archivo->hashSha256,
+                        'disco' => VerificarArchivoWhatsappEntrante::DISCO,
+                        'ruta_relativa' => $evento->archivo->rutaRelativa,
+                        'estado' => 'verificado',
+                    ]);
+                    $archivoId = (int) $archivo->getKey();
+                }
+
+                MensajeBuzonSalida::query()->create([
+                    'tema' => 'whatsapp.crudo.aceptado',
+                    'tipo_entidad' => 'evento_crudo_whatsapp',
+                    'entidad_id' => $crudo->getKey(),
+                    'clave_deduplicacion' => $claveDeduplicacion,
+                    'contenido' => json_encode([
+                        'evento_crudo_id' => $crudo->getKey(),
+                        'conexion_id' => $evento->conexionId,
+                        'chat_monitoreado_id' => $chat->getKey(),
+                        'archivo_whatsapp_id' => $archivoId,
+                    ], JSON_THROW_ON_ERROR),
+                    'intentos' => 0,
+                    'disponible_en' => now('UTC'),
+                    'creado_en' => now('UTC'),
+                ]);
+
+                return ResultadoCaptura::aceptado((int) $crudo->getKey());
+            }, 3);
+        } catch (QueryException $excepcion) {
+            if (! $this->esClaveDuplicadaSqlServer($excepcion)) {
+                throw $excepcion;
+            }
+
+            $existente = EventoCrudoWhatsapp::query()
+                ->where('conexion_id', $evento->conexionId)
+                ->where('clave_deduplicacion', $claveDeduplicacion)
+                ->first();
+
+            if ($existente === null) {
+                throw $excepcion;
+            }
+
+            return ResultadoCaptura::duplicado((int) $existente->getKey());
+        }
+    }
+
+    private function esClaveDuplicadaSqlServer(QueryException $excepcion): bool
+    {
+        $codigoControlador = (int) ($excepcion->errorInfo[1] ?? 0);
+
+        return in_array($codigoControlador, [2601, 2627], true);
+    }
+}

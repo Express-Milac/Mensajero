@@ -1,79 +1,58 @@
 # Mensajero
 
-Sistema interno de evidencia operativa para transporte. SQL Server guarda datos y referencias;
-storage privado guarda archivos; allowlist delimita captura; RAW permanece como fuente verificable.
+Sistema interno de MILAC para convertir mensajes de grupos seleccionados de WhatsApp en evidencia operativa consultable y, más adelante, en eventos interpretados por IA.
 
-## Continuar con una IA
+## Arquitectura vigente
 
-Leer [AGENTS.md](AGENTS.md) para instrucciones y responsabilidades, [OBJETIVO.md](OBJETIVO.md)
-para alcance y aceptación, [RESUMEN.md](RESUMEN.md) para estado real y [TASKS.md](TASKS.md)
-para el siguiente trabajo. [CONTRIBUTING.md](CONTRIBUTING.md) explica validaciones y entrega.
-No es necesario disponer del historial del chat para continuar.
+Mensajero conserva dos canales separados:
 
-## Entrega actual: arquitectura y base de aplicación
+- **Meta Cloud API oficial** para conversaciones y grupos compatibles con la plataforma oficial.
+- **Recolector de grupos normales existentes** en `recolector-whatsapp/`, únicamente con un número corporativo secundario dedicado y reemplazable.
 
-Siguiendo el requerimiento, se inicia por milestones 0 y 1, sin mezclar todas las fases.
-Implementado: Laravel 13 / PHP 8.4, dependencias bloqueadas en composer.lock, acceso mediante
-sesión, roles Administrador/Supervisor/Visualizador, rate limit de login, comando para crear
-administrador, configuración SQL Server/Redis, disco privado configurable y diagnóstico
-web/CLI. Blade para acceso e inicio; Livewire instalado para las próximas vistas operativas.
+El número principal de MILAC no debe vincularse al recolector no oficial.
 
-**Todavía no captura WhatsApp.** No hay gateway conectado, ingestión, timeline, multimedia,
-broadcasting ni llamadas Gemini. El modelo operativo y sus contratos están diseñados en docs,
-no presentados como funcionalidad implementada. No hay datos demo ni credenciales por defecto.
+## Reglas de captura
+- Solo se procesan grupos expresamente autorizados.
+- Nuevos grupos descubiertos nacen no monitoreados.
+- Pegatinas se descartan.
+- Evento crudo + buzón se guardan transaccionalmente e idempotentemente.
+- El recolector escribe cada mensaje autorizado en cola durable local antes de transmitirlo.
+- Una tarea local solo se elimina después de confirmación satisfactoria de Laravel.
+- Reinicios/desconexiones generan periodos de integridad no confirmada.
+- SQL Server no almacena binarios; archivos usan almacenamiento privado configurable.
 
-## Inicio
+## Estado implementado
+- Laravel 13 / PHP 8.4.
+- SQL Server con tablas `mensajero_*`.
+- Administración y auditoría de grupos.
+- Webhook oficial Meta con validación `X-Hub-Signature-256`.
+- Contrato HMAC interno.
+- `recolector-whatsapp/` con descubrimiento de grupos, filtro local, QR, reconexión, cola durable y monitor de integridad.
+- Comando `mensajero:registrar-conexion-recolector`.
 
-Requiere PHP con sqlsrv/pdo_sqlsrv/fileinfo, ODBC 18, SQL Server y Redis.
-Consultar [instalación detallada](docs/deployment.md).
+## Estado de pruebas
+La base anterior al incremento recolector está certificada localmente: Pint 78 archivos, PHPUnit 32/32 (78 aserciones) y SQL Server 6/6 (100 aserciones) repetido dos veces.
+
+El recolector agregado en el incremento actual debe certificarse localmente antes de vincular el número dedicado.
+
+## Preparación del POC recolector
+
+Laravel debe usar exclusivamente `mensajero_test` durante estas pruebas.
 
 ```powershell
-composer install
+php artisan mensajero:registrar-conexion-recolector recolector-pruebas --nombre="Recolector MILAC pruebas"
+cd recolector-whatsapp
 Copy-Item .env.example .env
-php artisan key:generate
-# Completar credenciales SQL y Redis en .env.
-docker compose up -d redis
-php artisan migrate
-php artisan mensajero:create-admin
-php artisan serve --host=127.0.0.1
+npm install
+npm run verificar
+npm run pruebas
 ```
 
-Abrir http://localhost:8000/login. No se debe exponer `artisan serve` en producción.
-No ejecutar migraciones con credenciales empresariales sin preparar antes base y permisos.
+Completar `.env` local con el mismo `WHATSAPP_PASARELA_SECRETO`/`MENSAJERO_PASARELA_SECRETO` sin compartirlo ni subirlo a Git.
 
-## Pruebas y estado
+Después ejecutar Laravel y `npm run desarrollo`. El QR se escanea **solo** con el número recolector dedicado.
 
-```powershell
-php -d extension=fileinfo vendor/phpunit/phpunit/phpunit
-php artisan route:list --except-vendor
-php artisan view:cache
-php artisan mensajero:health
-```
+Ver `recolector-whatsapp/README.md` y `docs/recolector-whatsapp-dedicado.md`.
 
-Resultado local: **9 pruebas aisladas, 41 assertions, todas pasan**. Rutas, vistas y manifest
-Composer validados. Las pruebas usan dobles para servicios y no utilizan SQLite ni sustituyen
-la validación SQL Server. Suite SQL real disponible en `phpunit.integration.xml`; requiere
-base desechable terminada en `_test`. No ejecutada en este entorno.
-
-Bloqueos de entorno: drivers SQL Server no instalados, Docker daemon no iniciado, sin datos
-de conexión SQL ni sesión WhatsApp. Milestone 1 **no está certificado de extremo a extremo**.
-Milestone 0 documentado; compatibilidad del proveedor con cuenta real sigue pendiente.
-
-## Documentación
-
-- [Revisión de login y SQL corporativos: IAVE/GPSGestor](docs/milac-integration-review.md)
-
-- [Arquitectura y decisiones](docs/architecture.md)
-- [Modelo SQL Server](docs/sql-server.md)
-- [Análisis del proveedor WhatsApp](docs/whatsapp-provider.md)
-- [Allowlist](docs/monitored-chats.md)
-- [Contrato e ingestión durable](docs/message-ingestion.md)
-- [Storage portable](docs/storage.md)
-- [Pipeline IA](docs/ai-pipeline.md)
-- [Despliegue y operación](docs/deployment.md)
-- [Milestones y aceptación](docs/milestones.md)
-
-Próximo trabajo: adaptar login y autorización al patrón corporativo documentado y preparar
-reutilización de la conexión existente, sin exigir secretos para avanzar con pruebas aisladas.
-Después certificar milestone 1 con SQL/Redis reales y continuar allowlist (2), RAW/outbox (3)
-y gateway (4), antes de multimedia y Gemini.
+## Limitación actual
+La metadata de foto/video/audio/documento queda en el evento crudo, pero el binario todavía no se descarga durablemente. El número recolector no debe entrar a grupos operativos reales hasta completar y certificar multimedia, carga, reinicios y reconciliación.

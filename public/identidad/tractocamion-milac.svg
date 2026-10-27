@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 280" role="img" aria-labelledby="titulo descripcion">
+<title id="titulo">Tractocamión de Express MILAC en ruta</title>
+<desc id="descripcion">Ilustración decorativa corporativa de un tractocamión de carga al amanecer.</desc>
+<defs>
+ <linearGradient id="cielo" x1="0" x2="1" y1=".65" y2=".3"><stop stop-color="#ffffff"/><stop offset=".45" stop-color="#fff9f3"/><stop offset=".8" stop-color="#ffdbb9"/><stop offset="1" stop-color="#ffb66e"/></linearGradient>
+ <linearGradient id="caja" x1="0" x2=".9" y1="0" y2="1"><stop stop-color="#fff"/><stop offset=".7" stop-color="#e5ecf3"/><stop offset="1" stop-color="#aebbc9"/></linearGradient>
+ <linearGradient id="cabina" x1="0" x2=".8" y1="0" y2="1"><stop stop-color="#fff"/><stop offset=".5" stop-color="#e5ecf2"/><stop offset="1" stop-color="#a6b8c6"/></linearGradient>
+ <linearGradient id="suelo" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f5dfce"/><stop offset="1" stop-color="#b7c0ce"/></linearGradient>
+ <filter id="sombra" x="-20%" y="-30%" width="150%" height="190%"><feGaussianBlur stdDeviation="9"/></filter>
+ <linearGradient id="fade"><stop stop-color="#fff" stop-opacity="1"/><stop offset=".36" stop-color="#fff" stop-opacity=".15"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="1080" height="280" fill="url(#cielo)"/>
+<circle cx="934" cy="85" r="115" fill="#fff4cc" opacity=".66"/>
+<path d="M0 210 160 174 255 201 370 153 520 204 670 162 850 192 960 153 1080 185V280H0Z" fill="#d1cbd2" opacity=".48"/>
+<path d="M0 226 215 193 302 210 420 184 560 224 727 193 865 218 1080 201V280H0Z" fill="url(#suelo)" opacity=".7"/>
+<path d="M0 248Q330 239 560 248T1080 239V280H0Z" fill="#c5cdd3" opacity=".64"/>
+<path d="M412 262H1080" stroke="#f9fafb" stroke-width="3" stroke-dasharray="45 42" opacity=".6"/>
+<ellipse cx="764" cy="242" rx="285" ry="14" fill="#495564" opacity=".2" filter="url(#sombra)"/>
+<!-- caja y chasis -->
+<path d="M690 63H1011Q1021 63 1021 73V211H690Z" fill="url(#caja)" stroke="#8394a0" stroke-width="3"/>
+<path d="M692 77H1018" stroke="#fff" stroke-width="4" opacity=".92"/>
+<path d="M698 188H1018" stroke="#ec7739" stroke-width="9"/>
+<path d="M720 202H1030V220H668" fill="none" stroke="#515d6b" stroke-width="11" stroke-linecap="round"/>
+<rect x="789" y="199" width="20" height="26" rx="2" fill="#798c9c"/>
+<path d="M734 116h164" stroke="#cdd7df" stroke-width="2" opacity=".7"/>
+<g fill="#333e47" stroke="#aebbc6" stroke-width="6"><circle cx="864" cy="225" r="32"/><circle cx="955" cy="225" r="32"/></g>
+<g fill="#a9bac6"><circle cx="864" cy="225" r="15"/><circle cx="955" cy="225" r="15"/></g>
+<!-- tractor -->
+<path d="M590 110H676Q699 110 702 133V210H541V175Q541 160 553 149L577 127Z" fill="url(#cabina)" stroke="#8497a6" stroke-width="3"/>
+<path d="M589 122H668V162H553L575 136Z" fill="#35536b" stroke="#75899b" stroke-width="2"/>
+<path d="M600 122 572 160" stroke="#98aebe" stroke-width="3" opacity=".7"/>
+<path d="M675 125V163" stroke="#d6e0e8" stroke-width="4"/>
+<path d="M540 176 514 184 501 197V213H542Z" fill="#d5e0e8" stroke="#8599a7" stroke-width="3"/>
+<path d="M504 200 539 199" stroke="#637d8f" stroke-width="6"/>
+<path d="M541 202 700 202" stroke="#ff8c42" stroke-width="7"/>
+<path d="M518 212h205v12H518Z" fill="#495967"/>
+<path d="M580 170h27" stroke="#637382" stroke-width="4" stroke-linecap="round"/>
+<rect x="607" y="188" width="25" height="10" rx="3" fill="#abbcca"/>
+<path d="M542 184 518 185" stroke="#f8b45d" stroke-width="8" stroke-linecap="round"/>
+<path d="M568 129 553 122" stroke="#465966" stroke-width="4"/>
+<g fill="#293841" stroke="#aebbc5" stroke-width="6"><circle cx="596" cy="226" r="34"/><circle cx="709" cy="226" r="34"/></g>
+<g fill="#abbcca"><circle cx="596" cy="226" r="16"/><circle cx="709" cy="226" r="16"/></g>
+<path d="M760 105h195" stroke="#ed703f" stroke-width="4"/>
+<text x="760" y="149" fill="#243b4d" font-family="Arial,sans-serif" font-size="25" font-weight="800" letter-spacing="1">EXPRESS MILAC</text>
+<text x="762" y="174" fill="#66798a" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">TRANSPORTE DE CARGA</text>
+<rect width="520" height="280" fill="url(#fade)"/>
+</svg>

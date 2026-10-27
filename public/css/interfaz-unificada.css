@@ -1,0 +1,225 @@
+/*
+ * Mensajero MILAC — identidad visual compartida.
+ * Se carga en TODAS las páginas desde el layout base, no por nombre de ruta.
+ * Mantener aquí los estilos de páginas legadas/evidencias, sin afectar las
+ * consultas SQL, los permisos, el historial ni el tratamiento de multimedia.
+ */
+.panorama-claro{
+  color:#1c344e;
+  background:#f5f7fa;
+  color-scheme:light;
+}
+.panorama-claro .shell{background:#f5f7fa}
+.panorama-claro .shell>main{min-width:0;max-width:none}
+.panorama-claro .barra-corporativa{
+  background:#fff;
+  color:#234360;
+  border-right:1px solid #e5ecf2;
+}
+.panorama-claro .barra-corporativa .nav{
+  display:flex;align-items:center;gap:10px;min-height:42px;
+  color:#35516f;transition:background .12s ease,color .12s ease
+}
+.panorama-claro .barra-corporativa .nav.active{
+  background:#fff0e4;border:1px solid #ffdbc4;color:#c35a20
+}
+.panorama-claro .barra-corporativa .nav.active svg,
+.panorama-claro .barra-corporativa .nav.active .centro-nav-icono{color:#f07428}
+.panorama-claro .barra-corporativa .marca-producto{color:#df6424}
+.panorama-claro .barra-superior{color:#657c93;border-color:#e5ecf3}
+.panorama-claro .eyebrow{color:#de6825;letter-spacing:1.8px;font-weight:800}
+.panorama-claro .muted,.panorama-claro .fine{color:#6e8397}
+.panorama-claro h1,.panorama-claro h2,.panorama-claro h3{color:#143351}
+.panorama-claro .card{
+  background:#fff;border:1px solid #e8eef3;
+  box-shadow:0 7px 30px rgba(22,52,79,.045)
+}
+.panorama-claro :is(.card,.evidence-section) a:not(.primary):not(.catalogo-ver-conversacion),
+.panorama-claro .breadcrumbs a{color:#c76126}
+.panorama-claro :is(.card,.evidence-section) a:hover,
+.panorama-claro .breadcrumbs a:hover{color:#9e471b}
+.panorama-claro .badge{background:#eef5fb;color:#42627e}
+.panorama-claro .badge.neutral{background:#f2f5f8;color:#687f91}
+.panorama-claro .badge.danger{background:#fff0ec;color:#a64d34}
+.panorama-claro :is(.primary,.action-link){
+  background:#ff7a2b;color:#17314a;border-radius:9px;border:0;font-weight:780
+}
+.panorama-claro .secondary{background:#fff2e7;border:1px solid #f2d3ba;color:#b45625;font-weight:700}
+.panorama-claro .notice.success{background:#eaf8ef;color:#24674c;border:1px solid #cbe9d8}
+.panorama-claro .error-box{background:#fff1ee;color:#ad4834;border:1px solid #f5d3ca}
+.panorama-claro :is(input,textarea,select){
+  border-color:#dce5ee;background:#fff;color:#223f5d
+}
+.panorama-claro :is(input,textarea,select):focus-visible{outline:2px solid #f68b4d;outline-offset:2px}
+.panorama-claro :is(.breadcrumbs,.pagination){color:#74889c}
+.panorama-claro .breadcrumbs{margin:18px 0 22px;gap:9px;font-size:12px}
+.panorama-claro .breadcrumbs a{font-weight:720}
+.panorama-claro .intro:not(.centro-hero){padding:17px 0 20px}
+.panorama-claro .intro.compact{padding:7px 0 22px}
+.panorama-claro .intro.compact .eyebrow{margin:8px 0 8px;font-size:10px}
+.panorama-claro .intro.compact h1{font-weight:820;letter-spacing:-1.35px;font-size:clamp(28px,3.15vw,43px);line-height:1.15;margin:9px 0 11px}
+.panorama-claro .intro.compact>.muted{max-width:840px;font-size:13px;line-height:1.7;margin:0}
+.panorama-claro .metadata-row{color:#7890a2;gap:7px 12px;font-size:11px}
+.panorama-claro .metadata-row span{background:#edf3f8;border:1px solid #e5edf4;border-radius:7px;padding:6px 9px}
+.panorama-claro .toolbar{border:1px solid #e5ecf1;border-radius:12px;background:#fff;box-shadow:none}
+.panorama-claro .filter-row label{color:#536b81;font-size:11px;font-weight:740}
+.panorama-claro .filter-row :is(select,input[type=date]){color:#284562;border-color:#dce6ec}
+.panorama-claro .filter-row .secondary{min-height:42px}
+.panorama-claro .pagination{margin:22px 0;gap:16px}
+.panorama-claro .pagination a{font-weight:750;color:#ba5c29}
+.panorama-claro .pagination span{color:#7890a4}
+.panorama-claro .connection-summary{
+  border:1px solid #d9e7ef;background:#f3f9fd;color:#425f75
+}
+.panorama-claro .connection-summary-heading strong{color:#274c6b}
+.panorama-claro .connection-summary .badge{background:#e2eef5}
+.panorama-claro .processing-help{color:#7d8e9e;font-size:11px}
+.panorama-claro .separador-fecha{background:#e2ebf4;color:#4b6985;border:1px solid #d3e0ec}
+.panorama-claro .mensaje-burbuja{background:#fff;border:1px solid #e3ebf2;box-shadow:0 5px 17px rgba(18,50,76,.03)}
+.panorama-claro .mensaje-fila .mensaje-avatar{background:#ffdfc7;color:#b45224}
+.panorama-claro .mensaje-cabecera time{color:#8393a4}
+.panorama-claro .mensaje-pie{color:#7b90a3}
+.panorama-claro .mensaje-pie a{color:#ce682e}
+.panorama-claro .etiqueta-tipo-mensaje{background:#eaf7ef;color:#287051}
+.panorama-claro .evidencia-multimedia{border-color:#e5edf1}
+.panorama-claro .descarga-multimedia{color:#b95b25}
+.panorama-claro .group-list{gap:12px}
+.panorama-claro .group-card{background:#fff;border:1px solid #e5edf2;box-shadow:0 5px 20px #16355008}
+.panorama-claro .group-card h2{color:#244360}
+.panorama-claro .group-card .metadata-row{margin-top:8px}
+.panorama-claro .group-card .action-link{background:#fff1e5;color:#b65520;border:1px solid #f8d9bf}
+.panorama-claro .group-card .action-link:hover{background:#ffdec3}
+.panorama-claro .group-card .eyebrow{color:#a67d66;font-size:10px}
+.panorama-claro .section-heading{margin-top:28px}
+.panorama-claro .section-heading h2{font-size:21px;color:#24435f;font-weight:800}
+.panorama-claro .section-heading .eyebrow{font-size:10px;margin-bottom:7px}
+.panorama-claro .text-link{font-weight:750;color:#bc612b}
+
+/* Detalle de evidencia: contenido primero, trazabilidad en segundo plano. */
+.panorama-claro .pagina-detalle-evidencia{padding-bottom:24px}
+.panorama-claro .pagina-detalle-evidencia .intro.compact{margin-bottom:3px}
+.panorama-claro .pagina-detalle-evidencia .intro.compact .muted{max-width:810px}
+.panorama-claro .detalle-mensaje{
+  padding:0;overflow:hidden;border:1px solid #e1eaf0;border-radius:15px;
+  box-shadow:0 12px 30px #143b5b0a
+}
+.panorama-claro .detalle-mensaje-encabezado{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding:23px 27px 19px;background:#fff;border-bottom:1px solid #eff3f6
+}
+.panorama-claro .detalle-mensaje-encabezado h2{
+  margin:10px 0 9px;font-weight:820;color:#1c3853;font-size:20px
+}
+.panorama-claro .detalle-remitente{
+  color:#173957;font-size:15px;font-weight:780;margin:6px 0 3px
+}
+.panorama-claro .detalle-mensaje-encabezado time{
+  display:block;font-size:11px;color:#788fa1;margin:10px 0 0
+}
+.panorama-claro .detalle-mensaje-encabezado .centro-ver-evidencia{
+  display:inline-flex;align-items:center;min-height:28px;
+  color:#b85724;font-size:11px;line-height:1.4;font-weight:740
+}
+.panorama-claro .estado-mensaje{
+  background:#e9f7ee;color:#237b55;font-size:11px;font-weight:750;border-radius:999px
+}
+.panorama-claro .detalle-contenido{
+  white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;
+  padding:21px 24px;margin:22px 27px 10px;
+  border-left:4px solid #f2762c;
+  border-radius:0 9px 9px 0;
+  background:#f7f9fc;color:#233b52;font-size:17px;line-height:1.75
+}
+.panorama-claro .detalle-nota{
+  color:#8b9baa;font-size:10px;margin:0 27px 24px
+}
+.panorama-claro .pagina-detalle-evidencia .evidence-section{
+  border:1px solid #e7edf2;border-radius:14px;background:#fff;
+  padding:22px 26px;margin-top:17px
+}
+.panorama-claro .pagina-detalle-evidencia .evidence-section h2{font-size:19px;font-weight:800;margin:2px 0 9px}
+.panorama-claro .seccion-trazabilidad .eyebrow{margin:0 0 8px}
+.panorama-claro .detalle-tecnico{
+  padding:0;border:1px solid #e0e9ef;border-radius:9px;
+  background:#fbfcfd;overflow:hidden;margin-top:12px
+}
+.panorama-claro .detalle-tecnico summary{
+  cursor:pointer;display:block;padding:15px 17px;
+  color:#31526e;font-weight:740;font-size:12px;
+  background:#fafcfe;list-style-position:inside
+}
+.panorama-claro .detalle-tecnico summary:hover{background:#f1f6fa}
+.panorama-claro .detalle-tecnico[open] summary{border-bottom:1px solid #e3ebf1}
+.panorama-claro .detalle-tecnico .evidence-metadata{padding:7px 16px 15px}
+.panorama-claro .detalle-tecnico .fine{padding:0 16px}
+.panorama-claro .evidence-metadata dt{color:#70869b}
+.panorama-claro .evidence-metadata dd{color:#304b67}
+.panorama-claro .raw-json{
+  margin:10px 16px 16px;background:#162c3d;color:#e7f0f8;
+  max-height:390px;font-size:11px;border-radius:9px;
+}
+
+/* Diagnóstico técnico sigue aislado en su ruta y permisos de administrador. */
+.panorama-claro .pagina-diagnostico .intro.compact{margin-bottom:12px}
+.panorama-claro .pagina-diagnostico .metric-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.panorama-claro .pagina-diagnostico .metric{
+  border-radius:13px;padding:20px;min-height:143px
+}
+.panorama-claro .pagina-diagnostico .metric .eyebrow{
+  margin:0 0 10px;font-size:10px;letter-spacing:1px;color:#7e90a0
+}
+.panorama-claro .pagina-diagnostico .metric strong{
+  color:#1d3854;font-size:33px;font-weight:810
+}
+.panorama-claro .pagina-diagnostico .metric span{color:#748b9c;font-size:11px;margin-top:8px}
+.panorama-claro .pagina-diagnostico .evidence-banner{padding:21px 23px;align-items:center}
+.panorama-claro .pagina-diagnostico .evidence-banner h2{font-weight:800;color:#234460}
+
+/* Acceso local: misma marca, pero sin inventar botones ni módulos. */
+.panorama-claro.pagina-acceso .shell>main{max-width:none}
+.panorama-claro.pagina-acceso .login{
+  margin:clamp(32px,7vh,92px) auto;max-width:480px;
+  padding:35px 38px;border:1px solid #e4eaf0;
+  box-shadow:0 20px 55px #1735520d
+}
+.panorama-claro.pagina-acceso .login .eyebrow{margin:0 0 8px;font-size:10px}
+.panorama-claro.pagina-acceso .login h1{font-size:clamp(30px,3vw,41px);font-weight:830;margin:13px 0 9px;letter-spacing:-1.3px}
+.panorama-claro.pagina-acceso .login .muted{font-size:12px;line-height:1.6}
+.panorama-claro.pagina-acceso .login label{color:#45627b;font-size:11px;font-weight:760}
+.panorama-claro.pagina-acceso .login input{background:#fff;min-height:44px}
+.panorama-claro.pagina-acceso .login .primary{background:#f8792b;color:#15334d;align-items:center}
+.panorama-claro.pagina-acceso .login .primary:hover{background:#f59657}
+.panorama-claro.pagina-acceso .login .fine{font-size:11px}
+.panorama-claro.pagina-acceso .barra-superior-derecha .etiqueta-corporativa{opacity:.75}
+@media(max-width:1450px){
+ .panorama-claro .pagina-diagnostico .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:800px){
+ .panorama-claro .shell>.barra-corporativa .navigation{
+   display:flex;gap:5px;overflow-x:auto
+ }
+ .panorama-claro .pagina-diagnostico .metric-grid{grid-template-columns:1fr 1fr}
+ .panorama-claro .detalle-mensaje-encabezado{padding:18px 17px}
+ .panorama-claro .detalle-contenido{margin:14px 17px 8px;padding:17px;font-size:15px}
+ .panorama-claro .detalle-nota{margin:0 17px 18px}
+ .panorama-claro .pagina-detalle-evidencia .evidence-section{padding:17px}
+ .panorama-claro .pagina-detalle-evidencia .raw-json{margin:10px}
+ .panorama-claro.pagina-acceso .login{padding:24px}
+}
+@media(max-width:480px){
+ .panorama-claro .detalle-mensaje-encabezado{flex-direction:column}
+ .panorama-claro .pagina-diagnostico .metric-grid{grid-template-columns:1fr}
+ .panorama-claro .evidence-metadata{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+ .panorama-claro .barra-corporativa .nav{transition:none}
+}
+
+/* Nombre y teléfono, sin confundir el celular comprobado con el LID. */
+.panorama-claro .telefono-participante{
+  display:inline-block;margin-left:6px;font-size:10px;line-height:1.5;
+  color:#6b8092;font-weight:580;white-space:normal;
+}
+.panorama-claro .detalle-remitente+.telefono-participante{
+  display:block;margin:2px 0 8px;font-size:12px;color:#546f86
+}

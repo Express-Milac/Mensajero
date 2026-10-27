@@ -1,0 +1,63 @@
+name: Validación de Mensajero
+
+on:
+  pull_request:
+  push:
+    branches:
+      - codex/raw-foundation-no-auth
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    name: Sintaxis, pruebas y calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: php:8.4-cli-bookworm
+    env:
+      COMPOSER_ALLOW_SUPERUSER: '1'
+
+    steps:
+      - name: Preparar PHP del contenedor
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git unzip ca-certificates libonig-dev libxml2-dev libzip-dev
+          docker-php-ext-install -j"$(nproc)" mbstring dom xml xmlwriter zip
+          php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+          php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+          php -v
+          composer --version
+
+      - name: Obtener código
+        uses: actions/checkout@v4
+
+      - name: Validar Composer
+        run: composer validate --strict
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar entorno de pruebas
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Revisar sintaxis PHP
+        run: find app bootstrap config database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Ejecutar PHPUnit de unidad y funcional
+        run: php vendor/phpunit/phpunit/phpunit
+
+      - name: Revisar formato con Pint
+        run: php vendor/laravel/pint/builds/pint --test
+
+      - name: Verificar rutas
+        run: php artisan route:list --except-vendor
+
+      - name: Compilar vistas
+        run: php artisan view:cache
+
+      - name: Nota de integración SQL Server
+        run: echo 'Las pruebas tests/Integracion no se ejecutan aquí; requieren una base SQL Server desechable cuyo nombre termine en _test.'

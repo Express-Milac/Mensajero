@@ -1,17 +1,21 @@
 ## Cambio
-
-Problema y comportamiento resultante:
-
-Tarea / milestone:
+Describe el incremento y el motivo.
 
 ## Validación
+Registra únicamente comandos realmente ejecutados y su resultado. No confundas `startup_failure` de CI con pruebas ejecutadas.
 
-Comandos ejecutados y resultados reales:
+## Base de datos
+- [ ] Si toca esquema, se probó exclusivamente contra SQL Server desechable `_test`.
+- [ ] No se ejecutaron migraciones contra producción.
 
-Servicios simulados o integraciones sin verificar:
+## Seguridad y datos
+- [ ] Sin secretos, sesiones de WhatsApp, payloads privados ni binarios operativos en Git.
+- [ ] Lista permitida y permisos revisados.
 
-## Entrega
-
-- [ ] Documentación y estado actualizados.
-- [ ] Sin secretos ni evidencia operativa en el diff.
-- [ ] Se mantienen allowlist, evidencia RAW y separación de archivos/SQL.
+## Revisión multidisciplinaria
+- [ ] Arquitectura
+- [ ] Creación
+- [ ] Revisión
+- [ ] Pruebas
+- [ ] Seguridad
+- [ ] UI/UX
