@@ -1,0 +1,34 @@
+name: Comprobar compatibilidad de sintaxis PHP 7.4
+
+on:
+  push:
+    branches:
+      - 'compatibilidad/php74-*'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sintaxis-php74:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Interpretar codigo con PHP 7.4 real
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Obtener codigo del PR sin credenciales operativas
+        uses: actions/checkout@v4
+
+      - name: Preparar PHP 7.4 independiente
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: none
+
+      - name: Mostrar version del interprete
+        run: php -v
+
+      - name: Detectar archivos incompatibles sin cargar Laravel ni BD
+        run: bash herramientas/comprobar-sintaxis-php74.sh
