@@ -13,7 +13,12 @@ use App\Services\Monitoreo\CambiarMonitoreoChat;
  */
 final class CambiarVisibilidadTablero
 {
-    public function __construct(private readonly CambiarMonitoreoChat $cambiarMonitoreo) {}
+    private CambiarMonitoreoChat $cambiarMonitoreo;
+
+    public function __construct(CambiarMonitoreoChat $cambiarMonitoreo)
+    {
+        $this->cambiarMonitoreo = $cambiarMonitoreo;
+    }
 
     public function ejecutar(int $chatId, bool $visible, string $tipoActor, ?int $actorId = null): ChatMonitoreado
     {
