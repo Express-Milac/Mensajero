@@ -33,7 +33,7 @@ final class ControlInterpretacionGemini
 
         return [
             'habilitado' => $registro !== null && (bool) $registro->habilitado,
-            'inicio_en' => $registro?->inicio_en === null ? null : (string) $registro->inicio_en,
+            'inicio_en' => ($registro === null || $registro->inicio_en === null) ? null : (string) $registro->inicio_en,
         ];
     }
 
