@@ -11,7 +11,7 @@
         <p class="muted">Lee los mensajes recibidos en este grupo, del más reciente al más antiguo, y consulta la evidencia original cuando necesites revisar el contexto.</p>
         <div class="metadata-row">
             <span>Grupo #{{ $grupo->id }}</span>
-            <span>Conexión: {{ $grupo->conexion?->nombre_visible ?: $grupo->conexion?->clave_conexion }}</span>
+            <span>Conexión: {{ optional($grupo->conexion)->nombre_visible ?: optional($grupo->conexion)->clave_conexion }}</span>
             <span>{{ $eventos->total() }} eventos con el filtro actual</span>
         </div>
     </section>
@@ -69,15 +69,17 @@
                 <summary>Consultar {{ $periodos->count() === $totalPeriodos ? 'los intervalos' : 'los últimos '.$periodos->count().' intervalos' }}</summary>
                 <ul>
                     @foreach($periodos as $periodo)
-                        @php($nombreCausa = match ($periodo->causa) {
-                            'reinicio_no_confirmado' => 'Reinicio sin confirmación',
-                            'desconexion_whatsapp' => 'Desconexión de WhatsApp',
-                            'fuente_multimedia_ausente' => 'Archivo multimedia no disponible',
-                            default => ucfirst(str_replace('_', ' ', $periodo->causa)),
-                        })
+                        @php
+                            $nombresCausas = [
+                                'reinicio_no_confirmado' => 'Reinicio sin confirmación',
+                                'desconexion_whatsapp' => 'Desconexión de WhatsApp',
+                                'fuente_multimedia_ausente' => 'Archivo multimedia no disponible',
+                            ];
+                            $nombreCausa = $nombresCausas[$periodo->causa] ?? ucfirst(str_replace('_', ' ', $periodo->causa));
+                        @endphp
                         <li>
                             <strong>{{ $nombreCausa }}</strong>
-                            <span>{{ $periodo->inicio_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }} — {{ $periodo->fin_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }}</span>
+                            <span>{{ ($periodo->inicio_en !== null ? $periodo->inicio_en->timezone(config('app.timezone'))->format('d/m/Y H:i:s') : 'Sin fecha') }} — {{ ($periodo->fin_en !== null ? $periodo->fin_en->timezone(config('app.timezone'))->format('d/m/Y H:i:s') : 'Sin fecha') }}</span>
                         </li>
                     @endforeach
                 </ul>
@@ -95,11 +97,11 @@
         @php($diaAnterior = null)
         @forelse($eventos as $fila)
             @php($registro = $fila['evento'])
-            @php($fechaLocal = $registro->recibido_en?->timezone(config('app.timezone')))
-            @php($dia = $fechaLocal?->format('Y-m-d') ?? 'sin-fecha')
+            @php($fechaLocal = ($registro->recibido_en !== null ? $registro->recibido_en->timezone(config('app.timezone')) : null))
+            @php($dia = ($fechaLocal !== null ? $fechaLocal->format('Y-m-d') : 'sin-fecha'))
             @if($dia !== $diaAnterior)
                 <div class="separador-fecha" role="heading" aria-level="3">
-                    {{ $fechaLocal?->format('d/m/Y') ?? 'Fecha desconocida' }}
+                    {{ ($fechaLocal !== null ? $fechaLocal->format('d/m/Y') : 'Fecha desconocida') }}
                 </div>
                 @php($diaAnterior = $dia)
             @endif
@@ -111,15 +113,14 @@
                         @if($fila['telefono_remitente'] && ! str_starts_with($fila['remitente'], 'Teléfono +'))
                             <span class="telefono-participante">+{{ $fila['telefono_remitente'] }}</span>
                         @endif
-                        <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $fechaLocal?->format('H:i:s') ?? 'Sin hora' }}</time>
+                        <time datetime="{{ ($registro->recibido_en !== null ? $registro->recibido_en->toIso8601String() : '') }}">{{ ($fechaLocal !== null ? $fechaLocal->format('H:i:s') : 'Sin hora') }}</time>
                     </div>
                     @if($registro->tipo_evento !== 'mensaje')
-                        <span class="etiqueta-tipo-mensaje">{{ match ($registro->tipo_evento) {
+                        <span class="etiqueta-tipo-mensaje">{{ [
                             'edicion' => 'Edición',
                             'eliminacion' => 'Eliminación',
                             'reaccion' => 'Reacción',
-                            default => 'Otro evento',
-                        } }}</span>
+                        ][$registro->tipo_evento] ?? 'Otro evento' }}</span>
                     @endif
                     <p class="mensaje-texto">{{ \Illuminate\Support\Str::limit($fila['resumen'], 1500) }}</p>
                     @if($registro->archivo)
@@ -133,12 +134,11 @@
                         @if($registro->id_mensaje_citado_proveedor)
                             <span>Con cita</span>
                         @endif
-                        <span>{{ match ($registro->estado_procesamiento) {
+                        <span>{{ [
                             'capturado' => 'Capturado',
                             'normalizado' => 'Normalizado',
                             'pendiente_semantica' => 'Pendiente de interpretación',
-                            default => 'Otro estado',
-                        } }}</span>
+                        ][$registro->estado_procesamiento] ?? 'Otro estado' }}</span>
                         <a href="{{ route('mensajes.evento', $registro->id) }}">Ver evidencia →</a>
                         @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
                             <a href="{{ route('remitentes.editar', $registro->id) }}">Identificar remitente →</a>
