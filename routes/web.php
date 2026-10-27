@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/tablero');
 
+// Laravel 13 registraba esta ruta desde bootstrap/app.php.
+// Laravel 8 necesita declararla expresamente; no verifica SQL ni revela datos.
+Route::get('/disponible', function () {
+    return response('', 200)->header('Cache-Control', 'no-store');
+})->name('disponible');
+
 Route::get('/acceso', function () {
     if (config('mensajero.autenticacion.modo') !== 'local') {
         return redirect()->route('tablero');
