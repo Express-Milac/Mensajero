@@ -16,14 +16,11 @@ class ContactoWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'metadatos' => 'array',
             'visto_primera_vez_en' => FechaUtc::class,
             'visto_ultima_vez_en' => FechaUtc::class,
         ];
-    }
 
     public function conexion(): BelongsTo
     {
