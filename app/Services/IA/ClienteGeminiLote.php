@@ -166,7 +166,7 @@ final class ClienteGeminiLote
         ];
     }
 
-    private function enteroONulo(mixed $valor): ?int
+    private function enteroONulo($valor): ?int
     {
         return is_int($valor) && $valor >= 0 ? $valor : null;
     }
