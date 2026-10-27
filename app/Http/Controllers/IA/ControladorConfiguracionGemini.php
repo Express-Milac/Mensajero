@@ -44,8 +44,7 @@ final class ControladorConfiguracionGemini extends Controller
     public function cambiar(
         Request $request,
         int $grupo,
-        ControlInterpretacionGemini $control,
-    ): JsonResponse|RedirectResponse {
+        ControlInterpretacionGemini $control) : \Symfony\Component\HttpFoundation\Response {
         $datos = $request->validate([
             'habilitado' => ['required', 'boolean'],
         ]);
