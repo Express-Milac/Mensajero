@@ -262,7 +262,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
         ?string $remitente = null,
         ?string $citado = null,
         string $tipoEvento = 'mensaje',
-        ?string $objetivo = null,
+        ?string $objetivo = null
     ): EventoCrudoWhatsapp {
         $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
             (int) $conexion->id,
