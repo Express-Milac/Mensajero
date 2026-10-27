@@ -144,3 +144,27 @@ SetHandler application/x-httpd-php
 El usuario `sistemas` recibió en `apache2ctl -t` una advertencia de certificado privado SSL no accesible. No afirmar que falta el archivo; podría ser falta de permisos de lectura. No reiniciar/recargar Apache hasta que un administrador autorizado valide su sintaxis como usuario privilegiado.
 
 **Precaución adicional:** el hecho de que `readlink -f /var/www/html/Mensajero` apunte a `public` no demuestra por sí solo que el virtual host sirva el directorio correcto ni que el dominio tenga autenticación. Verificar ambos antes de publicar WhatsApp.
+
+
+## Avance de port por inspección de código (27/oct/2026)
+
+Se inspeccionaron rutas y servicios de `app` (104 archivos PHP en el árbol de esta rama) y las 20 migraciones mediante lectura de sus fuentes. Se corrigieron:
+
+- Llamadas de constructor con argumentos nombrados PHP 8 en la pasarela y en el comando de ensayo.
+- `enum`, `match`, `?->`, `readonly`, promoción de propiedades, firmas `mixed` y `catch` sin variable en los componentes detectados.
+- Declaraciones con coma final de parámetros y retornos de unión `A|B`, sustituidos en controladores HTTP por `Symfony\\Component\\HttpFoundation\\Response`.
+- API de consola `$this->components->info()` sustituida por `$this->info()` en comandos compatibles con Laravel 8.
+- Se incorporaron `config/view.php`, `config/hashing.php` y `config/broadcasting.php` tradicionales; `phpunit.xml` usa esquema de cobertura de PHPUnit 9.
+- El workflow de Laravel 13 / PHP 8.4 ahora omite esta rama; el control separado intenta usar PHP 7.4.
+
+**Límites de esta revisión:** la inspección de texto/regex NO equivale a ejecutar `php -l` con PHP 7.4 ni a cargar la aplicación con Laravel 8. No existe aún un `composer.lock` resuelto para PHP 7.4, ni pruebas que hayan pasado sobre PHP 7.4 real. Los workflow recientes finalizaron con fallo previo a registrar pasos/ejecutor; no se puede inferir qué tests habrían pasado. NO DESPLEGAR.
+
+### Próxima puerta de calidad (obligatoria)
+
+1. Resolver dependencias de Laravel 8 con Composer 2 en un entorno de pruebas, mediante `composer update --no-scripts`, con `config.platform.php=7.4.13`; revisar la salida y conservar el `composer.lock` de esa resolución en la rama.
+2. Ejecutar `bash herramientas/comprobar-sintaxis-php74.sh` con PHP 7.4; corregir errores restantes (también código de pruebas).
+3. Ejecutar `php herramientas/probar-contratos-php74.php` sin frameworks, luego `composer check-platform-reqs`, `php artisan list` y `php artisan route:list` exclusivamente en un clon de desarrollo.
+4. Probar con una base `*_test` y un Redis aislado. No ejecutar llamadas a Gemini ni despachar WhatsApp con credenciales productivas.
+5. Solo después del respaldo, prueba HTTPS, permisos y autenticación corporativa, preparar un despliegue con reversión supervisada.
+
+No usar `composer update` sobre `/home/sistemas/laravelProjects/Mensajero` actualmente publicado.
