@@ -168,15 +168,15 @@ class ProteccionDespachoSqlServerTest extends TestCase
         $clave = 'redis-prueba-'.bin2hex(random_bytes(8));
 
         $resultado = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-            conexionId: (int) $grupo->conexion_id,
-            chatId: $grupo->id_chat_proveedor,
-            tipoEvento: 'mensaje',
-            tipoMensaje: 'texto',
-            eventoExternoId: $clave,
-            mensajeProveedorId: $clave,
-            contenidoCrudo: json_encode(['message' => ['conversation' => 'Prueba sin datos reales']], JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
+            (int) $grupo->conexion_id,
+            $grupo->id_chat_proveedor,
+            'mensaje',
+            'texto',
+            $clave,
+            $clave,
+            json_encode(['message' => ['conversation' => 'Prueba sin datos reales']], JSON_THROW_ON_ERROR),
+            CarbonImmutable::now('UTC'),
+            'v3-recolector'
         ));
 
         $this->assertSame('aceptado', $resultado->estado);
