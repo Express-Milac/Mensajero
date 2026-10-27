@@ -60,7 +60,7 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
             return self::FAILURE;
         }
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Evento #%d | Grupo #%d | Tipo: %s | Estado actual: %s',
             $identificador,
             (int) $evento->chat_monitoreado_id,
@@ -87,7 +87,7 @@ final class NormalizarEventoEspecificoWhatsapp extends Command
             return self::FAILURE;
         }
 
-        $this->components->info('Resultado: '.$resultado.'. Evento #'.$identificador);
+        $this->info('Resultado: '.$resultado.'. Evento #'.$identificador);
 
         return self::SUCCESS;
     }
