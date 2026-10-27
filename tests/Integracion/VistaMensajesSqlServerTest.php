@@ -77,13 +77,13 @@ class VistaMensajesSqlServerTest extends TestCase
             $secretoPrueba = 'mensaje_secreto_'.$sufijo;
             $identificadorPrivado = 'contacto-'.$sufijo.'@s.whatsapp.net';
             $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'vista-evento-'.$sufijo,
-                mensajeProveedorId: 'vista-evento-'.$sufijo,
-                contenidoCrudo: json_encode([
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'vista-evento-'.$sufijo,
+                'vista-evento-'.$sufijo,
+                json_encode([
                     'key' => [
                         'remoteJid' => 'grupo-interno-'.$sufijo.'@g.us',
                         'participantPn' => $identificadorPrivado,
@@ -93,9 +93,10 @@ class VistaMensajesSqlServerTest extends TestCase
                         'messageContextInfo' => ['messageSecret' => $secretoPrueba],
                     ],
                 ], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
 
             $this->assertSame('aceptado', $captura->estado);
@@ -171,16 +172,17 @@ class VistaMensajesSqlServerTest extends TestCase
             // sin necesidad de normalizarlo ni volver a cargar la página.
             $mensajeNuevo = 'Nuevo mensaje visible sin recargar '.$sufijo;
             $capturaNueva = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'vista-nuevo-'.$sufijo,
-                mensajeProveedorId: 'vista-nuevo-'.$sufijo,
-                contenidoCrudo: json_encode(['message' => ['conversation' => $mensajeNuevo]], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC')->addSecond(),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'vista-nuevo-'.$sufijo,
+                'vista-nuevo-'.$sufijo,
+                json_encode(['message' => ['conversation' => $mensajeNuevo]], JSON_THROW_ON_ERROR),
+                CarbonImmutable::now('UTC')->addSecond(),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
             $this->assertSame('aceptado', $capturaNueva->estado);
 
@@ -426,16 +428,17 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/mensajes/grupos/'.$grupo->id)->assertNotFound();
 
             $rechazo = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'desactivado-'.$sufijo,
-                mensajeProveedorId: 'desactivado-'.$sufijo,
-                contenidoCrudo: json_encode(['message' => ['conversation' => 'No capturar']], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'desactivado-'.$sufijo,
+                'desactivado-'.$sufijo,
+                json_encode(['message' => ['conversation' => 'No capturar']], JSON_THROW_ON_ERROR),
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
             $this->assertNotSame('aceptado', $rechazo->estado);
             $this->assertSame(0, EventoCrudoWhatsapp::query()
