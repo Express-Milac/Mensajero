@@ -18,8 +18,7 @@ final class CambiarMonitoreoChat
         bool $esMonitoreado,
         string $actorTipo,
         ?int $actorId = null,
-        ?string $motivo = null,
-    ): ChatMonitoreado {
+        ?string $motivo = null) : ChatMonitoreado {
         return DB::transaction(function () use ($chatId, $esMonitoreado, $actorTipo, $actorId, $motivo): ChatMonitoreado {
             $chat = ChatMonitoreado::query()
                 ->where('tipo_chat', 'grupo')
