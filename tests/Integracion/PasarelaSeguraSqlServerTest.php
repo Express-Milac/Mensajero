@@ -129,7 +129,7 @@ class PasarelaSeguraSqlServerTest extends TestCase
         array $contenido,
         string $identificador,
         bool $firmaValida = true,
-        int $desfaseSegundos = 0,
+        int $desfaseSegundos = 0
     ): TestResponse {
         $cuerpo = json_encode($contenido, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $marcaTiempo = (string) (now()->getTimestamp() + $desfaseSegundos);
