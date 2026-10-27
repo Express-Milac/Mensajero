@@ -12,8 +12,7 @@ final class ReservarLoteGeminiTest extends TestCase
     public function test_rechaza_lotes_sin_habilitacion_sin_tocar_sql_ni_google(): void
     {
         config()->set('mensajero.ia.lotes_habilitados', false);
-        Http::preventStrayRequests();
-        Http::fake();
+        $this->simularHttpSinRed();
 
         try {
             app(ReservarLoteGemini::class)->reservar(10196, [101, 102]);
@@ -27,8 +26,7 @@ final class ReservarLoteGeminiTest extends TestCase
 
     public function test_rechaza_ids_duplicados_antes_de_usar_sql(): void
     {
-        Http::preventStrayRequests();
-        Http::fake();
+        $this->simularHttpSinRed();
 
         try {
             app(ReservarLoteGemini::class)->reservar(10196, [101, 101]);
