@@ -18,7 +18,7 @@ final class FechaUtc implements CastsAttributes
      */
     public bool $withoutObjectCaching = true;
 
-    public function get($model, string $key, $value, array $attributes): ?CarbonImmutable
+    public function get($model, $key, $value, $attributes): ?CarbonImmutable
     {
         if ($value === null || $value === '') {
             return null;
@@ -31,7 +31,7 @@ final class FechaUtc implements CastsAttributes
         return CarbonImmutable::parse((string) $value, 'UTC')->utc();
     }
 
-    public function set($model, string $key, $value, array $attributes): ?string
+    public function set($model, $key, $value, $attributes): ?string
     {
         if ($value === null || $value === '') {
             return null;
