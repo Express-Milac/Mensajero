@@ -10,6 +10,19 @@ use Tests\TestCase;
 
 final class ClienteGeminiLoteTest extends TestCase
 {
+
+    public function test_bloquea_cualquier_http_no_simulado_en_laravel_8(): void
+    {
+        // Incluso cuando otra URL está simulada, una URL desconocida no debe salir a internet.
+        $this->simularHttpSinRed([
+            'generativelanguage.googleapis.com/*' => Http::response(['simulado' => true], 200),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Petición HTTP no simulada');
+        Http::get('https://example.invalid/servicio-no-autorizado');
+    }
+
     private function contexto(): array
     {
         return [
