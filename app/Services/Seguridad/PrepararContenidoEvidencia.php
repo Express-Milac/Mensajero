@@ -44,7 +44,7 @@ final class PrepararContenidoEvidencia
                 ),
                 'truncado' => false,
             ];
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return [
                 'contenido' => 'Vista previa no disponible: formato JSON no interpretable. Consulte la evidencia conservada en SQL Server.',
                 'truncado' => false,
