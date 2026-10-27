@@ -131,7 +131,7 @@ final class ControladorMensajes extends Controller
             return [
                 'grupo' => $grupo,
                 'hoy' => (int) ($conteos[$grupo->id] ?? 0),
-                'ultima' => $recientes->first()?->recibido_en,
+                'ultima' => ($recientes->first() !== null ? $recientes->first()->recibido_en : null),
                 'eventos' => $eventosPorGrupo[(int) $grupo->id] ?? [],
                 'mensajes' => $recientes->map(fn (EventoCrudoWhatsapp $evento): array => [
                     'id' => $evento->id,
@@ -142,7 +142,7 @@ final class ControladorMensajes extends Controller
                     'fecha' => $evento->recibido_en,
                 ])->all(),
                 // No inferir que un grupo sea de ensayo por su nombre.
-                'ensayo' => preg_match('/^ensayo-redis-[0-9a-f]{16}$/D', (string) $grupo->conexion?->clave_conexion) === 1,
+                'ensayo' => preg_match('/^ensayo-redis-[0-9a-f]{16}$/D', (string) ($grupo->conexion !== null ? $grupo->conexion->clave_conexion : '')) === 1,
             ];
         });
 
@@ -178,21 +178,36 @@ final class ControladorMensajes extends Controller
             ->sortByDesc(fn (array $fila): int => $fila['ultima']->timestamp)
             ->first();
 
-        $visibles = $tarjetas->filter(fn (array $fila): bool => match ($actividad) {
-            'hoy' => $fila['hoy'] > 0,
-            'sin_actividad' => $fila['hoy'] === 0,
-            default => true,
+        $visibles = $tarjetas->filter(function (array $fila) use ($actividad): bool {
+            if ($actividad === 'hoy') {
+                return $fila['hoy'] > 0;
+            }
+            if ($actividad === 'sin_actividad') {
+                return $fila['hoy'] === 0;
+            }
+            return true;
         });
 
-        $visibles = match ($orden) {
-            'actividad' => $visibles->sort(fn (array $a, array $b): int => ($b['hoy'] <=> $a['hoy'])
-                ?: (($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0))),
-            'nombre' => $visibles->sort(fn (array $a, array $b): int => strcasecmp(
-                (string) ($a['grupo']->nombre_interno ?: $a['grupo']->nombre_grupo ?: ''),
-                (string) ($b['grupo']->nombre_interno ?: $b['grupo']->nombre_grupo ?: ''),
-            )),
-            default => $visibles->sort(fn (array $a, array $b): int => ($b['ultima']?->timestamp ?? 0) <=> ($a['ultima']?->timestamp ?? 0)),
+        $ordenarPorUltima = static function (array $a, array $b): int {
+            $fechaA = $a['ultima'] === null ? 0 : $a['ultima']->timestamp;
+            $fechaB = $b['ultima'] === null ? 0 : $b['ultima']->timestamp;
+            return $fechaB <=> $fechaA;
         };
+
+        if ($orden === 'actividad') {
+            $visibles = $visibles->sort(static function (array $a, array $b) use ($ordenarPorUltima): int {
+                return ($b['hoy'] <=> $a['hoy']) ?: $ordenarPorUltima($a, $b);
+            });
+        } elseif ($orden === 'nombre') {
+            $visibles = $visibles->sort(static function (array $a, array $b): int {
+                return strcasecmp(
+                    (string) ($a['grupo']->nombre_interno ?: $a['grupo']->nombre_grupo ?: ''),
+                    (string) ($b['grupo']->nombre_interno ?: $b['grupo']->nombre_grupo ?: '')
+                );
+            });
+        } else {
+            $visibles = $visibles->sort($ordenarPorUltima);
+        }
 
         return [
             'tarjetas' => $visibles->values(),
@@ -228,10 +243,10 @@ final class ControladorMensajes extends Controller
             ->get();
 
         $gruposRecolector = $grupos->filter(
-            fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
+            fn (ChatMonitoreado $grupo) => ($grupo->conexion !== null ? $grupo->conexion->proveedor : null) === 'recolector_whatsapp',
         );
         $gruposOtrasConexiones = $grupos->reject(
-            fn (ChatMonitoreado $grupo) => $grupo->conexion?->proveedor === 'recolector_whatsapp',
+            fn (ChatMonitoreado $grupo) => ($grupo->conexion !== null ? $grupo->conexion->proveedor : null) === 'recolector_whatsapp',
         );
         $identificadores = $grupos->pluck('id');
         $conexiones = $grupos->pluck('conexion_id')->unique();
@@ -363,12 +378,16 @@ final class ControladorMensajes extends Controller
     private function resumen(EventoCrudoWhatsapp $evento, ExtraerContenidoWhatsapp $extraer): string
     {
         if ($evento->tipo_evento !== 'mensaje') {
-            return match ($evento->tipo_evento) {
-                'edicion' => 'Edición registrada. El mensaje original no ha sido reemplazado.',
-                'eliminacion' => 'Eliminación registrada como evidencia.',
-                'reaccion' => 'Reacción registrada como evidencia.',
-                default => 'Evento registrado sin interpretación adicional.',
-            };
+            switch ($evento->tipo_evento) {
+                case 'edicion':
+                    return 'Edición registrada. El mensaje original no ha sido reemplazado.';
+                case 'eliminacion':
+                    return 'Eliminación registrada como evidencia.';
+                case 'reaccion':
+                    return 'Reacción registrada como evidencia.';
+                default:
+                    return 'Evento registrado sin interpretación adicional.';
+            }
         }
 
         if ($evento->mensaje !== null) {
@@ -385,19 +404,26 @@ final class ControladorMensajes extends Controller
             if (is_string($texto) && $texto !== '') {
                 return $texto;
             }
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return 'Contenido no interpretable; se conserva la evidencia original.';
         }
 
-        return match ($evento->tipo_mensaje) {
-            'foto' => 'Fotografía recibida.',
-            'video' => 'Video recibido.',
-            'audio' => 'Audio recibido.',
-            'documento' => 'Documento recibido.',
-            'ubicacion' => 'Ubicación compartida.',
-            'contacto' => 'Contacto compartido.',
-            default => 'Mensaje recibido sin texto visible.',
-        };
+        switch ($evento->tipo_mensaje) {
+            case 'foto':
+                return 'Fotografía recibida.';
+            case 'video':
+                return 'Video recibido.';
+            case 'audio':
+                return 'Audio recibido.';
+            case 'documento':
+                return 'Documento recibido.';
+            case 'ubicacion':
+                return 'Ubicación compartida.';
+            case 'contacto':
+                return 'Contacto compartido.';
+            default:
+                return 'Mensaje recibido sin texto visible.';
+        }
     }
 
 }
