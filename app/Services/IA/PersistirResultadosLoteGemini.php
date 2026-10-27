@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\DB;
  */
 final class PersistirResultadosLoteGemini
 {
-    public function __construct(private readonly ValidarAcontecimientosLoteGemini $validador) {}
+    private ValidarAcontecimientosLoteGemini $validador;
+
+    public function __construct(ValidarAcontecimientosLoteGemini $validador)
+    {
+        $this->validador = $validador;
+    }
 
     /**
      * @param array{acontecimientos:array,modelo:string,tokens_entrada:?int,tokens_salida:?int} $respuesta
