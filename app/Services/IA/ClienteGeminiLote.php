@@ -12,10 +12,14 @@ use RuntimeException;
  */
 final class ClienteGeminiLote
 {
-    public function __construct(
-        private readonly PrepararContextoGemini $preparador,
-        private readonly ValidarAcontecimientosLoteGemini $validador,
-    ) {}
+    private PrepararContextoGemini $preparador;
+    private ValidarAcontecimientosLoteGemini $validador;
+
+    public function __construct(PrepararContextoGemini $preparador, ValidarAcontecimientosLoteGemini $validador)
+    {
+        $this->preparador = $preparador;
+        $this->validador = $validador;
+    }
 
     /**
      * @param array<int,array{id:int,texto:string,tipo:string,emisor?:string,responde_a?:?int}> $contexto
