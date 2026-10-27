@@ -213,7 +213,7 @@ class CargaPasarelaSqlServerTest extends TestCase
         ChatMonitoreado $chat,
         string $idEvento,
         string $remitente,
-        int $numeroEvento,
+        int $numeroEvento
     ): array {
         return [
             'clave_conexion' => $conexion->clave_conexion,
