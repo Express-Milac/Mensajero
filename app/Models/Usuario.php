@@ -29,6 +29,10 @@ class Usuario extends Authenticatable
             return;
         }
 
-        $this->attributes['password'] = Hash::make($valor);
+        // Mantener hashes válidos de importaciones y fábricas; no cifrarlos dos veces.
+        $datosHash = password_get_info($valor);
+        $this->attributes['password'] = ($datosHash['algoName'] ?? 'unknown') !== 'unknown'
+            ? $valor
+            : Hash::make($valor);
     }
 }
