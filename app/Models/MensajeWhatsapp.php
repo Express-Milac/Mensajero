@@ -16,14 +16,11 @@ class MensajeWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'enviado_en' => FechaUtc::class,
             'recibido_en' => FechaUtc::class,
             'procesado_en' => FechaUtc::class,
         ];
-    }
 
     public function chat(): BelongsTo
     {
