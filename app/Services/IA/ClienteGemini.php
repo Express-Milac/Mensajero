@@ -129,7 +129,7 @@ final class ClienteGemini
         ];
     }
 
-    private function enteroPositivoONulo(mixed $valor): ?int
+    private function enteroPositivoONulo($valor): ?int
     {
         return is_int($valor) && $valor >= 0 ? $valor : null;
     }
