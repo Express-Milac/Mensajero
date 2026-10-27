@@ -49,8 +49,8 @@ final class EstadoGemini extends Command
         $this->line('Interpretacion automatica efectiva: '.($automatica ? 'SI' : 'NO'));
         $this->line('Normalizacion habilitada (configuracion nueva): '.($normaliza ? 'SI' : 'NO'));
         $this->line('Grupo autorizado desde el panel: '.($autorizado ? 'SI' : 'NO'));
-        $this->line('Corte global mínimo: '.($inicio?->format(DATE_ATOM) ?? 'NO CONFIGURADO'));
-        $this->line('Corte web efectivo: '.($corteGrupo?->format(DATE_ATOM) ?? 'APAGADO'));
+        $this->line('Corte global mínimo: '.($inicio !== null ? $inicio->format(DATE_ATOM) : 'NO CONFIGURADO'));
+        $this->line('Corte web efectivo: '.($corteGrupo !== null ? $corteGrupo->format(DATE_ATOM) : 'APAGADO'));
         $this->warn('La configuracion NO demuestra que los trabajadores ya iniciados se hayan reiniciado.');
 
         try {
