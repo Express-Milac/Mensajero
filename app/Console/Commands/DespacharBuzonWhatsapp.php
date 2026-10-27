@@ -77,7 +77,7 @@ final class DespacharBuzonWhatsapp extends Command
 
         $resultado = $despachador->ejecutar($limite, $idEvento);
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Publicados: %d. Fallidos: %d.',
             $resultado['publicados'],
             $resultado['fallidos'],
