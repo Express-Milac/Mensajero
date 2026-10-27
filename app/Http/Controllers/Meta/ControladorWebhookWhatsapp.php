@@ -135,22 +135,24 @@ class ControladorWebhookWhatsapp extends Controller
                     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
                     $capturado = $capturar->ejecutar(new EventoWhatsappEntrante(
-                        conexionId: (int) $conexion->id,
-                        chatId: $idChat,
-                        tipoEvento: 'mensaje',
-                        tipoMensaje: $this->tipoMensaje((string) ($mensaje['type'] ?? 'desconocido')),
-                        eventoExternoId: isset($mensaje['id']) ? (string) $mensaje['id'] : null,
-                        mensajeProveedorId: isset($mensaje['id']) ? (string) $mensaje['id'] : null,
-                        contenidoCrudo: $contenido,
-                        recibidoEn: $this->fechaMensaje($mensaje['timestamp'] ?? null),
-                        versionContrato: 'meta-webhook-v1',
+                        (int) $conexion->id,
+                        $idChat,
+                        'mensaje',
+                        $this->tipoMensaje((string) ($mensaje['type'] ?? 'desconocido')),
+                        isset($mensaje['id']) ? (string) $mensaje['id'] : null,
+                        isset($mensaje['id']) ? (string) $mensaje['id'] : null,
+                        $contenido,
+                        $this->fechaMensaje($mensaje['timestamp'] ?? null),
+                        'meta-webhook-v1'
                     ));
 
-                    $claveResultado = match ($capturado->estado) {
-                        'aceptado' => 'aceptados',
-                        'duplicado' => 'duplicados',
-                        default => 'ignorados',
-                    };
+                    if ($capturado->estado === 'aceptado') {
+                        $claveResultado = 'aceptados';
+                    } elseif ($capturado->estado === 'duplicado') {
+                        $claveResultado = 'duplicados';
+                    } else {
+                        $claveResultado = 'ignorados';
+                    }
                     $resultado[$claveResultado]++;
                 }
             }
@@ -181,7 +183,7 @@ class ControladorWebhookWhatsapp extends Controller
 
     private function sincronizarGrupos(
         ConexionWhatsapp $conexion,
-        mixed $grupos,
+        $grupos,
         SincronizarChatsDescubiertos $sincronizar,
     ): int {
         if (! is_array($grupos)) {
@@ -220,18 +222,25 @@ class ControladorWebhookWhatsapp extends Controller
 
     private function tipoMensaje(string $tipo): string
     {
-        return match ($tipo) {
-            'text' => 'texto',
-            'image' => 'foto',
-            'video' => 'video',
-            'audio' => 'audio',
-            'document' => 'documento',
-            'sticker' => 'sticker',
-            default => $tipo !== '' ? $tipo : 'desconocido',
-        };
+        switch ($tipo) {
+            case 'text':
+                return 'texto';
+            case 'image':
+                return 'foto';
+            case 'video':
+                return 'video';
+            case 'audio':
+                return 'audio';
+            case 'document':
+                return 'documento';
+            case 'sticker':
+                return 'sticker';
+            default:
+                return $tipo !== '' ? $tipo : 'desconocido';
+        }
     }
 
-    private function fechaMensaje(mixed $marcaTiempo): CarbonImmutable
+    private function fechaMensaje($marcaTiempo): CarbonImmutable
     {
         if (is_numeric($marcaTiempo) && (int) $marcaTiempo > 0) {
             return CarbonImmutable::createFromTimestampUTC((int) $marcaTiempo);
