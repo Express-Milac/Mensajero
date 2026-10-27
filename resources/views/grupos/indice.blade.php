@@ -80,13 +80,13 @@
                         </span>
                         <div class="gestor-identidad-texto">
                             <h3 title="{{ $tituloGrupo }}">{{ $tituloGrupo }}</h3>
-                            <span>{{ $grupo->conexion?->proveedor === 'recolector_whatsapp' ? 'WhatsApp del recolector' : 'Otra conexión' }}@if(! $grupo->es_activo) · Inactivo @endif</span>
+                            <span>{{ optional($grupo->conexion)->proveedor === 'recolector_whatsapp' ? 'WhatsApp del recolector' : 'Otra conexión' }}@if(! $grupo->es_activo) · Inactivo @endif</span>
                         </div>
                     </div>
 
                     <div class="gestor-columna gestor-fecha">
                         <span class="gestor-etiqueta-movil">Última detección</span>
-                        <time>{{ $grupo->visto_ultima_vez_en?->timezone(config('app.timezone'))->format('d/m/Y · H:i') ?? 'Sin fecha registrada' }}</time>
+                        <time>{{ ($grupo->visto_ultima_vez_en !== null ? $grupo->visto_ultima_vez_en->timezone(config('app.timezone'))->format('d/m/Y · H:i') : 'Sin fecha registrada') }}</time>
                     </div>
 
                     <div class="gestor-columna gestor-columna-switch">
@@ -125,7 +125,7 @@
                         <dl>
                             <div><dt>Identificador interno</dt><dd>{{ $grupo->id }}</dd></div>
                             <div><dt>Identificador de WhatsApp</dt><dd>{{ $grupo->id_chat_proveedor }}</dd></div>
-                            <div><dt>Conexión</dt><dd>{{ $grupo->conexion?->nombre_visible ?: ($grupo->conexion?->clave_conexion ?: 'No identificada') }}</dd></div>
+                            <div><dt>Conexión</dt><dd>{{ optional($grupo->conexion)->nombre_visible ?: (optional($grupo->conexion)->clave_conexion ?: 'No identificada') }}</dd></div>
                             <div><dt>Versión de autorización</dt><dd>{{ $grupo->version_autorizacion }}</dd></div>
                         </dl>
                     </details>
