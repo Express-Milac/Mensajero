@@ -15,14 +15,22 @@ use RuntimeException;
 
 final class ProcesarAnalisisGemini
 {
-    public function __construct(
-        private readonly PoliticaEnvioGemini $politica,
-        private readonly ConstruirDialogoGemini $constructorDialogo,
-        private readonly ClienteGemini $cliente,
-        private readonly ValidarResultadoGemini $validador,
-        private readonly RegistrarAcontecimientoOperativo $registrar,
-        private readonly NotificadorTiempoReal $notificador,
-    ) {}
+    private PoliticaEnvioGemini $politica;
+    private ConstruirDialogoGemini $constructorDialogo;
+    private ClienteGemini $cliente;
+    private ValidarResultadoGemini $validador;
+    private RegistrarAcontecimientoOperativo $registrar;
+    private NotificadorTiempoReal $notificador;
+
+    public function __construct(PoliticaEnvioGemini $politica, ConstruirDialogoGemini $constructorDialogo, ClienteGemini $cliente, ValidarResultadoGemini $validador, RegistrarAcontecimientoOperativo $registrar, NotificadorTiempoReal $notificador)
+    {
+        $this->politica = $politica;
+        $this->constructorDialogo = $constructorDialogo;
+        $this->cliente = $cliente;
+        $this->validador = $validador;
+        $this->registrar = $registrar;
+        $this->notificador = $notificador;
+    }
 
     public function ejecutar(int $mensajeId): string
     {
