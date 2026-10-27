@@ -265,18 +265,19 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
         ?string $objetivo = null,
     ): EventoCrudoWhatsapp {
         $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-            conexionId: (int) $conexion->id,
-            chatId: $chat->id_chat_proveedor,
-            tipoEvento: $tipoEvento,
-            tipoMensaje: 'texto',
-            eventoExternoId: $idExterno,
-            mensajeProveedorId: $idExterno,
-            contenidoCrudo: json_encode($contenido, JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
-            remitenteProveedorId: $remitente,
-            mensajeCitadoProveedorId: $citado,
-            mensajeObjetivoProveedorId: $objetivo,
+            (int) $conexion->id,
+            $chat->id_chat_proveedor,
+            $tipoEvento,
+            'texto',
+            $idExterno,
+            $idExterno,
+            json_encode($contenido, JSON_THROW_ON_ERROR),
+            CarbonImmutable::now('UTC'),
+            'v3-recolector',
+            null,
+            $remitente,
+            $citado,
+            $objetivo
         ));
 
         $this->assertSame('aceptado', $captura->estado);
