@@ -22,10 +22,14 @@ use Throwable;
  */
 final class ConciliarPublicacionesGemini
 {
-    public function __construct(
-        private readonly PoliticaEnvioGemini $politica,
-        private readonly PresupuestoPublicacionesGemini $presupuesto,
-    ) {}
+    private PoliticaEnvioGemini $politica;
+    private PresupuestoPublicacionesGemini $presupuesto;
+
+    public function __construct(PoliticaEnvioGemini $politica, PresupuestoPublicacionesGemini $presupuesto)
+    {
+        $this->politica = $politica;
+        $this->presupuesto = $presupuesto;
+    }
 
     public function disponible(): bool
     {
