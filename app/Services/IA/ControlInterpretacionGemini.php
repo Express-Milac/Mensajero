@@ -91,7 +91,7 @@ final class ControlInterpretacionGemini
         try {
             $global = new \DateTimeImmutable($general['inicio_en'].' UTC');
             $grupo = new \DateTimeImmutable($individual['inicio_en'].' UTC');
-        } catch (\Throwable) {
+        } catch (\Throwable $error) {
             return null;
         }
 
