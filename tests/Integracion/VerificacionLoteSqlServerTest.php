@@ -158,18 +158,20 @@ class VerificacionLoteSqlServerTest extends TestCase
         $clave = 'verificacion-'.bin2hex(random_bytes(8));
 
         $entrada = new EventoWhatsappEntrante(
-            conexionId: (int) $grupo->conexion_id,
-            chatId: $grupo->id_chat_proveedor,
-            tipoEvento: 'mensaje',
-            tipoMensaje: 'texto',
-            eventoExternoId: $clave,
-            mensajeProveedorId: $clave,
-            contenidoCrudo: json_encode([
+            (int) $grupo->conexion_id,
+            $grupo->id_chat_proveedor,
+            'mensaje',
+            'texto',
+            $clave,
+            $clave,
+            json_encode([
                 'message' => ['extendedTextMessage' => ['text' => $texto]],
             ], JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
-            mensajeCitadoProveedorId: $idCitado,
+            CarbonImmutable::now('UTC'),
+            'v3-recolector',
+            null,
+            null,
+            $idCitado
         );
 
         $resultado = app(CapturarEventoWhatsappEntrante::class)->ejecutar($entrada);
