@@ -196,3 +196,23 @@ Los trabajos recientes de GitHub Actions terminan con fallo **sin pasos ejecutad
 - [ ] Aprobación explícita de despliegue y plan de reversión del directorio de Mensajero.
 
 Esta lista no autoriza instalar paquetes ni hacer cambios en otras aplicaciones, servicios Apache/PHP o bases de datos activas.
+
+## Compatibilidad comprobada por inspección: vistas y filtros (27/oct/2026)
+
+Correcciones funcionales adicionales dentro de **Mensajero**:
+
+1. Se ajustó `app/Services/Capture/FiltroMensajeEntrante.php` a `decidir(...): string` porque `DisposicionEntrada` ahora contiene constantes de cadena. El tipo anterior `: DisposicionEntrada` provocaría `TypeError` al recibir cualquier mensaje. Se amplió `herramientas/probar-contratos-php74.php` con casos para sticker y chat no autorizado sin cargar Laravel.
+2. Se repararon las firmas `get` / `set` de `app/Casts/FechaUtc.php` para implementar el contrato `CastsAttributes` de Laravel 8 sin restringir los parámetros.
+3. Se inspeccionaron las 19 vistas Blade; siete contenían operadores `?->` y/o `match` de PHP8 y se adaptaron a PHP7.4 sin cambiar textos, filtros ni permisos:
+   - grupos/indice
+   - mensajes/evento
+   - mensajes/grupo
+   - mensajes/partes/panorama-tarjetas
+   - mensajes/partes/tarjeta-grupo
+   - remitentes/editar
+   - remitentes/indice
+4. Se agregaron `herramientas/comprobar-vistas-php74.php` (barrera estática) y `php artisan view:cache` (compilación real, después de instalar dependencias) al workflow específico; el linter PHP7.4 ahora incluye también `tests/` y `herramientas/`.
+5. Se transformaron los constructores con argumentos nombrados en nueve archivos `tests/Integracion`, se corrigieron dos auxiliares y se quitaron comas finales de firmas detectadas en cinco archivos de pruebas, sin tocar datos de SQL Server ni activar ensayos.
+
+Estos cambios **solo están revisados por lectura de código**. Los scripts automáticos y Blade compilado aún NO han sido ejecutados con PHP 7.4 y Laravel8, porque GitHub Actions continúa con fallo antes de obtener runner o registrar pasos. Por ello las pruebas de integración SQL Server y la revisión completa siguen PENDIENTES y está prohibido desplegar.
+
