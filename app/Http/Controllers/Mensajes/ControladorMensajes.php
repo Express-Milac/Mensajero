@@ -269,8 +269,7 @@ final class ControladorMensajes extends Controller
         Request $request,
         int $chat,
         ExtraerContenidoWhatsapp $extraer,
-        IdentificarRemitente $identificador,
-    ): View {
+        IdentificarRemitente $identificador) : View {
         $grupo = ChatMonitoreado::query()
             ->with('conexion')
             ->where('tipo_chat', 'grupo')
@@ -351,8 +350,7 @@ final class ControladorMensajes extends Controller
         int $evento,
         ExtraerContenidoWhatsapp $extraer,
         PrepararContenidoEvidencia $preparador,
-        IdentificarRemitente $identificador,
-    ): View {
+        IdentificarRemitente $identificador) : View {
         $registro = EventoCrudoWhatsapp::query()
             ->with(['chat', 'mensaje.remitente', 'archivo'])
             ->whereHas('chat', function ($consulta) {
