@@ -21,7 +21,7 @@ while IFS= read -r archivo; do
         php -l "$archivo" 2>&1 || true
         errores=$((errores + 1))
     fi
-done < <(find app bootstrap config database routes public -type f -name '*.php' | sort)
+done < <(find app bootstrap config database routes public tests herramientas -type f -name '*.php' | sort)
 
 printf '\nRevisados: %s | Incompatibles PHP 7.4: %s\n' "$revisados" "$errores"
 if [ "$errores" -ne 0 ]; then
