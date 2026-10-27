@@ -49,11 +49,11 @@ class MetaWebhookSqlServerTest extends TestCase
             ]);
 
             $primero = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.001',
-                tipo: 'text',
-                contenido: ['text' => ['body' => 'Primera prueba oficial']],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.001',
+                'text',
+                ['text' => ['body' => 'Primera prueba oficial']],
             );
 
             $this->enviarFirmado($primero)
@@ -77,11 +77,11 @@ class MetaWebhookSqlServerTest extends TestCase
             );
 
             $segundo = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.002',
-                tipo: 'text',
-                contenido: ['text' => ['body' => 'Mensaje autorizado']],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.002',
+                'text',
+                ['text' => ['body' => 'Mensaje autorizado']],
             );
 
             $this->enviarFirmado($segundo)
@@ -97,11 +97,11 @@ class MetaWebhookSqlServerTest extends TestCase
             $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
 
             $pegatina = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.003',
-                tipo: 'sticker',
-                contenido: ['sticker' => ['id' => 'media-'.$sufijo]],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.003',
+                'sticker',
+                ['sticker' => ['id' => 'media-'.$sufijo]],
             );
 
             $this->enviarFirmado($pegatina)
