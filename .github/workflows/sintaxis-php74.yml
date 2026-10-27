@@ -51,3 +51,62 @@ jobs:
 
       - name: Probar valores de contratos originales en PHP 7.4
         run: php herramientas/probar-contratos-php74.php
+
+  dependencias-y-arranque:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Resolver Laravel 8 y probar en entorno aislado
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: 'base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      QUEUE_CONNECTION: sync
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      BROADCAST_CONNECTION: 'null'
+      MENSAJERO_IA_LOTES_HABILITADOS: 'false'
+      MENSAJERO_IA_ENVIO_AUTORIZADO: 'false'
+      IA_HABILITADA: 'false'
+
+    steps:
+      - name: Clonar solo este repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar PHP 7.4 y Composer 2 en runner aislado
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, dom, xml, zip, pdo_sqlite, bcmath, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Comprobar herramientas del entorno de pruebas
+        run: |
+          php -v
+          composer --version
+          php -m | grep -Ei 'pdo_sqlite|mbstring|xml|bcmath|fileinfo'
+
+      - name: Resolver dependencias con plataforma PHP 7.4.13 (sin scripts)
+        run: composer update --no-scripts --no-interaction --prefer-dist --no-progress
+
+      - name: Verificar requisitos físicos del runner
+        run: composer check-platform-reqs
+
+      - name: Iniciar Artisan sin conectarse a SQL corporativo
+        run: |
+          php artisan --version
+          php artisan route:list
+
+      - name: Ejecutar pruebas aisladas sin servicios externos
+        run: ./vendor/bin/phpunit -c phpunit-lotes.xml
+
+      - name: Guardar lock resultante para revisión sin publicarlo
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-lock-php74
+          path: composer.lock
+          retention-days: 7
