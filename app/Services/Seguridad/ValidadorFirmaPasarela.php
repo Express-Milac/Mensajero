@@ -27,8 +27,7 @@ final class ValidadorFirmaPasarela
         string $firma,
         string $secreto,
         int $ventanaSegundos,
-        ?CarbonImmutable $ahora = null,
-    ): bool {
+        ?CarbonImmutable $ahora = null) : bool {
         if (! preg_match('/^[A-Za-z0-9._:-]{16,128}$/', $identificador)) {
             return false;
         }
