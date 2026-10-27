@@ -99,13 +99,13 @@ final class RecuperarPublicacionWhatsapp extends Command
         }
 
         if (! $aplicar) {
-            $this->components->info('Evento #'.$eventoId.': aviso elegible para recuperación controlada.');
+            $this->info('Evento #'.$eventoId.': aviso elegible para recuperación controlada.');
             $this->line('Vista previa de solo lectura: use --aplicar únicamente tras confirmar la incidencia.');
 
             return self::SUCCESS;
         }
 
-        $this->components->info('Evento #'.$eventoId.': aviso restablecido en SQL Server para futura publicación.');
+        $this->info('Evento #'.$eventoId.': aviso restablecido en SQL Server para futura publicación.');
         $this->line('No se ha conectado a Redis ni se ha normalizado el evento.');
 
         return self::SUCCESS;
