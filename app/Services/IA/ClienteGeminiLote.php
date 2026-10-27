@@ -131,7 +131,7 @@ final class ClienteGeminiLote
         $respuesta = Http::withHeaders([
             'x-goog-api-key' => $clave,
             'Accept' => 'application/json',
-        ])->connectTimeout(5)->timeout(25)
+        ])->withOptions(['connect_timeout' => 5])->timeout(25)
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.$modelo.':generateContent', $solicitud);
 
         if (! $respuesta->successful()) {
