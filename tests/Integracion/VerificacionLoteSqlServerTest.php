@@ -153,7 +153,7 @@ class VerificacionLoteSqlServerTest extends TestCase
     private function crearEvento(
         ChatMonitoreado $grupo,
         string $texto,
-        ?string $idCitado = null,
+        ?string $idCitado = null
     ): EventoCrudoWhatsapp {
         $clave = 'verificacion-'.bin2hex(random_bytes(8));
 
