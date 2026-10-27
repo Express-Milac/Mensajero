@@ -232,38 +232,38 @@ class ControladorEntradaPasarela extends Controller
         if (isset($datos['multimedia']) && is_array($datos['multimedia'])) {
             $multimedia = $datos['multimedia'];
             $archivo = new ArchivoWhatsappEntrante(
-                identificadorArchivo: (string) $multimedia['identificador_archivo'],
-                rutaRelativa: (string) $multimedia['ruta_relativa'],
-                hashSha256: (string) $multimedia['hash_sha256'],
-                tamanoBytes: (int) $multimedia['tamano_bytes'],
-                tipoMime: isset($multimedia['tipo_mime']) ? (string) $multimedia['tipo_mime'] : null,
-                nombreOriginal: isset($multimedia['nombre_original']) ? (string) $multimedia['nombre_original'] : null,
-                extension: isset($multimedia['extension']) ? (string) $multimedia['extension'] : null,
+                (string) $multimedia['identificador_archivo'],
+                (string) $multimedia['ruta_relativa'],
+                (string) $multimedia['hash_sha256'],
+                (int) $multimedia['tamano_bytes'],
+                isset($multimedia['tipo_mime']) ? (string) $multimedia['tipo_mime'] : null,
+                isset($multimedia['nombre_original']) ? (string) $multimedia['nombre_original'] : null,
+                isset($multimedia['extension']) ? (string) $multimedia['extension'] : null,
             );
         }
 
         $resultado = $capturar->ejecutar(new EventoWhatsappEntrante(
-            conexionId: (int) $conexion->id,
-            chatId: (string) $datos['chat_id'],
-            tipoEvento: (string) $datos['tipo_evento'],
-            tipoMensaje: (string) $datos['tipo_mensaje'],
-            eventoExternoId: $datos['evento_externo_id'] ?? null,
-            mensajeProveedorId: $datos['mensaje_proveedor_id'] ?? null,
-            contenidoCrudo: (string) $datos['contenido_crudo'],
-            recibidoEn: CarbonImmutable::parse((string) $datos['recibido_en']),
-            versionContrato: (string) ($datos['version_contrato'] ?? 'v1'),
-            archivo: $archivo,
-            remitenteProveedorId: $datos['id_remitente_proveedor'] ?? null,
-            nombreRemitente: $datos['nombre_remitente'] ?? null,
-            fuenteNombreRemitente: $datos['fuente_nombre_remitente'] ?? null,
-            telefonoRemitente: $datos['telefono_remitente'] ?? null,
-            mensajeCitadoProveedorId: $datos['id_mensaje_citado_proveedor'] ?? null,
-            mensajeObjetivoProveedorId: $datos['id_mensaje_objetivo_proveedor'] ?? null,
+            (int) $conexion->id,
+            (string) $datos['chat_id'],
+            (string) $datos['tipo_evento'],
+            (string) $datos['tipo_mensaje'],
+            $datos['evento_externo_id'] ?? null,
+            $datos['mensaje_proveedor_id'] ?? null,
+            (string) $datos['contenido_crudo'],
+            CarbonImmutable::parse((string) $datos['recibido_en']),
+            (string) ($datos['version_contrato'] ?? 'v1'),
+            $archivo,
+            $datos['id_remitente_proveedor'] ?? null,
+            $datos['id_mensaje_citado_proveedor'] ?? null,
+            $datos['id_mensaje_objetivo_proveedor'] ?? null,
+            $datos['nombre_remitente'] ?? null,
+            $datos['fuente_nombre_remitente'] ?? null,
+            $datos['telefono_remitente'] ?? null,
         ));
 
         return response()->json([
             'estado' => $resultado->estado,
-            'disposicion' => $resultado->disposicion->value,
+            'disposicion' => $resultado->disposicion,
             'evento_crudo_id' => $resultado->eventoCrudoId,
         ]);
     }
