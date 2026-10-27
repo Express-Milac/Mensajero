@@ -69,7 +69,7 @@ final class IdentificarRemitente
         $contacto = $mensaje !== null && $mensaje->relationLoaded('remitente')
             ? $mensaje->getRelation('remitente')
             : null;
-        $nombre = $contacto?->nombre_visible ?: $contacto?->nombre_notificacion;
+        $nombre = $contacto === null ? null : ($contacto->nombre_visible ?: $contacto->nombre_notificacion);
         if (is_string($nombre) && trim($nombre) !== '') {
             return trim($nombre);
         }
