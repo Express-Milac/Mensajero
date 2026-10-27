@@ -103,7 +103,7 @@ final class IdentificarRemitente
 
         try {
             $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return null;
         }
 
@@ -145,7 +145,7 @@ final class IdentificarRemitente
     {
         try {
             $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return null;
         }
 
