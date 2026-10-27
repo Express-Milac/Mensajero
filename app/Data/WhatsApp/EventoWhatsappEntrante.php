@@ -6,7 +6,7 @@ use Carbon\CarbonImmutable;
 
 final class EventoWhatsappEntrante
 {
-    publi    public int $conexionId;
+    public int $conexionId;
     public string $chatId;
     public string $tipoEvento;
     public string $tipoMensaje;
@@ -23,7 +23,7 @@ final class EventoWhatsappEntrante
     public ?string $fuenteNombreRemitente;
     public ?string $telefonoRemitente;
 
-    function __construct(
+    public function __construct(
         int $conexionId,
         string $chatId,
         string $tipoEvento,
@@ -60,7 +60,7 @@ final class EventoWhatsappEntrante
     }
 
 
-c function hashContenidoSha256(): string
+    public function hashContenidoSha256(): string
     {
         return hash('sha256', $this->contenidoCrudo);
     }
