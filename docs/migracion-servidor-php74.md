@@ -168,3 +168,31 @@ Se inspeccionaron rutas y servicios de `app` (104 archivos PHP en el árbol de e
 5. Solo después del respaldo, prueba HTTPS, permisos y autenticación corporativa, preparar un despliegue con reversión supervisada.
 
 No usar `composer update` sobre `/home/sistemas/laravelProjects/Mensajero` actualmente publicado.
+
+
+## Verificación nueva de dependencias y arranque (27/oct/2026)
+
+Hallazgo comprobado en el `composer.lock` heredado: ya en sus primeras dependencias aparece `brick/math` con requisito `php: ^8.2`. **Es imposible instalar ese lock como tal en el PHP 7.4.13 del servidor.** No copiarlo ni utilizar `--ignore-platform-reqs`.
+
+Cambios incorporados exclusivamente a Mensajero:
+- `tests/TestCase.php` arranca la aplicación mediante `Console Kernel` de Laravel 8.
+- `config/database.php` habilita SQLite solo cuando `DB_CONNECTION=sqlite`; SQL Server continúa predeterminado.
+- `phpunit-lotes.xml` adopta esquema PHPUnit 9 y prueba adicional `DisponibilidadMensajeroPhp74Test`.
+- `routes/web.php` recupera `/disponible`, que Laravel 13 añadía desde `bootstrap/app.php`, y responde únicamente con código 200 y sin datos privados.
+- `herramientas/verificar-lock-php74.php` rechaza un lock sin Laravel 8 o una plataforma Composer diferente de 7.4.13. Es solo lectura y NO sustituye `composer check-platform-reqs`.
+- El flujo `.github/workflows/sintaxis-php74.yml` tiene un trabajo nuevo `dependencias-y-arranque`: en un runner sin credenciales operativas intenta resolver paquetes mediante Composer 2 y PHP 7.4, ejecutar `artisan`, rutas y el conjunto SQLite, y adjuntar el nuevo `composer.lock` para revisión **solo si todas las pruebas pasan**.
+
+Los trabajos recientes de GitHub Actions terminan con fallo **sin pasos ejecutados ni runner asignado**. No se dispone de pruebas aprobadas ni de un lock regenerado. Hasta que el CI vuelva a ejecutar trabajos, esta rama debe seguir como borrador.
+
+### Lista de condiciones para considerar terminada la adaptación
+
+- [ ] Sintaxis de todos los archivos PHP verificada por intérprete PHP 7.4 real.
+- [ ] Composer 2 resolvió un lock nuevo para PHP 7.4.13 y Laravel 8.
+- [ ] `composer check-platform-reqs` y `php artisan --version` funcionan en ambiente aislado.
+- [ ] `php artisan route:list` funciona y `/disponible` responde.
+- [ ] Suite de unidad y lotes PHP7/SQLite aprobada; suite SQL Server ejecutada únicamente sobre una base `_test`.
+- [ ] Comportamiento de Redis/WhatsApp/Gemini comprobado sin tráfico, envíos ni historiales reales.
+- [ ] Revisión de permisos de archivos, almacenamiento, autenticación y credenciales antes de publicar.
+- [ ] Aprobación explícita de despliegue y plan de reversión del directorio de Mensajero.
+
+Esta lista no autoriza instalar paquetes ni hacer cambios en otras aplicaciones, servicios Apache/PHP o bases de datos activas.
