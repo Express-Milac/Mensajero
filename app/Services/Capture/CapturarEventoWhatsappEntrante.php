@@ -15,11 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 final class CapturarEventoWhatsappEntrante
 {
-    public function __construct(
-        private readonly FiltroMensajeEntrante $filtro,
-        private readonly VerificarArchivoWhatsappEntrante $verificadorArchivo,
-        private readonly NotificadorTiempoReal $notificador,
-    ) {}
+    private FiltroMensajeEntrante $filtro;
+    private VerificarArchivoWhatsappEntrante $verificadorArchivo;
+    private NotificadorTiempoReal $notificador;
+
+    public function __construct(FiltroMensajeEntrante $filtro, VerificarArchivoWhatsappEntrante $verificadorArchivo, NotificadorTiempoReal $notificador)
+    {
+        $this->filtro = $filtro;
+        $this->verificadorArchivo = $verificadorArchivo;
+        $this->notificador = $notificador;
+    }
 
     public function ejecutar(EventoWhatsappEntrante $evento): ResultadoCaptura
     {
