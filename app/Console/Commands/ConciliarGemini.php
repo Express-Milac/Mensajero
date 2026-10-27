@@ -70,7 +70,7 @@ final class ConciliarGemini extends Command
 
                 foreach ($candidatos as $mensaje) {
                     $this->line('  ID #'.$mensaje->id.' | tipo '.$mensaje->tipo_mensaje.' | recibido UTC '
-                        .$mensaje->recibido_en?->format('Y-m-d H:i:s'));
+                        .($mensaje->recibido_en !== null ? $mensaje->recibido_en->format('Y-m-d H:i:s') : ''));
 
                     if ($this->option('aplicar')) {
                         $estado = $conciliador->publicar((int) $mensaje->id, $grupo);
