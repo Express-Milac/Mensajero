@@ -19,14 +19,14 @@
         <article class="catalogo-tarjeta">
             <div class="catalogo-tarjeta-encabezado">
                 <span class="catalogo-grupo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span>
-                <div class="catalogo-grupo-titulo"><h3>{{ $nombre }}</h3><span>{{ $registro->chat?->nombre_interno ?: ($registro->chat?->nombre_grupo ?: 'Grupo sin nombre') }}</span></div>
+                <div class="catalogo-grupo-titulo"><h3>{{ $nombre }}</h3><span>{{ optional($registro->chat)->nombre_interno ?: (optional($registro->chat)->nombre_grupo ?: 'Grupo sin nombre') }}</span></div>
             </div>
             <div class="catalogo-tarjeta-cuerpo">
                 <p><span>Nombre disponible de WhatsApp</span><strong>{{ $nombreWhatsapp ?? 'No informado' }}</strong></p>
                 <p><span>Nombre interno asignado</span><strong>{{ $nombreAsignado ?? 'Sin asignar' }}</strong></p>
                 <p><span>Teléfono del remitente</span><strong>{{ $telefono ? '+'.$telefono : 'WhatsApp no proporcionó un número verificable' }}</strong></p>
                 <p><span>Origen del nombre recibido</span><strong>{{ $fuenteNombre === 'contacto' ? 'Agenda del recolector' : ($fuenteNombre === 'perfil' ? 'Perfil de WhatsApp' : 'No informado') }}</strong></p>
-                <p><span>Último mensaje consultado</span><strong>{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</strong></p>
+                <p><span>Último mensaje consultado</span><strong>{{ ($registro->recibido_en !== null ? $registro->recibido_en->timezone(config('app.timezone'))->format('d/m/Y H:i') : '') }}</strong></p>
                 <a class="centro-ver-evidencia" href="{{ route('mensajes.evento', $registro->id) }}">Consultar evidencia original ↗</a>
             </div>
         </article>
