@@ -6,11 +6,21 @@ set -euo pipefail
 raiz="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 composer_bin="${COMPOSER_BIN:-composer}"
 
-if ! command -v "$composer_bin" >/dev/null 2>&1; then
-    echo "ERROR: Composer 2 debe estar disponible en el equipo de desarrollo." >&2
-    exit 2
+# Composer 2 puede estar instalado como ejecutable O como archivo PHAR privado.
+if [[ -n "${COMPOSER_PHAR:-}" ]]; then
+    if [[ ! -f "$COMPOSER_PHAR" ]]; then
+        echo "ERROR: no existe COMPOSER_PHAR." >&2
+        exit 2
+    fi
+    ejecutar_composer=(php "$COMPOSER_PHAR")
+else
+    if ! command -v "$composer_bin" >/dev/null 2>&1; then
+        echo "ERROR: Composer 2 debe estar disponible en el equipo de desarrollo." >&2
+        exit 2
+    fi
+    ejecutar_composer=("$composer_bin")
 fi
-version_composer="$("$composer_bin" --version --no-ansi 2>&1)"
+version_composer="$("${ejecutar_composer[@]}" --version --no-ansi 2>&1)"
 if [[ ! "$version_composer" =~ Composer[[:space:]]version[[:space:]]2\. ]]; then
     echo "ERROR: se necesita Composer 2 separado de Composer 1 del servidor." >&2
     exit 2
@@ -37,7 +47,7 @@ cp "$raiz/herramientas/verificar-lock-php74.php" "$directorio/herramientas/verif
 # La carpeta temporal no contiene .env, contraseñas, datos SQL ni historial WhatsApp.
 (
     cd "$directorio"
-    "$composer_bin" update --no-scripts --no-plugins --no-interaction --prefer-dist --no-progress
+    "${ejecutar_composer[@]}" update --no-install --no-scripts --no-plugins --no-interaction --prefer-dist --no-progress
     php herramientas/verificar-lock-php74.php
 )
 
