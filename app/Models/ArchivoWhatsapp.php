@@ -15,12 +15,9 @@ class ArchivoWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'tamano_bytes' => 'integer',
         ];
-    }
 
     public function conexion(): BelongsTo
     {
