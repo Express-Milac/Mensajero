@@ -59,7 +59,7 @@ final class ClienteMetaWhatsapp
         return Http::withToken($token)
             ->acceptJson()
             ->timeout(20)
-            ->connectTimeout(10);
+            ->withOptions(['connect_timeout' => 10]);
     }
 
     private function url(string $recurso): string
