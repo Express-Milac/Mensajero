@@ -4,13 +4,19 @@ namespace App\Data\WhatsApp;
 
 use App\Enums\DisposicionEntrada;
 
-final readonly class ResultadoCaptura
+final class ResultadoCaptura
 {
-    private function __construct(
-        public string $estado,
-        public DisposicionEntrada $disposicion,
-        public ?int $eventoCrudoId = null,
-    ) {}
+    public string $estado;
+    /** @var string Uno de los valores de DisposicionEntrada */
+    public string $disposicion;
+    public ?int $eventoCrudoId;
+
+    private function __construct(string $estado, string $disposicion, ?int $eventoCrudoId = null)
+    {
+        $this->estado = $estado;
+        $this->disposicion = $disposicion;
+        $this->eventoCrudoId = $eventoCrudoId;
+    }
 
     public static function aceptado(int $eventoCrudoId): self
     {
@@ -22,7 +28,7 @@ final readonly class ResultadoCaptura
         return new self('duplicado', DisposicionEntrada::Aceptar, $eventoCrudoId);
     }
 
-    public static function ignorado(DisposicionEntrada $disposicion): self
+    public static function ignorado(string $disposicion): self
     {
         return new self('ignorado', $disposicion);
     }
