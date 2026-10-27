@@ -66,3 +66,32 @@ bash herramientas/comprobar-sintaxis-php74.sh
 ```
 
 No ejecutar este archivo contra la instalación actual de producción ni hacer pull de la rama experimental sobre su directorio activo. La prueba inicial debe hacerse en una copia aparte y se esperan errores mientras no esté terminado el port.
+
+
+## Inventario confirmado del servidor por Francisco, 27/oct/2026
+
+- SO: Debian GNU/Linux 9 (Stretch).
+- PHP CLI: 7.4.13 (NTS); `php --ini` usa `/etc/php/7.4/cli/php.ini`.
+- Extensiones PHP CLI: `pdo_sqlsrv`, `sqlsrv`, `mbstring`, `curl`, `fileinfo`, `bcmath`, `openssl`, `xml`, `zip`, `intl` y otras. **Esto no prueba que estén cargadas por Apache o PHP-FPM**.
+- Composer CLI global: 1.6.5 (2018). Es una herramienta heredada; no cambiarla globalmente. Resolver las dependencias de Mensajero con Composer 2 en una copia y con `config.platform.php=7.4.13`, generando un lock exclusivo de PHP 7.4.
+- OpenSSL CLI: 1.1.0l (2019). Podrían existir restricciones TLS/CA al bajar dependencias; no deshabilitar verificación TLS para resolverlas.
+- Enlace publicado: `/var/www/html/Mensajero` se resuelve a `/home/sistemas/laravelProjects/Mensajero/public` (directorio correcto).
+- `apache2ctl -M 2>/dev/null | grep -Ei 'php|proxy_fcgi|rewrite'` devolvió vacío, pero **ocultó stderr y el código de salida**, por lo que no se conoce aún el SAPI PHP web.
+
+### Comprobaciones no destructivas pendientes
+
+```bash
+apache2ctl -t
+apache2ctl -M 2>&1 | head -80
+echo "estado_apache=$?"
+ps -eo comm,args | grep -E '[a]pache2|[h]ttpd|[n]ginx|[p]hp-fpm'
+ls -ld /home /home/sistemas /home/sistemas/laravelProjects /home/sistemas/laravelProjects/Mensajero /home/sistemas/laravelProjects/Mensajero/public
+```
+
+**Precaución**: en comandos con `|` el código de salida mostrado suele corresponder al último comando del pipeline. Si se requiere el verdadero estado de `apache2ctl`, usar `apache2ctl -M >/tmp/mensajero-modulos-check.txt 2>&1; echo $?` y leer el archivo (si se dispone de permiso); no reiniciar Apache.
+
+### Composer sin afectar programas existentes
+
+La página oficial `https://getcomposer.org/download/` describe el canal Composer 2.2 LTS y el instalador con `--install-dir`, `--filename` y `--2.2`. Este canal funciona con PHP 7.4. Para construir Mensajero, preferir el Composer 2 estable más reciente admitido por PHP 7.4, siempre en **una ruta privada y aislada**, sin `self-update` sobre el Composer global de 1.6.5. Validar firma y cadena de certificados HTTPS; jamás usar `--disable-tls`, `secure-http=false` o `--ignore-platform-reqs`.
+
+**No ejecutar aún Composer 2 sobre el directorio de despliegue**: primero terminar el port completo, regenerar lock y verificar módulos web.
