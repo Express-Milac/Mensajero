@@ -33,6 +33,9 @@ jobs:
       - name: Detectar archivos incompatibles sin cargar Laravel ni BD
         run: bash herramientas/comprobar-sintaxis-php74.sh
 
+      - name: Detectar sintaxis PHP8 en vistas sin tocar base de datos
+        run: php herramientas/comprobar-vistas-php74.php
+
   contratos-base:
     if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
     name: Contratos de WhatsApp y roles sin Laravel
@@ -102,6 +105,9 @@ jobs:
         run: |
           php artisan --version
           php artisan route:list
+
+      - name: Compilar todas las vistas con Laravel 8
+        run: php artisan view:cache
 
       - name: Ejecutar pruebas aisladas sin servicios externos
         run: ./vendor/bin/phpunit -c phpunit-lotes.xml
