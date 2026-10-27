@@ -34,7 +34,7 @@ class ConfigurarMonitoreoChat extends Command
                 null,
                 $this->option('motivo') !== null ? (string) $this->option('motivo') : null,
             );
-        } catch (ModelNotFoundException) {
+        } catch (ModelNotFoundException $error) {
             $this->error('No existe el chat indicado.');
 
             return self::FAILURE;
