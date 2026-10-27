@@ -123,7 +123,7 @@ class MetaWebhookSqlServerTest extends TestCase
         string $idGrupo,
         string $idMensaje,
         string $tipo,
-        array $contenido,
+        array $contenido
     ): array {
         return [
             'object' => 'whatsapp_business_account',
