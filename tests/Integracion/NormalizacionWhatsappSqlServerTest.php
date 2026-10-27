@@ -40,7 +40,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
 
             $respuesta = $this->capturar($conexion, $chat, 'respuesta-'.$sufijo, [
                 'message' => ['extendedTextMessage' => ['text' => 'Recibido']],
-            ], remitente: $remitente, citado: $idOriginal);
+            ], $remitente, $idOriginal);
 
             $normalizador = app(NormalizarEventoWhatsapp::class);
             $this->assertSame('normalizado', $normalizador->ejecutar((int) $respuesta->id));
@@ -55,7 +55,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
             $original = $this->capturar($conexion, $chat, $idOriginal, [
                 'message' => ['conversation' => 'Unidad disponible'],
                 'messageTimestamp' => 1792429200,
-            ], remitente: $remitente);
+            ], $remitente);
 
             $this->assertSame('normalizado', $normalizador->ejecutar((int) $original->id));
             $this->assertSame('duplicado', $normalizador->ejecutar((int) $original->id));
@@ -86,7 +86,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
 
             $edicion = $this->capturar($conexion, $chat, 'edicion-'.$sufijo, [
                 'message' => ['protocolMessage' => ['type' => 14]],
-            ], tipoEvento: 'edicion', objetivo: 'original-'.$sufijo);
+            ], null, null, 'edicion', 'original-'.$sufijo);
 
             $normalizador = app(NormalizarEventoWhatsapp::class);
             $this->assertSame('pendiente_semantica', $normalizador->ejecutar((int) $edicion->id));
