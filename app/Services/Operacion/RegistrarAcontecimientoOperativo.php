@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Schema;
  */
 final class RegistrarAcontecimientoOperativo
 {
-    public function __construct(private readonly VincularEvidenciasOperativas $vinculador) {}
+    private VincularEvidenciasOperativas $vinculador;
+
+    public function __construct(VincularEvidenciasOperativas $vinculador)
+    {
+        $this->vinculador = $vinculador;
+    }
 
     public function desdeAnalisis(int $analisisId): ?int
     {
