@@ -19,6 +19,10 @@ Condición inamovible de infraestructura de MILAC: **PHP 7.4.13**. No requiere r
 - Nuevos `app/Http/Kernel.php`, `app/Console/Kernel.php`, `app/Exceptions/Handler.php`, `app/Providers/RouteServiceProvider.php` y middleware de invitado.
 - `config/app.php` registra proveedores y alias tradicionales. La programación de tareas pasa a `Console/Kernel.php`; se quita de `routes/console.php` para evitar duplicidad.
 
+- Se migraron los métodos `casts(): array` de diez modelos de Mensajero a la propiedad `protected $casts` de Laravel 8, conservando los nombres de campos y tipos declarados.
+- En `config/database.php`, `migrations` volvió al formato de cadena `mensajero_migraciones`, que Laravel 8 requiere para conservar el historial existente.
+- `herramientas/comprobar-sintaxis-php74.sh` permite enumerar archivos aún incompatibles ejecutando `php -l` con el intérprete PHP 7.4 del servidor. **Es solo lectura, no arranca Laravel.**
+
 **Esto NO significa que la aplicación arranque en PHP 7.4.** Hay incompatibilidades de sintaxis y API aún pendientes.
 
 ## Pendientes críticos de migración
@@ -54,3 +58,11 @@ Si `php -m` no muestra `pdo_sqlsrv`, el servidor debe disponer de una versión d
 PHP 7.4 y Laravel 8 no tienen mantenimiento de seguridad estándar desde 2022/2023. La aplicación deberá permanecer detrás de autenticación corporativa, VPN o control de acceso equivalente; usar mínimo privilegio SQL Server, aislamiento de archivos, firewall y monitoreo. Una publicación sin autenticación en Internet queda descartada para mensajes operativos reales.
 
 **Prohibido durante el port:** `--ignore-platform-reqs`, cambiar `composer.json` en el servidor manualmente, copiar `vendor` de PHP 8, ejecutar `php artisan migrate` en SQL corporativo, habilitar el trabajo Gemini por lotes o apuntar Apache a la raíz del repositorio.
+
+## Prueba de sintaxis cuando el código de la rama esté en una copia de trabajo
+
+```bash
+bash herramientas/comprobar-sintaxis-php74.sh
+```
+
+No ejecutar este archivo contra la instalación actual de producción ni hacer pull de la rama experimental sobre su directorio activo. La prueba inicial debe hacerse en una copia aparte y se esperan errores mientras no esté terminado el port.
