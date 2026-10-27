@@ -151,7 +151,7 @@ final class ConciliarPublicacionesWhatsapp extends Command
             }
         }
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Examinados: %d. Elegibles: %d. Restablecidos: %d.',
             $identificadores->count(),
             $elegibles,
