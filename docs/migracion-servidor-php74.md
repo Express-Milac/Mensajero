@@ -318,3 +318,31 @@ La comprobación real del usuario en la copia PHP aislada indicó:
 Nuevo script `herramientas/instalar-sqlsrv-windows-php74.ps1`: comprueba versión PHP, arquitectura, ODBC, descarga oficial sobre HTTPS, selecciona exclusivamente esas DLL, respalda `php.ini`, copia a la carpeta `ext` PRIVADA, habilita extensiones y comprueba su carga; si la carga falla, restaura `php.ini` y borra solo las DLL copiadas por ese intento. **Aún no ejecutado en el equipo del usuario.** No instala MSI, no requiere cambiar Composer ni servicios de Windows y NO modifica el servidor MILAC.
 
 Solo cuando PHP 7.4 reconozca `pdo_sqlsrv` se repetirá el diagnóstico SQL de **solo lectura** y luego se definirá una puerta de migraciones segura hacia `mensajero_integracion_test`. No ejecutar directamente toda la suite SQL Server antes de confirmar la base física, pues algunos tests aplican migraciones.
+
+
+## Diagnóstico SQL Server tras instalar extensiones PHP 7.4 (28/oct/2026)
+
+El usuario instaló correctamente las DLL oficiales SQLSRV/PDO_SQLSRV 5.10.1
+para PHP 7.4.13 NTS x64; ODBC 18 ya estaba instalado. El instalador respaldó
+php.ini y reportó `PDO_SQLSRV: OK`, `SQLSRV: OK`.
+
+Al repetir la comprobación de SOLO LECTURA sobre
+`mensajero_integracion_test`, el controlador **sí cargó**, pero Laravel 8
+devolvió `Illuminate\\Database\\QueryException`. Esto **NO confirma conexión
+SQL** y tampoco identifica aún si falló por certificado TLS, autenticación,
+permisos, existencia de la base o red. No ejecutar migraciones.
+
+Se mejoró `herramientas/diagnosticar-sqlsrv-php74.php` para distinguir
+`abrir_conexion_sql`, `consultar_nombre_fisico` y
+`consultar_catalogo_tablas`, e imprimir solo SQLSTATE, código nativo
+numérico, clase y categoría orientativa. El diagnóstico deliberadamente
+NO imprime mensajes brutos de excepciones, nombres de servidor,
+DSN, usuarios, contraseñas ni resultados sensibles. **Esta versión está
+pendiente de ejecución local.**
+
+El ODBC Driver 18 normalmente exige cifrado y validación de certificado
+del servidor; una CA no confiable puede producir un fallo de conexión.
+Sin confirmar códigos, NO cambiar automáticamente
+`DB_ENCRYPT` ni `DB_TRUST_SERVER_CERTIFICATE`. Preferir certificado TLS
+válido y nombre coincidente. No usar `--ignore-platform-reqs`,
+ni apuntar PHP7.4 a SQL productivo.
