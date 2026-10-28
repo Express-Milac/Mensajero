@@ -111,3 +111,35 @@ certificados Apache/SQL Server, protección por red o login y
 procedimiento de respaldo/reversión. No correr `composer install`,
 `artisan migrate`, reinicios de Apache ni despliegues en el
 directorio publicado a partir de este inventario.
+
+## Inventario de usuarios y permisos del servidor (28/oct/2026)
+
+La segunda inspeccion de solo lectura por SSH del usuario `sistemas`
+en `webserver` mostro:
+
+- Procesos: `root apache2`, `www-data apache2`,
+  `root php-fpm7.3` y `www-data php-fpm7.3`. Esto demuestra
+  presencia de ambos; **no** demuestra que el virtual host de Mensajero
+  use FPM 7.3 (Apache conserva configurado mod_php7.4).
+- `www-data`: uid/gid 33; grupo principal `www-data`.
+- La ruta `/var/www/html/Mensajero` es un enlace simbolico que
+  apunta a `/home/sistemas/laravelProjects/Mensajero/public`.
+  La cadena de directorios hasta public permite atravesar la ruta.
+- `/home/sistemas`, `laravelProjects`, `Mensajero`, `public`,
+  `storage`, `bootstrap` y `bootstrap/cache` tienen propietario
+  `sistemas:sistemas` y permisos `drwxr-xr-x` (0755).
+  Por **permisos tradicionales**, el trabajador web `www-data` puede
+  leer/atravesar, pero **no escribir** en `storage` ni
+  `bootstrap/cache`. Verificar ACL adicionales antes de concluir.
+- `/var/www/html` tiene permisos `drwxrwxrwx` (0777),
+  hallazgo de seguridad que requiere revision por el administrador
+  responsable de todas las aplicaciones, sin cambiar permisos ahora.
+
+**Siguiente puerta:** auditar solo lectura las ACL y la propiedad de
+`storage/framework`, `storage/framework/cache`,
+`storage/framework/sessions`, `storage/framework/views`,
+`storage/logs` y `bootstrap/cache`, comprobar que el
+virtual host de Mensajero use PHP 7.4 y obtener una validacion
+privilegiada de `apache2ctl -t` por el administrador.
+No ejecutar `chmod -R`, `chown -R`, cambios Apache, migraciones,
+reinstalaciones ni arranque de trabajadores sobre el servidor publicado.
