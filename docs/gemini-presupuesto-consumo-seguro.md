@@ -4,6 +4,13 @@
 **Estado:** diseño; no es una implementación ni autorización operativa.  
 **Rama:** `integracion/normalizacion-gemini-validada-20261028`.
 
+## Estado confirmado y fase experimental actual (28/10/2026)
+
+- **Último resultado real del usuario:** commit `e2a21ac`, cotizador **4 pruebas / 21 aserciones OK** (suite unidad) y **86 pruebas / 1,467 aserciones OK** (suite SQL Server) con `SELECT DB_NAME() = mensajero_integracion_test`. Total confirmado entre ambas suites: **90 pruebas / 1,488 aserciones**. Concurrencia del libro SQL también aprobada en la suite completa.
+- **Nuevo desarrollo sin ejecutar:** `VincularCotizacionPresupuestoGemini` conecta cotizador + libro de reservas **solo como servicio contable independiente**: exige referencia exacta `gemini-3.5-flash-lite-standard-2026-10-28`, importe `reserva_maxima_microusd` igual o mayor a la cotización del circuito, grupo activo/monitoreado/visible y una fuente de mensaje normalizado o lote real con mensaje vinculado a ese grupo. Si falta algo, no reserva.
+- Las pruebas `VincularCotizacionPresupuestoGeminiSqlServerTest.php` (4 casos) están **pendientes** y ahora forman parte de `scripts/validar-cotizacion-gemini.ps1`. Este script también repite toda la regresión SQL Server, con todas las banderas IA apagadas. Solo se prueba en una base de integración.
+- El puente **NO se invoca desde `PublicarLoteGemini`, `ProcesarAnalisisGemini`, ni `ClienteGemini` o `ClienteGeminiLote`**. No sirve todavía como barrera operativa real. Las tarifas están congeladas al 28/10/2026 como referencia y requerirán nueva revisión antes de cualquier uso. Nadie ha definido ni autorizado todavía el importe de presupuesto de MILAC.
+
 ## Avance experimental de Fase 1 (NO VALIDADO AÚN, 2026-10-28)
 
 Se añadió `2026_10_28_000400_crear_reservas_presupuesto_gemini.php` con dos tablas: `mensajero_candado_presupuesto_gemini` (fila global de bloqueo) y `mensajero_reservas_consumo_gemini` (fuente única por `tipo_fuente + fuente_id`, grupo, importe entero en microUSD, tarifa, fecha y estado).
