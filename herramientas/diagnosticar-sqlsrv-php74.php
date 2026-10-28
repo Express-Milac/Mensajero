@@ -88,6 +88,13 @@ try {
             : 'integrada_o_incompleta'
     ).PHP_EOL;
 
+    // Permite investigar credenciales sin siquiera abrir una conexion SQL.
+    // No valida permisos ni destino fisico; no confundir con una aprobacion.
+    if (in_array('--solo-config', $argv, true)) {
+        echo 'INSPECCION_CONFIG_SQL74_COMPLETADA_SIN_CONEXION'.PHP_EOL;
+        exit(0);
+    }
+
     $etapa = 'crear_conexion';
     $conexion = Illuminate\Support\Facades\DB::connection('sqlsrv');
     if ($conexion->getDriverName() !== 'sqlsrv') {
