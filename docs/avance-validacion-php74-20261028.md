@@ -79,3 +79,35 @@ lock de Laravel 13. No equivale a certificar todas las dependencias
 instaladas del **servidor**: ejecutar `composer check-platform-reqs`
 en copia aislada de PHP7.4, nunca modificar el Composer global 1.6.5
 ni instalar paquetes en produccion sin plan aprobado.
+
+## Inventario solo lectura aportado desde MILAC Debian 9 (28/oct/2026)
+
+El usuario `sistemas` ejecutó comandos no destructivos por SSH en `webserver`
+y confirmó lo siguiente (sin solicitar ni leer credenciales):
+
+- Debian GNU/Linux 9 (stretch).
+- PHP **CLI 7.4.13** (NTS).
+- Extensiones PHP CLI presentes: `pdo_sqlsrv`, `sqlsrv`,
+  `mbstring`, `curl`, `openssl`, `xml`, `zip`,
+  `intl`, `fileinfo`, `bcmath`.
+- Composer **global** 1.6.5; no actualizar ni sustituir a nivel
+  de sistema. Usar Composer 2 compatible con PHP 7.4 únicamente
+  aislado durante una futura instalación aprobada.
+- Archivos habilitados de Apache: `php7.4.load` y `rewrite.load`.
+  Esto demuestra configuración, no la versión PHP efectiva del vhost.
+- `apache2ctl -t >/dev/null 2>&1` no devolvió éxito **como usuario
+  `sistemas`**. NO concluye que Apache tenga sintaxis rota o
+  certificado corrupto: la comprobación previa indicó error al acceder
+  a llave SSL privada sin privilegios. Requiere verificación por
+  administrador autorizado, sin publicar ni copiar la llave.
+- `readlink -f /var/www/html/Mensajero` devolvió
+  `/home/sistemas/laravelProjects/Mensajero/public` (enlace correcto).
+- Existen `public`, `storage` y `bootstrap/cache`; **existencia no
+  prueba permisos de escritura** del usuario de Apache.
+
+El servidor MILAC sigue sin cambios. **No está aprobado el despliegue**:
+faltan comprobación PHP web real, permisos del usuario web,
+certificados Apache/SQL Server, protección por red o login y
+procedimiento de respaldo/reversión. No correr `composer install`,
+`artisan migrate`, reinicios de Apache ni despliegues en el
+directorio publicado a partir de este inventario.
