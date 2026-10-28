@@ -41,6 +41,13 @@ final class RevocacionLotesGeminiSqlServerTest extends TestCase
             $this->assertTrue(Schema::hasTable($tabla), 'Falta tabla '.$tabla);
         }
 
+        // La captura sintética no debe notificar al servicio HTTP de tiempo real.
+        config()->set('mensajero.tiempo_real.habilitado', false);
+        // Tampoco puede publicar trabajos del circuito individual al normalizar.
+        config()->set('mensajero.ia.habilitada', false);
+        config()->set('mensajero.ia.envio_autorizado', false);
+        config()->set('mensajero.ia.lotes_habilitados', false);
+
         Http::preventStrayRequests();
         Http::fake();
     }
@@ -141,30 +148,6 @@ final class RevocacionLotesGeminiSqlServerTest extends TestCase
         $fechaMensaje = CarbonImmutable::now('UTC')->subMinutes(10);
         $corteSql = $inicio->format('Y-m-d H:i:s.u');
 
-        // Autorizacion exclusivamente en memoria de esta prueba.
-        config()->set('mensajero.ia.habilitada', true);
-        config()->set('mensajero.ia.envio_autorizado', true);
-        config()->set('mensajero.ia.servicio_pagado_confirmado', true);
-        config()->set('mensajero.ia.clave_api', 'clave-ficticia-sin-acceso-a-google');
-        config()->set('mensajero.ia.fecha_inicio', $inicio->format('Y-m-d\\TH:i:sP'));
-        config()->set('mensajero.ia.lotes_habilitados', true);
-        config()->set('mensajero.ia.lotes_fecha_inicio', $inicio->format('Y-m-d\\TH:i:sP'));
-        config()->set('mensajero.ia.lotes_maximo_dia_grupo', 3);
-
-        DB::table('mensajero_control_interpretacion_ia')
-            ->where('chat_monitoreado_id', 0)
-            ->update(['habilitado' => true, 'inicio_en' => $corteSql]);
-
-        DB::table('mensajero_control_interpretacion_ia')->insert([
-            'chat_monitoreado_id' => $grupo->id,
-            'habilitado' => true,
-            'inicio_en' => $corteSql,
-            'actualizado_en' => $corteSql,
-        ]);
-
-        $this->assertTrue(app(PoliticaEnvioGemini::class)->configuracionCompleta());
-        $this->assertTrue(app(PoliticaLotesGemini::class)->habilitada());
-
         $idExterno = 'revocacion-'.$clave;
         $evento = new EventoWhatsappEntrante(
             conexionId: (int) $conexion->id,
@@ -190,6 +173,36 @@ final class RevocacionLotesGeminiSqlServerTest extends TestCase
         ]));
 
         $mensaje = MensajeWhatsapp::query()->where('evento_crudo_id', $resultado->eventoCrudoId)->firstOrFail();
+        // Confirmar que preparar la evidencia NO publicó al circuito individual.
+        $this->assertFalse(DB::table('mensajero_control_publicaciones_gemini')
+            ->where('mensaje_whatsapp_id', $mensaje->id)->exists());
+        Http::assertNothingSent();
+
+        // Los permisos se habilitan solo DESPUES de normalizar el mensaje.
+        // Así esta prueba cubre únicamente el circuito de lotes.
+        config()->set('mensajero.ia.habilitada', true);
+        config()->set('mensajero.ia.envio_autorizado', true);
+        config()->set('mensajero.ia.servicio_pagado_confirmado', true);
+        config()->set('mensajero.ia.clave_api', 'clave-ficticia-sin-acceso-a-google');
+        config()->set('mensajero.ia.fecha_inicio', $inicio->format('Y-m-d\\TH:i:sP'));
+        config()->set('mensajero.ia.lotes_habilitados', true);
+        config()->set('mensajero.ia.lotes_fecha_inicio', $inicio->format('Y-m-d\\TH:i:sP'));
+        config()->set('mensajero.ia.lotes_maximo_dia_grupo', 3);
+
+        DB::table('mensajero_control_interpretacion_ia')
+            ->where('chat_monitoreado_id', 0)
+            ->update(['habilitado' => true, 'inicio_en' => $corteSql]);
+
+        DB::table('mensajero_control_interpretacion_ia')->insert([
+            'chat_monitoreado_id' => $grupo->id,
+            'habilitado' => true,
+            'inicio_en' => $corteSql,
+            'actualizado_en' => $corteSql,
+        ]);
+
+        $this->assertTrue(app(PoliticaEnvioGemini::class)->configuracionCompleta());
+        $this->assertTrue(app(PoliticaLotesGemini::class)->habilitada());
+
         $this->assertTrue(app(PoliticaEnvioGemini::class)->autoriza($grupo->id, $mensaje->recibido_en));
         $this->assertTrue(app(PoliticaLotesGemini::class)->posteriorAlCorte($mensaje->recibido_en));
 
