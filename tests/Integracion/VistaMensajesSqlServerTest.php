@@ -120,9 +120,12 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Temas clave del día')
                 ->assertSee('Posibles acuerdos mencionados')
                 ->assertSee('Menciones para revisar')
-                ->assertSee('Actualizar ahora')
+                // El tablero se actualiza por su estado y la ruta de refresco,
+                // sin boton manual. La vista /mensajes si conserva ese boton.
+                ->assertSee('id="estado-actualizacion"', false)
+                ->assertSee('Comprobando mensajes...')
                 ->assertSee('data-buscar-conversaciones', false)
-                ->assertSee('data-modo-tarjetas="lista"', false)
+                ->assertSee('centro-lista-grupos modo-lista', false)
                 ->assertSee('Ver mensaje original')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Llegó '.$contenido)
@@ -197,6 +200,8 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/mensajes')
                 ->assertOk()
                 ->assertSee('Explorar conversaciones')
+                ->assertSee('Actualizar ahora')
+                ->assertSee('data-actualizar-manual', false)
                 ->assertSee('Conversaciones recientes')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
