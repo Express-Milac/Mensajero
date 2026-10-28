@@ -16,6 +16,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -75,6 +77,52 @@ final class ErroresEnvioLotesGeminiSqlServerTest extends TestCase
         ]);
 
         $this->validarErrorExternoSinReintento('no finalizó');
+    }
+
+    public function test_conexion_interrumpida_deja_lote_en_revision_y_no_reenvia(): void
+    {
+        $intentos = 0;
+
+        // Simula una falla de transporte: no hay respuesta HTTP y tampoco red real.
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => function (Request $request) use (&$intentos): never {
+                if ($request->method() !== 'POST') {
+                    throw new RuntimeException('Solicitud inesperada al simular conexion Gemini.');
+                }
+
+                $intentos++;
+                throw new ConnectionException('Conexion ficticia interrumpida.');
+            },
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            [, , $loteId] = $this->prepararLotePublicado();
+
+            try {
+                app(ProcesarLoteGemini::class)->ejecutar($loteId);
+                $this->fail('La falla de conexion debe requerir revision.');
+            } catch (ConnectionException $error) {
+                $this->assertStringContainsString('interrumpida', $error->getMessage());
+            }
+
+            $this->assertSame(1, $intentos);
+            $this->assertSame('requiere_revision', DB::table('mensajero_lotes_gemini')
+                ->where('id', $loteId)->value('estado'));
+            $this->assertSame('ConnectionException', DB::table('mensajero_lotes_gemini')
+                ->where('id', $loteId)->value('error_tipo'));
+            $this->assertSame(0, DB::table('mensajero_resultados_lote_gemini')
+                ->where('lote_id', $loteId)->count());
+
+            // Una segunda ejecucion no debe alcanzar de nuevo al cliente HTTP.
+            $this->assertSame('omitido', app(ProcesarLoteGemini::class)->ejecutar($loteId));
+            $this->assertSame(1, $intentos);
+            Bus::assertNotDispatched(AnalizarMensajeGeminiTrabajo::class);
+            Bus::assertNotDispatched(AnalizarLoteGeminiTrabajo::class);
+        } finally {
+            DB::rollBack();
+        }
     }
 
     private function validarErrorExternoSinReintento(string $textoError): void
