@@ -11,7 +11,9 @@
     "verificar": "tsc --noEmit",
     "construir": "tsc",
     "pruebas": "tsx --test tests/**/*.test.ts",
-    "iniciar": "node dist/src/principal.js"
+    "iniciar": "node dist/src/principal.js",
+    "preconstruir": "node scripts/aplicar-parche-baileys.mjs",
+    "preiniciar": "node scripts/aplicar-parche-baileys.mjs"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "6.7.24",
@@ -24,5 +26,8 @@
     "@types/qrcode-terminal": "^0.12.2",
     "tsx": "^4.20.0",
     "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
