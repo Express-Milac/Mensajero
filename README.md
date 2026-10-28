@@ -22,15 +22,28 @@ instale en Debian 9, sin modificar desde desarrollo el servidor existente.
 
 ## Compatibilidad verificada localmente
 
-- PHPUnit y PHP 7.4.13: **41 pruebas / 89 aserciones** (SQLite).
-- SQL Server aislado: **56 pruebas / 880 aserciones**.
-- Redis local: conexión `PING/PONG` y un trabajo sintético publicado y
-  procesado por `queue:work --once`, con cola vacía al terminar.
+La revisión `f81d222f5abdfc61d188954fefda769c52a06598` fue comprobada
+el 28 de octubre de 2026 con resultados aportados desde Windows:
 
-Estas pruebas fueron ejecutadas **antes de los ajustes recientes de
-preparación de la rama** y no sustituyen probar las dependencias Linux,
-la versión PHP web, el sistema de archivos ni la integración con
-los servicios corporativos.
+- **215 archivos PHP:** sintaxis compatible con el intérprete PHP 7.4.13.
+- **42 pruebas funcionales / 91 aserciones** (PHPUnit 9.6.38, SQLite).
+- **56 pruebas de integración SQL Server / 880 aserciones**, exclusivamente
+  sobre la base de ensayos `mensajero_php74_231a8c29f3_test`.
+- **Redis local:** `PING/PONG`; un trabajo publicado, procesado mediante
+  `queue:work --once`, cola vacía y claves exclusivas limpiadas.
+- **Recolector Node 22.15.0:** TypeScript y compilación correctos;
+  **31 pruebas aprobadas**, incluido HTTPS obligatorio y parche Baileys.
+
+**Total: 129 pruebas automatizadas aprobadas, sin fallos**, además de
+los controles de sintaxis y Redis. No se conectó WhatsApp real.
+
+Estas pruebas validan Windows y la base SQL Server de laboratorio.
+No sustituyen las verificaciones de Debian 9, PHP efectivo de Apache,
+permisos de `www-data`, TLS SQL corporativo ni el funcionamiento
+del recolector en Linux. Baileys requiere Node 20 o superior; el Node
+20 oficial en Linux requiere una biblioteca glibc más nueva que la
+instalada en Debian 9, por lo que el recolector debe ejecutarse en
+un entorno Node/Linux compatible, separado del PHP antiguo.
 
 ## Condiciones de ejecución en el servidor
 
