@@ -54,6 +54,24 @@ try {
         throw new RuntimeException('La configuracion efectiva no es segura.');
     }
 
+    // Mostrar exclusivamente la politica TLS EFECTIVA, nunca el DSN,
+    // servidor, usuario, contraseña u otros valores arbitrarios.
+    $encriptar = config('database.connections.sqlsrv.encrypt');
+    $confiar = config('database.connections.sqlsrv.trust_server_certificate');
+
+    $normalizarTls = static function ($valor): string {
+        if (is_bool($valor)) {
+            return $valor ? 'true' : 'false';
+        }
+        $normalizado = strtolower(trim((string) $valor));
+        return in_array($normalizado, ['yes', 'no', 'true', 'false', '1', '0', 'strict'], true)
+            ? $normalizado : 'no_reconocido';
+    };
+
+    echo 'CONFIG_TLS_ENCRYPT: '.$normalizarTls($encriptar).PHP_EOL;
+    echo 'CONFIG_TLS_TRUST_SERVER_CERTIFICATE: '.$normalizarTls($confiar).PHP_EOL;
+    echo 'TIPO_TLS_TRUST: '.gettype($confiar).PHP_EOL;
+
     $etapa = 'crear_conexion';
     $conexion = Illuminate\Support\Facades\DB::connection('sqlsrv');
     if ($conexion->getDriverName() !== 'sqlsrv') {
