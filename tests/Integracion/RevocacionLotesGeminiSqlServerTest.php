@@ -3,6 +3,8 @@
 namespace Tests\Integracion;
 
 use App\Data\WhatsApp\EventoWhatsappEntrante;
+use App\Jobs\AnalizarMensajeGeminiTrabajo;
+use App\Jobs\AnalizarLoteGeminiTrabajo;
 use App\Models\ChatMonitoreado;
 use App\Models\ConexionWhatsapp;
 use App\Models\MensajeWhatsapp;
@@ -13,6 +15,7 @@ use App\Services\IA\PoliticaLotesGemini;
 use App\Services\IA\ProcesarLoteGemini;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -48,6 +51,8 @@ final class RevocacionLotesGeminiSqlServerTest extends TestCase
         config()->set('mensajero.ia.envio_autorizado', false);
         config()->set('mensajero.ia.lotes_habilitados', false);
 
+        // Interceptar cualquier dispatch, incluso si algun trabajo fuerza Redis.
+        Bus::fake();
         Http::preventStrayRequests();
         Http::fake();
     }
@@ -176,6 +181,8 @@ final class RevocacionLotesGeminiSqlServerTest extends TestCase
         // Confirmar que preparar la evidencia NO publicó al circuito individual.
         $this->assertFalse(DB::table('mensajero_control_publicaciones_gemini')
             ->where('mensaje_whatsapp_id', $mensaje->id)->exists());
+        Bus::assertNotDispatched(AnalizarMensajeGeminiTrabajo::class);
+        Bus::assertNotDispatched(AnalizarLoteGeminiTrabajo::class);
         Http::assertNothingSent();
 
         // Los permisos se habilitan solo DESPUES de normalizar el mensaje.
