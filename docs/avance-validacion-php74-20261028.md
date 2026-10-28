@@ -17,25 +17,37 @@ Estos resultados solo corresponden al ensayo Windows / SQL Server Docker.
 No son una certificacion de despliegue en Debian 9 ni autorizacion para
 ejecutar migraciones en SQL Server corporativo.
 
-## Siguiente etapa: Redis local sin escritura
+## Redis local: conexion y consumo real aprobados
 
-Herramientas nuevas:
+En Windows, PHP 7.4.13 / Laravel 8 / Predis recibieron `PONG` de
+Redis 127.0.0.1:6379, sin leer claves ni publicar trabajos.
 
-- `herramientas/diagnosticar-redis-php74.php`: comprueba PHP 7.4.13,
-  Laravel 8, Predis 1.x, configuracion de pruebas y PING a Redis
-  `127.0.0.1:6379`. No lee ni altera claves; desactiva colas y AI.
-- `herramientas/ejecutar-diagnostico-redis74.ps1`: aplica variables
-  temporales en PowerShell, configura SQLite en memoria para que la
-  prueba no consulte SQL Server y restaura el entorno al terminar.
+A continuacion el usuario ejecuto un unico trabajo ficticio en la cola
+exclusiva `mensajero_ensayo_php74_01e6982b7721436faf95736961babeaa`:
 
-**Aun no ejecutado en el equipo del usuario.** Aprobar PING no verifica
-publicacion de trabajos, procesamiento de colas ni workers. Esas pruebas
-requieren un ensayo adicional exclusivamente en Redis local y con
-una cola ficticia unica; nunca procesar colas reales del recolector.
+```text
+TRABAJOS_PUBLICADOS: 1
+PREPARACION_COLA_REDIS74_APROBADA
+Processing: Tests\\Soporte\\TrabajoColaRedisPhp74
+Processed: Tests\\Soporte\\TrabajoColaRedisPhp74
+TRABAJO_PROCESADO: SI
+COLA_VACIA: SI
+CLAVES_DE_ENSAYO_LIMPIADAS: SI
+ENSAYO_COLA_REDIS74_APROBADO
+```
+
+El trabajador se limito a `--once --tries=1 --timeout=15`; el
+resultado comprobo escritura de acuse, consumo y limpieza del prefijo
+aleatorio. El ensayo uso SQLite en memoria y no accedio a SQL Server,
+WhatsApp o Gemini.
+
+**El paso Redis local esta aprobado**. No se han probado aun Redis en
+Debian 9, el flujo conjunto real SQL+Redis, el PHP del servidor web ni
+la autenticacion y permisos corporativos.
 
 ## Pendientes para preparar despliegue MILAC
 
-- Confirmar Redis local y despues una cola de ensayo con trabajador limitado.
+- Redis local y trabajador limitado: APROBADOS en Windows (no en Debian 9).
 - Verificar `php7.4` de Apache (se detecto configuracion mod_php 7.4),
   extension SQL y permisos del usuario web.
 - Resolver advertencia de certificado Apache con el administrador y validar TLS
@@ -44,3 +56,14 @@ una cola ficticia unica; nunca procesar colas reales del recolector.
 - Construir paquete aislado y procedimiento de respaldo/reversion.
 - No modificar servicios Apache, PHP, certificados, Redis o SQL corporativo
   durante las pruebas sin autorizacion administrativa.
+
+## Puerta siguiente: inventario SIN cambios del servidor
+
+Se agrego `herramientas/auditar-servidor-milac-solo-lectura.sh` para
+inspeccionar PHP CLI y extensiones, mod_php7.4 y mod_rewrite configurados,
+sintaxis Apache del usuario actual (resultado no concluyente si hay permisos
+insuficientes), y la ruta a `public`. No lee `.env`, certificados,
+bases de datos ni Redis y no modifica servicios ni archivos. Este
+diagnostico esta **pendiente de ejecucion por el usuario en Debian 9**;
+no copiar ni hacer pull en el directorio publicado para ejecutarlo.
+El PHP WEB efectivo, TLS corporativo y autenticacion siguen pendientes.
