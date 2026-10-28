@@ -4,6 +4,14 @@
 **Estado:** diseño; no es una implementación ni autorización operativa.  
 **Rama:** `integracion/normalizacion-gemini-validada-20261028`.
 
+## Corrección de seguridad y validación más reciente
+
+- Validado el commit `65ca500` en el equipo del usuario: **90 pruebas SQL Server / 1,551 aserciones** y **4 unitarias / 21 aserciones**, **94 pruebas / 1,572 aserciones** en dos suites, 0 fallos. El destino físico se verificó como `mensajero_integracion_test`.
+- Se detectó un problema adicional en el puente contable aislado: un lote con al menos un mensaje del grupo correcto también podía contener otro mensaje de un grupo diferente, sin que la comprobación del puente lo descartara.
+- Ahora `VincularCotizacionPresupuestoGemini` exige que el lote tenga miembros y que **ningún** miembro esté asociado a otro grupo, falte en SQL o tenga estado de captura distinto de `normalizado`. No modifica ni enciende el cliente Gemini.
+- Se añadieron dos pruebas `test_lote_mixto_con_mensaje_de_otro_grupo_no_reserva_presupuesto` y `test_lote_con_mensaje_no_normalizado_no_reserva_presupuesto`. **PENDIENTES DE EJECUCIÓN**; por ello el total demostrado sigue siendo 94/1,572 hasta la siguiente salida de PHPUnit.
+- Permanece pendiente resolver la posibilidad de cambio de autorización/membresía entre la comprobación contable y el envío real (TOCTOU), además de reservar y consumir presupuesto exactamente una vez antes de HTTP. Ninguna reserva aislada equivale a permiso de envío.
+
 ## Estado confirmado y fase experimental actual (28/10/2026)
 
 - **Último resultado real del usuario:** commit `e2a21ac`, cotizador **4 pruebas / 21 aserciones OK** (suite unidad) y **86 pruebas / 1,467 aserciones OK** (suite SQL Server) con `SELECT DB_NAME() = mensajero_integracion_test`. Total confirmado entre ambas suites: **90 pruebas / 1,488 aserciones**. Concurrencia del libro SQL también aprobada en la suite completa.
