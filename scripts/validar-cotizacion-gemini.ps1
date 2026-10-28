@@ -50,7 +50,9 @@ try {
 
     $archivos = @(
         "app/Services/IA/CotizarCostoReferenciaGemini.php",
-        "tests/Unidad/CotizarCostoReferenciaGeminiTest.php"
+        "tests/Unidad/CotizarCostoReferenciaGeminiTest.php",
+        "app/Services/IA/VincularCotizacionPresupuestoGemini.php",
+        "tests/Integracion/VincularCotizacionPresupuestoGeminiSqlServerTest.php"
     )
 
     foreach ($archivo in $archivos) {
@@ -68,6 +70,12 @@ try {
     php scripts/verificar-base-presupuesto-gemini.php
     if ($LASTEXITCODE -ne 0) {
         throw "No se verifico la base SQL test; regresion bloqueada."
+    }
+
+    Write-Host "=== 4 PRUEBAS DEL PUENTE MONETARIO, SOLO SQL DE TEST ==="
+    .\vendor\bin\phpunit.bat -c phpunit.integracion.xml tests/Integracion/VincularCotizacionPresupuestoGeminiSqlServerTest.php
+    if ($LASTEXITCODE -ne 0) {
+        throw "Puente monetario: pruebas no aprobadas."
     }
 
     Write-Host "=== REGRESION INTEGRAL SQL SERVER ==="
