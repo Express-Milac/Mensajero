@@ -213,7 +213,9 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Gestor de grupos')
                 ->assertSee('Habilitar grupos')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
-                ->assertSee('Ver conversación')
+                // El gestor actual enlaza al historial con la etiqueta "Conversación".
+                // Asegurar el enlace real, no solo un texto presente en la navegación.
+                ->assertSee('href="'.route('mensajes.grupo', $grupo->id).'" class="gestor-ver-grupo">Conversación', false)
                 ->assertSee('Acceso controlado')
                 ->assertSee('css/interfaz-unificada.css');
 
@@ -355,7 +357,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee('Temas clave del día')
                 ->assertSee('Captura recolector '.$sufijo)
                 ->assertSee('Captura pasarela '.$sufijo)
-                ->assertSee('Grupos con carruseles independientes')
+                // La plantilla presenta grupos separados en una lista;
+                // cada grupo conserva su carrusel y su identificador propio.
+                ->assertSee('grupos en esta vista')
+                ->assertSee('Seguimiento por grupo: eventos y mensajes originales')
                 ->assertSee('Carrusel de mensajes de Captura recolector '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Captura pasarela '.$sufijo)
                 ->assertSee('data-grupo-id="'.$grupoRecolector->id.'"', false)
