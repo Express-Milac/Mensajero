@@ -19,7 +19,7 @@ $clave = getenv('DB_PASSWORD');
 if (getenv('MENSAJERO_SQL_DOCKER_VERIFICADO') !== 'mensajero-sqlserver'
     || getenv('APP_ENV') !== 'testing'
     || getenv('DB_CONNECTION') !== 'sqlsrv'
-    || getenv('DB_URL') !== ''
+    || ! in_array(getenv('DB_URL'), ['', false], true)
     || ! in_array($host, ['127.0.0.1', 'localhost'], true)
     || ! is_string($puerto) || preg_match('/\A[0-9]{1,5}\z/D', $puerto) !== 1
     || (int) $puerto < 1 || (int) $puerto > 65535
@@ -43,7 +43,6 @@ $dsnBase = 'sqlsrv:Server='.$host.','.$puerto.
 try {
     $pdo = new PDO($dsnBase, $usuario, $clave, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT => 8,
     ]);
 
     $fisica = $pdo->query('SELECT DB_NAME()')->fetchColumn();
@@ -65,7 +64,6 @@ try {
         ';Database='.$nombreNuevo.';Encrypt=yes;TrustServerCertificate=1;LoginTimeout=8';
     $nueva = new PDO($dsnNueva, $usuario, $clave, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT => 8,
     ]);
 
     if ($nueva->query('SELECT DB_NAME()')->fetchColumn() !== $nombreNuevo
