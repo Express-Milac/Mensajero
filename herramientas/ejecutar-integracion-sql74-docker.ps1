@@ -1,5 +1,4 @@
-# Parametro opcional: reutilizar solamente una base creada por ESTE ensayo.
-# Si no se indica, se crea una nueva base de pruebas en Docker.
+# Permite reusar una base efimera existente; sin parametro crea una nueva.
 param([string] $BaseExistente = "")
 
 # Pruebas SQL Server reales con PHP 7.4: SOLO Docker local y BASE NUEVA.
@@ -110,54 +109,22 @@ try {
         [Environment]::SetEnvironmentVariable($nombre, $valores[$nombre], "Process")
     }
     if ([string]::IsNullOrEmpty($BaseExistente)) {
-        Write-Host "=== CREAR BASE NUEVA SOLO EN DOCKER, SIN TOCAR mensajero_test ==="
+        Write-Host "=== CREAR BASE NUEVA SOLO EN DOCKER ==="
         $salida = @(& $php74 $creador)
         if ($LASTEXITCODE -ne 0) {
             throw "No se pudo preparar la base de pruebas aislada."
         }
         $registro = @($salida | Where-Object {
-            $_ -match '^BASE_DESECHABLE_CREADA: mensajero_php74_[a-f0-9]{10}_test
-    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
-    if ($LASTEXITCODE -ne 0) {
-        throw "Se detectó fallo en pruebas SQL. Revisar salida y corregir código."
-    }
-
-    Write-Host "`n=== INTEGRACION SQL SERVER PHP 7.4 APROBADA ==="
-    Write-Host "La base de prueba creada permanece disponible para auditarla: $nueva"
-} finally {
-    foreach ($nombre in $valores.Keys) {
-        [Environment]::SetEnvironmentVariable($nombre, $anteriores[$nombre], "Process")
-    }
-    $datos = $null
-    $valores = $null
-    Write-Host "Variables de proceso restauradas. Ninguna base fue eliminada."
-}
-
+            $_ -match '^BASE_DESECHABLE_CREADA: mensajero_php74_[a-f0-9]{10}_test$'
         })
         if ($registro.Count -ne 1 -or $salida -notcontains "BASE_VERIFICADA_VACIA: SI") {
-            throw "No se verifico la base nueva vacia; no se ejecutaran migraciones."
+            throw "No se verifico la nueva base vacia. No ejecutar migraciones."
         }
         $nueva = ($registro[0] -split ': ', 2)[1]
         $env:DB_DATABASE = $nueva
         Write-Host "Base nueva y vacia: $nueva"
     } else {
-        if ($BaseExistente -cnotmatch '^mensajero_php74_[a-f0-9]{10}_test
-    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
-    if ($LASTEXITCODE -ne 0) {
-        throw "Se detectó fallo en pruebas SQL. Revisar salida y corregir código."
-    }
-
-    Write-Host "`n=== INTEGRACION SQL SERVER PHP 7.4 APROBADA ==="
-    Write-Host "La base de prueba creada permanece disponible para auditarla: $nueva"
-} finally {
-    foreach ($nombre in $valores.Keys) {
-        [Environment]::SetEnvironmentVariable($nombre, $anteriores[$nombre], "Process")
-    }
-    $datos = $null
-    $valores = $null
-    Write-Host "Variables de proceso restauradas. Ninguna base fue eliminada."
-}
-) {
+        if ($BaseExistente -cnotmatch '^mensajero_php74_[a-f0-9]{10}_test$') {
             throw "Nombre de base existente fuera del patron exclusivo SQL74."
         }
         $nueva = $BaseExistente
