@@ -351,9 +351,26 @@ final class EnsayarMismoLoteGeminiRedis extends Command
                 $this->warn('Revisar cola aleatoria: '.$colaNombre);
             }
 
+            // Restaurar el control global ANTES de borrar otras evidencias,
+            // y en una operación separada, para que un fallo de limpieza
+            // de claves foráneas no vuelva a dejar Gemini habilitado en SQL.
+            if ($globalCambiado && $globalAnterior !== null) {
+                try {
+                    DB::table('mensajero_control_interpretacion_ia')
+                        ->where('chat_monitoreado_id', 0)->update([
+                            'habilitado' => $globalAnterior->habilitado,
+                            'inicio_en' => $globalAnterior->inicio_en,
+                            'actualizado_en' => $globalAnterior->actualizado_en,
+                        ]);
+                } catch (Throwable $error) {
+                    $limpiezaCorrecta = false;
+                    $this->warn('CRITICO: no se pudo restaurar el control global SQL.');
+                }
+            }
+
             // No borrar ni modificar datos no identificados explícitamente como sintéticos.
             try {
-                DB::transaction(function () use ($ids, $globalAnterior, $globalCambiado): void {
+                DB::transaction(function () use ($ids): void {
                     if ($ids['lote'] !== null) {
                         $resultadosIds = DB::table('mensajero_resultados_lote_gemini')
                             ->where('lote_id', $ids['lote'])->pluck('id')->all();
@@ -370,14 +387,6 @@ final class EnsayarMismoLoteGeminiRedis extends Command
                     if ($ids['grupo'] !== null) {
                         DB::table('mensajero_control_interpretacion_ia')
                             ->where('chat_monitoreado_id', $ids['grupo'])->delete();
-                    }
-                    if ($globalCambiado && $globalAnterior !== null) {
-                        DB::table('mensajero_control_interpretacion_ia')
-                            ->where('chat_monitoreado_id', 0)->update([
-                                'habilitado' => $globalAnterior->habilitado,
-                                'inicio_en' => $globalAnterior->inicio_en,
-                                'actualizado_en' => $globalAnterior->actualizado_en,
-                            ]);
                     }
                     if ($ids['mensaje'] !== null) {
                         DB::table('mensajero_mensajes_whatsapp')
