@@ -1,6 +1,15 @@
 # Puerta de salida a servidor MILAC — PHP 7.4.13
 
-**28 octubre 2026 — pendiente, no apto todavía para despliegue.**
+**Actualización 28/oct/2026:** la rama PHP 7.4 ya aprobó **41 pruebas
+funcionales / 89 aserciones**, **56 SQL Server / 880 aserciones** y el
+ensayo Redis local con worker `--once`. El texto de tareas pendientes
+más abajo incluye estados históricos anteriores a esos resultados.
+
+**Sigue sin autorizarse el despliegue en producción**: falta validar PHP
+web, identidad, HTTPS, permisos de escritura y SQL/Redis corporativos.
+La entrega a cargo de un compañero se rige por
+[ENTREGA-INSTALADOR-MILAC-PHP74.md](ENTREGA-INSTALADOR-MILAC-PHP74.md).
+
 
 ## Objetivo
 Instalar y operar captura, normalización, grupos autorizados, tablero y archivos privados del Mensajero en el servidor MILAC (Debian 9, Apache/mod_php 7.4 y SQL Server), sin alterar otros sistemas. Gemini por lotes, cotizador y presupuesto de la rama PHP 8.4 no forman parte del primer despliegue.
