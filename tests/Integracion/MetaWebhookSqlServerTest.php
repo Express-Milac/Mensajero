@@ -141,14 +141,16 @@ class MetaWebhookSqlServerTest extends TestCase
                             'profile' => ['name' => 'Operador de prueba'],
                             'wa_id' => '524611111111',
                         ]],
-                        'messages' => [[
+                        // PHP 7.4 no admite desempacar arreglos con claves de texto.
+                        // array_merge conserva el contenido asociativo y permite
+                        // sobrescribir las propiedades particulares del mensaje.
+                        'messages' => [array_merge([
                             'from' => '524611111111',
                             'id' => $idMensaje,
                             'timestamp' => (string) now()->getTimestamp(),
                             'group_id' => $idGrupo,
                             'type' => $tipo,
-                            ...$contenido,
-                        ]],
+                        ], $contenido)],
                     ],
                 ]],
             ]],
