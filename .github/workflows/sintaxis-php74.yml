@@ -92,8 +92,8 @@ jobs:
           composer --version
           php -m | grep -Ei 'pdo_sqlite|mbstring|xml|bcmath|fileinfo'
 
-      - name: Resolver dependencias con plataforma PHP 7.4.13 (sin scripts)
-        run: composer update --no-scripts --no-interaction --prefer-dist --no-progress
+      - name: Instalar versiones exactas del composer.lock del proyecto
+        run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
 
       - name: Impedir lock de Laravel 13 o plataforma distinta
         run: php herramientas/verificar-lock-php74.php
@@ -112,10 +112,3 @@ jobs:
       - name: Ejecutar pruebas aisladas sin servicios externos
         run: ./vendor/bin/phpunit -c phpunit-lotes.xml
 
-      - name: Guardar lock resultante para revisión sin publicarlo
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: composer-lock-php74
-          path: composer.lock
-          retention-days: 7
