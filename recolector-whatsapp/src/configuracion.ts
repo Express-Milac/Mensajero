@@ -59,7 +59,7 @@ export function validarUrlMensajero(valor: string): string {
     throw new Error('MENSAJERO_URL no admite usuario, clave, parametros ni fragmentos.');
   }
 
-  return url.toString().replace(/\\/+$/, '');
+  return url.toString().replace(/\/+$/, '');
 }
 
 export function cargarConfiguracion(): ConfiguracionRecolector {
