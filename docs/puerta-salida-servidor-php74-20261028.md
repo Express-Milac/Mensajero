@@ -1,15 +1,9 @@
 # Puerta de salida a servidor MILAC — PHP 7.4.13
 
-**Actualización 28/oct/2026:** la rama PHP 7.4 ya aprobó **41 pruebas
-funcionales / 89 aserciones**, **56 SQL Server / 880 aserciones** y el
-ensayo Redis local con worker `--once`. El texto de tareas pendientes
-más abajo incluye estados históricos anteriores a esos resultados.
-
-**Sigue sin autorizarse el despliegue en producción**: falta validar PHP
-web, identidad, HTTPS, permisos de escritura y SQL/Redis corporativos.
-La entrega a cargo de un compañero se rige por
-[ENTREGA-INSTALADOR-MILAC-PHP74.md](ENTREGA-INSTALADOR-MILAC-PHP74.md).
-
+**Estado PHP 7.4.13:** pruebas locales aprobadas (41 SQLite, 56 SQL Server
+y trabajo Redis ficticio). La instalación del compañero todavía requiere
+configuración privada, validación Apache/TLS, permisos y autenticación;
+no se ha modificado el servidor corporativo.
 
 ## Objetivo
 Instalar y operar captura, normalización, grupos autorizados, tablero y archivos privados del Mensajero en el servidor MILAC (Debian 9, Apache/mod_php 7.4 y SQL Server), sin alterar otros sistemas. Gemini por lotes, cotizador y presupuesto de la rama PHP 8.4 no forman parte del primer despliegue.
@@ -21,10 +15,10 @@ Instalar y operar captura, normalización, grupos autorizados, tablero y archivo
 - El servidor posee PHP 7.4.13 CLI y pdo_sqlsrv CLI, Apache tiene mod_php 7.4 configurado; aún falta validar vhost y PHP web exactos.
 
 ## Puertas de calidad restantes
-1. Repetir pruebas de PHP 7.4.13 en Mensajero-PHP74-Pruebas: último resultado conocido 41 casos con 1 error y 3 fallos por API connectTimeout de Laravel 8. La rama ya cambió el cliente a withOptions(connect_timeout), pero NO hay salida posterior que certifique que pasan. Asegurar también que no quede preventStrayRequests incompatible.
+1. Las 41 pruebas PHP 7.4.13 de la suite funcional pasaron (89 aserciones); repetirlas únicamente si se modifica código PHP de ejecución.
 2. Verificar instalación limpia local con Composer 2 aislado, platform-reqs, sintaxis, artisan --version, route:list, view:cache y pruebas de HTTP internas.
-3. Probar las 20 migraciones y consultas solo en SQL Server *_test, con cambios reversibles. Ninguna migración en SQL corporativo sin respaldo y permiso.
-4. Validar Redis y el recolector Node por separado en entorno Linux; Node NO se reemplaza al bajar PHP. Confirmar versión Node/npm compatible y supervisión de una sola sesión del número secundario.
+3. La suite SQL Server pasó 56 pruebas y 880 aserciones sobre base aislada *_test. Ninguna migración en SQL corporativo sin respaldo y permiso.
+4. Redis local ya pasó PING y trabajo único de cola. Aún falta validar Redis corporativo y recolector Node en entorno Linux; confirmar Node/npm, libc y supervisión de una sola sesión.
 5. Preparar COPIA PRIVADA de staging, instalar dependencias Linux en esa copia (no copiar vendor de Windows), establecer .env privado, storage, bootstrap/cache y almacenamiento privado MENSAJERO_RUTA_ALMACENAMIENTO.
 6. Confirmar Apache/HTTPS sirviendo solo public, y autenticación corporativa o restricción de red equivalente. Diagnóstico SSL anterior sin privilegios no demuestra que falte una llave: validar con el administrador sin modificar permisos.
 7. Preparar respaldos de SQL y multimedia, plan de recuperación, rutas y supervisores, y prueba de humo con mensajes sintéticos. Solicitar autorización explícita antes del despliegue productivo.
