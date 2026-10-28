@@ -14,6 +14,8 @@ if (PHP_VERSION_ID !== 70413
     || getenv('REDIS_PORT') !== '6379'
     || getenv('REDIS_DB') !== '0'
     || getenv('QUEUE_CONNECTION') !== 'sync'
+    || getenv('DB_CONNECTION') !== 'sqlite'
+    || getenv('DB_DATABASE') !== ':memory:'
     || getenv('IA_HABILITADA') !== 'false'
     || getenv('MENSAJERO_IA_ENVIO_AUTORIZADO') !== 'false'
     || getenv('MENSAJERO_IA_LOTES_HABILITADOS') !== 'false'
@@ -48,7 +50,9 @@ try {
         || config('database.redis.default.host') !== '127.0.0.1'
         || (int) config('database.redis.default.port') !== 6379
         || (int) config('database.redis.default.database') !== 0
-        || config('queue.default') !== 'sync') {
+        || config('queue.default') !== 'sync'
+        || config('database.default') !== 'sqlite'
+        || config('database.connections.sqlite.database') !== ':memory:') {
         throw new RuntimeException('La configuracion efectiva no corresponde al ensayo local.');
     }
 
