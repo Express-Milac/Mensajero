@@ -65,7 +65,12 @@ return [
         // deshabilitado: acceso interno temporal sin inicio de sesión.
         // local: autenticación Laravel provisional para desarrollo y pruebas.
         // corporativo: reservado para identidad MILAC; falla cerrado hasta implementarse.
-        'modo' => env('MENSAJERO_MODO_AUTENTICACION', 'deshabilitado'),
+        // Sin plantilla .env, una instalacion de produccion no abre el acceso
+        // por omision: identidad corporativa pendiente, falla cerrada.
+        'modo' => env(
+            'MENSAJERO_MODO_AUTENTICACION',
+            env('APP_ENV', 'production') === 'production' ? 'corporativo' : 'deshabilitado'
+        ),
     ],
 
     // Consultas de conversaciones sin iniciar sesión: únicamente POC local explícito.
