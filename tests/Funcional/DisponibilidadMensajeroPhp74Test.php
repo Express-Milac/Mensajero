@@ -10,6 +10,14 @@ use Tests\TestCase;
  */
 final class DisponibilidadMensajeroPhp74Test extends TestCase
 {
+    public function test_modo_corporativo_sin_integracion_rechaza_acceso_sin_consultar_sql(): void
+    {
+        config(['mensajero.autenticacion.modo' => 'corporativo']);
+
+        $this->get('/tablero')->assertStatus(503);
+        $this->get('/grupos')->assertStatus(503);
+    }
+
     public function test_disponibilidad_no_expone_datos_operativos(): void
     {
         $respuesta = $this->get('/disponible');
