@@ -38,6 +38,8 @@ if (! is_file($base.'/vendor/autoload.php')) {
     exit(1);
 }
 
+$etapa = 'inicio_laravel';
+
 try {
     require $base.'/vendor/autoload.php';
     $app = require $base.'/bootstrap/app.php';
@@ -52,17 +54,23 @@ try {
         throw new RuntimeException('La configuracion efectiva no es segura.');
     }
 
+    $etapa = 'crear_conexion';
     $conexion = Illuminate\Support\Facades\DB::connection('sqlsrv');
     if ($conexion->getDriverName() !== 'sqlsrv') {
         throw new RuntimeException('El controlador de SQL Server es incorrecto.');
     }
 
+    $etapa = 'abrir_conexion_sql';
+    $conexion->getPdo();
+
     // ÚNICAS operaciones SQL: dos SELECT de solo lectura.
+    $etapa = 'consultar_nombre_fisico';
     $fisica = $conexion->selectOne('SELECT DB_NAME() AS nombre');
     if (! isset($fisica->nombre) || $fisica->nombre !== 'mensajero_integracion_test') {
         throw new RuntimeException('La base SQL FISICA no es la base de integración.');
     }
 
+    $etapa = 'consultar_catalogo_tablas';
     $tablas = $conexion->selectOne(
         "SELECT COUNT(*) AS cantidad FROM sys.tables WHERE name LIKE 'mensajero[_]%'"
     );
@@ -71,8 +79,64 @@ try {
     echo 'TABLAS_MENSAJERO_EN_BASE_TEST: '.(int) $tablas->cantidad.PHP_EOL;
     echo 'DIAGNOSTICO_SQL74_SOLO_LECTURA_APROBADO'.PHP_EOL;
 } catch (Throwable $error) {
-    // Nunca imprimir SQL, usuario, contrasena ni datos del servidor.
-    fwrite(STDERR, 'BLOQUEADO: fallo de conexion o configuracion ('.
-        get_class($error).'). Revisar el entorno SIN publicar secretos.'.PHP_EOL);
+    // Clasificacion SEGURA: nunca mostrar getMessage(), errorInfo[2],
+    // DSN, servidor, usuario, contraseña, SQL ni credenciales.
+    $sqlEstado = 'NO_DISPONIBLE';
+    $codigoNativo = 'NO_DISPONIBLE';
+    $clasificacion = 'no_identificado';
+    $causa = $error;
+
+    for ($intento = 0; $intento < 5 && $causa instanceof Throwable; $intento++) {
+        if ($causa instanceof PDOException && isset($causa->errorInfo)
+            && is_array($causa->errorInfo)) {
+            $info = $causa->errorInfo;
+
+            if (isset($info[0]) && is_string($info[0])
+                && preg_match('/\\A[A-Z0-9]{5}\\z/D', $info[0])) {
+                $sqlEstado = $info[0];
+            }
+
+            if (isset($info[1]) && (is_int($info[1]) ||
+                (is_string($info[1]) && preg_match('/\\A-?[0-9]{1,11}\\z/D', $info[1])))) {
+                $codigoNativo = (string) $info[1];
+            }
+        }
+
+        // Solo inspeccionar internamente indicadores conocidos,
+        // sin volver a imprimir texto potencialmente sensible.
+        $detalle = strtolower($causa->getMessage());
+        if (strpos($detalle, 'certificate') !== false
+            || strpos($detalle, 'certificado') !== false
+            || strpos($detalle, 'ssl provider') !== false
+            || strpos($detalle, 'tls handshake') !== false) {
+            $clasificacion = 'tls_o_certificado';
+        } elseif (strpos($detalle, 'login failed') !== false
+            || strpos($detalle, 'inicio de sesion') !== false
+            || strpos($detalle, 'authentication failed') !== false) {
+            $clasificacion = 'autenticacion';
+        } elseif (strpos($detalle, 'cannot open database') !== false
+            || strpos($detalle, 'no se puede abrir la base') !== false) {
+            $clasificacion = 'base_inaccesible';
+        } elseif (strpos($detalle, 'timeout') !== false
+            || strpos($detalle, 'timed out') !== false
+            || strpos($detalle, 'tiempo de espera') !== false) {
+            $clasificacion = 'red_o_tiempo_espera';
+        } elseif (strpos($detalle, 'data source name not found') !== false
+            || strpos($detalle, 'driver not found') !== false) {
+            $clasificacion = 'controlador_odbc';
+        }
+
+        $causa = $causa->getPrevious();
+    }
+
+    // El código SQLSTATE identifica el subsistema aunque no haya
+    // un texto reconocible; no se adivina la causa final.
+    fwrite(STDERR, 'BLOQUEADO_SQL74'.PHP_EOL);
+    fwrite(STDERR, 'ETAPA: '.$etapa.PHP_EOL);
+    fwrite(STDERR, 'TIPO: '.get_class($error).PHP_EOL);
+    fwrite(STDERR, 'SQLSTATE: '.$sqlEstado.PHP_EOL);
+    fwrite(STDERR, 'CODIGO_NATIVO: '.$codigoNativo.PHP_EOL);
+    fwrite(STDERR, 'CATEGORIA_ORIENTATIVA: '.$clasificacion.PHP_EOL);
+    fwrite(STDERR, 'Se omitieron todos los textos de error y datos de conexion.'.PHP_EOL);
     exit(1);
 }
