@@ -16,9 +16,14 @@ if (! extension_loaded('pdo_sqlsrv') || ! in_array('sqlsrv', PDO::getAvailableDr
     exit(1);
 }
 
+// Solo dos bases de pruebas ya usadas en los entornos locales.
+// Esta herramienta NUNCA hace migraciones ni modifica tablas.
+$basesPermitidas = ['mensajero_test', 'mensajero_integracion_test'];
+$baseSolicitada = getenv('DB_DATABASE');
+
 if (getenv('APP_ENV') !== 'testing'
     || getenv('DB_CONNECTION') !== 'sqlsrv'
-    || getenv('DB_DATABASE') !== 'mensajero_integracion_test'
+    || ! in_array($baseSolicitada, $basesPermitidas, true)
     || ! in_array(getenv('DB_URL'), ['', false], true)
     || getenv('IA_HABILITADA') !== 'false'
     || getenv('MENSAJERO_IA_ENVIO_AUTORIZADO') !== 'false'
@@ -47,7 +52,8 @@ try {
 
     if (! $app->environment('testing')
         || config('database.default') !== 'sqlsrv'
-        || config('database.connections.sqlsrv.database') !== 'mensajero_integracion_test'
+        || config('database.connections.sqlsrv.database') !== $baseSolicitada
+        || ! in_array(config('database.connections.sqlsrv.host'), ['127.0.0.1', 'localhost'], true)
         || config('mensajero.ia.habilitada') !== false
         || config('mensajero.ia.envio_autorizado') !== false
         || config('mensajero.ia.lotes_habilitados') !== false) {
@@ -95,6 +101,10 @@ try {
         exit(0);
     }
 
+    if (! $usuarioConfigurado || ! $claveConfigurada) {
+        throw new RuntimeException('Sin credenciales SQL de pruebas no se abre conexión.');
+    }
+
     $etapa = 'crear_conexion';
     $conexion = Illuminate\Support\Facades\DB::connection('sqlsrv');
     if ($conexion->getDriverName() !== 'sqlsrv') {
@@ -107,8 +117,8 @@ try {
     // ÚNICAS operaciones SQL: dos SELECT de solo lectura.
     $etapa = 'consultar_nombre_fisico';
     $fisica = $conexion->selectOne('SELECT DB_NAME() AS nombre');
-    if (! isset($fisica->nombre) || $fisica->nombre !== 'mensajero_integracion_test') {
-        throw new RuntimeException('La base SQL FISICA no es la base de integración.');
+    if (! isset($fisica->nombre) || $fisica->nombre !== $baseSolicitada) {
+        throw new RuntimeException('La base SQL FISICA no coincide con la base de prueba autorizada.');
     }
 
     $etapa = 'consultar_catalogo_tablas';
@@ -116,7 +126,7 @@ try {
         "SELECT COUNT(*) AS cantidad FROM sys.tables WHERE name LIKE 'mensajero[_]%'"
     );
     echo 'PHP_VERIFICADO: '.PHP_VERSION.PHP_EOL;
-    echo 'BASE_SQL_FISICA_VERIFICADA: mensajero_integracion_test'.PHP_EOL;
+    echo 'BASE_SQL_FISICA_VERIFICADA: '.$baseSolicitada.PHP_EOL;
     echo 'TABLAS_MENSAJERO_EN_BASE_TEST: '.(int) $tablas->cantidad.PHP_EOL;
     echo 'DIAGNOSTICO_SQL74_SOLO_LECTURA_APROBADO'.PHP_EOL;
 } catch (Throwable $error) {
