@@ -21,6 +21,9 @@ final class CotizarCostoReferenciaGemini
 
     public const FECHA_TARIFA = '2026-10-28';
 
+    // Identificador INMUTABLE de la tarifa estándar de la referencia.
+    public const REFERENCIA_TARIFA = 'gemini-3.5-flash-lite-standard-2026-10-28';
+
     public const LIMITE_ENTRADA_TOKENS = 1_048_576;
 
     // Son los maxOutputTokens explícitos de los clientes existentes.
