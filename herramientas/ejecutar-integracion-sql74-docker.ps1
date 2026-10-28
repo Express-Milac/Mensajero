@@ -158,6 +158,18 @@ try {
         throw "Fallo multimedia. No lanzar suite completa."
     }
 
+    Write-Host "`n=== PRUEBA FOCAL NORMALIZACION LOTE PHP 7.4 ==="
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --filter NormalizacionLoteSqlServerTest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo normalizacion por lote. No lanzar suite completa."
+    }
+
+    Write-Host "`n=== PRUEBA FOCAL VERIFICACION LOTE PHP 7.4 ==="
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --filter VerificacionLoteSqlServerTest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo verificacion de lote. No lanzar suite completa."
+    }
+
     Write-Host "`n=== SUITE DE INTEGRACION SQL SERVER PHP 7.4 ==="
     & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
     if ($LASTEXITCODE -ne 0) {
