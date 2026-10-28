@@ -371,3 +371,38 @@ variables al terminar. La omisión de validación del certificado NO
 es una solución aceptable para producción ni para un ambiente compartido:
 si el error continúa, la solución es aprovisionar cadena de confianza
 y nombre de certificado correctos con el administrador SQL.
+
+
+## Puerta SQL: TLS llega a autenticación, error 18452 (28/oct/2026)
+
+El usuario repitió SQL PHP 7.4.13 con `DB_ENCRYPT=yes` y
+`DB_TRUST_SERVER_CERTIFICATE=true` solo en el proceso de PowerShell.
+El diagnóstico mostró `CONFIG_TLS_ENCRYPT: yes`,
+`CONFIG_TLS_TRUST_SERVER_CERTIFICATE: true`,
+`TIPO_TLS_TRUST: boolean` y una falla **distinta**:
+`ETAPA=abrir_conexion_sql`, `SQLSTATE=28000`, código nativo
+`18452`, `CATEGORIA_ORIENTATIVA=autenticacion`.
+
+La nueva falla significa que el controlador superó el bloqueo anterior
+de certificado pero SQL Server rechazó el inicio de sesión. Microsoft
+documenta 18452 como inicio de sesión de dominio no confiable para
+autenticación integrada; también es posible que falte login SQL, se
+intente autenticación SQL cuando el servidor solo admite Windows, o
+que el principal Windows no sea verificable. **No afirmar cuál de
+esas causas es la concreta sin revisar las credenciales efectivas.**
+
+Se agregó al diagnóstico el indicador de presencia (no valor) de
+`username` y `password` efectivos de Laravel. El argumento
+`--solo-config` informa solo `SI/NO` y el modo inferido,
+**sin abrir conexión**. No recopilar ni compartir credenciales ni
+copiar la totalidad de `.env` desde instalaciones activas.
+
+Si no hay credenciales SQL en este clon, configurar un login de
+**uso exclusivo de pruebas**, con acceso restringido a
+`mensajero_integracion_test`; o solicitar acceso Windows integrado
+reconocido por el servidor, según política de MILAC. Antes de cualquier
+migración, verificar nombre FÍSICO de base mediante solo lectura.
+
+El ajuste `TrustServerCertificate=true` fue una excepción efímera de
+diagnóstico, no debe fijarse en producción. Requiere reparación de
+cadena TLS para el despliegue corporativo.
