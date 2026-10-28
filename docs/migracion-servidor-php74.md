@@ -268,3 +268,36 @@ local; ello es compatible con un HEAD separado. Comprobar con
 cambios locales y bloquear el despliegue si el árbol no es limpio.
 El mensaje impreso manualmente al final de un bloque de PowerShell no
 corrige el fallo previo de PHPUnit.
+
+
+## Puerta 1 superada: pruebas reales PHP 7.4.13 (28/oct/2026)
+
+**Resultado aportado por el usuario en Windows, carpeta aislada
+Mensajero-PHP74-Pruebas**, con el commit `7231cf5`:
+
+- PHP CLI real 7.4.13; PHPUnit 9.6.38; sintaxis de tests/TestCase.php válida.
+- **OK (41 tests, 89 assertions)** con `phpunit-lotes.xml`.
+- La corrección del callback único `Http::fake` de Laravel 8 quedó confirmada.
+- El clon está en HEAD separado (`git rev-parse --abbrev-ref HEAD` devuelve HEAD);
+  se actualizó por fast-forward a la misma revisión. Este estado no impide
+  pruebas, pero debe etiquetarse/cambiarse a una rama antes del empaquetado.
+
+**AÚN NO APTO PARA SERVIDOR:** la suite usa SQLite en memoria; no
+demuestra compatibilidad de PHP 7.4 con PDO_SQLSRV ni migraciones SQL Server.
+
+### Puerta 2: comprobar SQL Server real de pruebas, sin cambios
+
+Se añadió `herramientas/diagnosticar-sqlsrv-php74.php`. Antes de conectarse
+exige el intérprete PHP **7.4.13 exacto**, `pdo_sqlsrv`, la aplicación con
+`APP_ENV=testing`, `DB_CONNECTION=sqlsrv`,
+`DB_DATABASE=mensajero_integracion_test`, sin URL de BD externa,
+banderas Gemini apagadas, cola sincronizada y ausencia de caché Laravel.
+Tras iniciar Laravel, vuelve a comprobar los permisos efectivos y hace
+únicamente dos SELECT: el nombre **FÍSICO** de la base y el número de
+tablas de Mensajero. No imprime credenciales, ejecuta migraciones ni
+lanza trabajadores. Se detiene si falta el controlador o la base no coincide.
+
+**El diagnóstico aún no ha sido ejecutado** en el Windows del usuario.
+No correr `phpunit.integracion.xml` hasta comprobar el destino físico;
+varias pruebas de esa suite invocan `artisan migrate` automáticamente.
+No copiar variables de entorno de producción ni guardar contraseñas en Git.
