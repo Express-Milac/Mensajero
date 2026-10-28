@@ -4,6 +4,16 @@
 **Estado:** diseño; no es una implementación ni autorización operativa.  
 **Rama:** `integracion/normalizacion-gemini-validada-20261028`.
 
+## Avance experimental de Fase 1 (NO VALIDADO AÚN, 2026-10-28)
+
+Se añadió `2026_10_28_000400_crear_reservas_presupuesto_gemini.php` con dos tablas: `mensajero_candado_presupuesto_gemini` (fila global de bloqueo) y `mensajero_reservas_consumo_gemini` (fuente única por `tipo_fuente + fuente_id`, grupo, importe entero en microUSD, tarifa, fecha y estado).
+
+`ReservarPresupuestoGemini` implementa reservas idempotentes y límites compartidos globales por día/mes UTC; nunca devuelve cupo por una reserva fallida/incierta, ni siquiera al finalizar. **El importe de cada reserva es un máximo configurado artificialmente, NO un costo máximo validado con tarifas reales.** Este componente está **desconectado de `PublicarLoteGemini`, del circuito individual y de `ClienteGeminiLote`**, y por ello aún NO constituye protección efectiva frente a llamadas reales. El envío real sigue NO autorizado.
+
+La configuración de tarifas, presupuesto y activación es cero/falsa por defecto. Hay seis pruebas nuevas contra SQL Server test y un script para verificar primero `SELECT DB_NAME()`, migrar exclusivamente la base `mensajero_integracion_test`, ejecutar pruebas nuevas y repetir regresión completa. Los resultados de estas pruebas **están pendientes de ejecución del usuario**. Hasta entonces, la cifra confirmada sigue 79/1375 de la versión anterior.
+
+Próxima fase: integrar la reserva monetaria con ambos circuitos **únicamente cuando** exista una cotización máxima sustentada por precios oficiales verificados y límites adecuados de salida/pensamiento. No se deben aprobar tarifas ficticias ni conectar un máximo arbitrario al envío real.
+
 ## Evidencia de la revisión
 
 El circuito individual usa `ClienteGemini` (máximo `maxOutputTokens=900`) y el circuito de lotes usa `ClienteGeminiLote` (`maxOutputTokens=1800`). Ambos consultan el servicio `generateContent` y registran, cuando llegan, `usageMetadata.promptTokenCount` y `candidatesTokenCount`. No se persisten por separado los tokens de pensamiento, caché ni cargos externos. Una falla de transporte puede impedir recibir `usageMetadata` aunque la solicitud haya llegado al proveedor.
