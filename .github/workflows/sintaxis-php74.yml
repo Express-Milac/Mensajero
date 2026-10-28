@@ -92,6 +92,9 @@ jobs:
           composer --version
           php -m | grep -Ei 'pdo_sqlite|mbstring|xml|bcmath|fileinfo'
 
+      - name: Validar composer.json y composer.lock sin cambiar versiones
+        run: composer validate --no-check-publish --strict
+
       - name: Instalar versiones exactas del composer.lock del proyecto
         run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
 
