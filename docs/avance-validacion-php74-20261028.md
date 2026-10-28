@@ -143,3 +143,42 @@ virtual host de Mensajero use PHP 7.4 y obtener una validacion
 privilegiada de `apache2ctl -t` por el administrador.
 No ejecutar `chmod -R`, `chown -R`, cambios Apache, migraciones,
 reinstalaciones ni arranque de trabajadores sobre el servidor publicado.
+
+## Cierre de validación LOCAL del commit f81d222 (28/oct/2026)
+
+Resultados recibidos en la terminal Windows del usuario, en la carpeta
+`Mensajero-PHP74-Pruebas`, después de actualizar mediante fast-forward
+al SHA completo `f81d222f5abdfc61d188954fefda769c52a06598`:
+
+- Intérprete PHP **7.4.13** NTS x64; **215 archivos PHP** revisados con
+  `php -l`, cero errores de sintaxis.
+- `verificar-lock-php74.php`: `composer.lock` de Laravel **8.83.29**
+  y plataforma **7.4.13**, aprobado.
+- Suite `phpunit-lotes.xml`: **42 pruebas, 91 aserciones, 0 fallos**.
+  Se incluye la prueba de acceso corporativo cerrado que se añadió
+  después de la ronda anterior de 41 pruebas.
+- Suite SQL Server completa, reutilizando solo la base desechable
+  `mensajero_php74_231a8c29f3_test`: **56 pruebas, 880 aserciones,
+  0 fallos**. El usuario verificó que `mensajero_test` no se alteró.
+- Redis/PHP7.4/Predis: `PING: PONG`. Trabajo de prueba único en
+  `mensajero_ensayo_php74_91991d4e3c334c1ca93f715682263811`,
+  consumido por un trabajador Laravel `queue:work redis --once`;
+  acuse confirmado, cola vacía y claves temporales limpiadas.
+- Node **22.15.0** y npm **10.9.2**: `npm run verificar` pasó,
+  `npm run construir` aplicó el parche Baileys y compiló,
+  `npm run pruebas` aprobó **31 pruebas, 0 fallos**. Incluye las
+  nuevas comprobaciones de URL HTTPS fuera de localhost.
+
+**Balance: 129 pruebas automatizadas, todas aprobadas**; PHP,
+SQL Server y Node comprobados **localmente**, además del ensayo Redis.
+No se inició la sesión WhatsApp ni se enviaron mensajes reales.
+
+**Cierre de alcance:** el port PHP 7.4 y sus módulos de laboratorio
+están listos para entrega de código, no para certificación automática
+del servidor MILAC. Faltan comprobaciones del PHP web, permisos y TLS
+corporativos; también la integración de identidad corporativa.
+Baileys necesita Node 20+, por lo que en Debian 9 no debe asumirse que
+el binario oficial Linux de Node 20 funcionará por su requisito de
+`glibc`. Se requiere otro entorno Linux compatible para el recolector.
+La instalación queda a cargo del compañero responsable, sin alteración
+de servicios, archivos ni bases corporativas desde desarrollo.
