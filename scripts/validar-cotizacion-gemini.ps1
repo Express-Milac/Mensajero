@@ -72,7 +72,7 @@ try {
         throw "No se verifico la base SQL test; regresion bloqueada."
     }
 
-    Write-Host "=== 4 PRUEBAS DEL PUENTE MONETARIO, SOLO SQL DE TEST ==="
+    Write-Host "=== 6 PRUEBAS DEL PUENTE MONETARIO, SOLO SQL DE TEST ==="
     .\vendor\bin\phpunit.bat -c phpunit.integracion.xml tests/Integracion/VincularCotizacionPresupuestoGeminiSqlServerTest.php
     if ($LASTEXITCODE -ne 0) {
         throw "Puente monetario: pruebas no aprobadas."
