@@ -247,6 +247,156 @@ final class PublicarLoteGeminiSqlServerTest extends TestCase
         }
     }
 
+    public function test_control_corte_contextual_nuevo_excluye_mensaje_antiguo(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+
+            // El mensaje llegó hace 10 minutos, pero el permiso contextual
+            // de lotes solamente autoriza lo recibido hace 5 minutos o menos.
+            config()->set('mensajero.ia.lotes_fecha_inicio',
+                CarbonImmutable::now('UTC')->subMinutes(5)->format('Y-m-d\\TH:i:sP'));
+
+            $this->assertTrue(app(PoliticaLotesGemini::class)->habilitada());
+            $this->assertFalse(app(PoliticaLotesGemini::class)->posteriorAlCorte($mensaje->recibido_en));
+            $this->assertSame('no_elegible',
+                app(PublicarLoteGemini::class)->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(0, DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_control_revocacion_sql_del_grupo_no_reserva_lote(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+            DB::table('mensajero_control_interpretacion_ia')
+                ->where('chat_monitoreado_id', $grupo->id)
+                ->update(['habilitado' => false]);
+
+            $this->assertSame('no_elegible',
+                app(PublicarLoteGemini::class)->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(0, DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_control_apagado_sql_global_no_reserva_lote(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+            DB::table('mensajero_control_interpretacion_ia')
+                ->where('chat_monitoreado_id', 0)
+                ->update(['habilitado' => false]);
+
+            $this->assertSame('no_elegible',
+                app(PublicarLoteGemini::class)->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(0, DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_control_limite_contextual_invalido_impide_publicar(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+            config()->set('mensajero.ia.lotes_maximo_dia_grupo', 31);
+
+            $this->assertFalse(app(PoliticaLotesGemini::class)->habilitada());
+            $this->assertSame('deshabilitado',
+                app(PublicarLoteGemini::class)->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(0, DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_control_cupo_compartido_incluye_reserva_individual_de_otro_mensaje(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensajeIndividual] = $this->prepararGrupoYMensaje();
+
+            // El circuito individual ya consumió la única solicitud diaria.
+            DB::table('mensajero_control_publicaciones_gemini')->insert([
+                'mensaje_whatsapp_id' => $mensajeIndividual->id,
+                'chat_monitoreado_id' => $grupo->id,
+                'estado' => 'requiere_revision',
+                'origen' => 'manual',
+                'reservado_en' => now('UTC')->format('Y-m-d H:i:s.u'),
+            ]);
+
+            // Otro mensaje de ese MISMO grupo no puede convertir la reserva
+            // anterior en un cupo nuevo. Normalizarlo con Gemini apagado.
+            config()->set('mensajero.ia.habilitada', false);
+            config()->set('mensajero.ia.envio_autorizado', false);
+
+            $idExterno = 'cupo-'.bin2hex(random_bytes(10));
+            $evento = new EventoWhatsappEntrante(
+                conexionId: (int) $grupo->conexion_id,
+                chatId: $grupo->id_chat_proveedor,
+                tipoEvento: 'mensaje',
+                tipoMensaje: 'texto',
+                eventoExternoId: $idExterno,
+                mensajeProveedorId: $idExterno,
+                contenidoCrudo: json_encode([
+                    'message' => ['conversation' => 'Segundo mensaje sintético, mismo grupo'],
+                ], JSON_THROW_ON_ERROR),
+                recibidoEn: CarbonImmutable::now('UTC')->subMinutes(8),
+                versionContrato: 'v3-recolector',
+            );
+            $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar($evento);
+            $this->assertSame('aceptado', $captura->estado);
+            $this->assertSame(0, Artisan::call('mensajero:normalizar-lote', [
+                'grupo' => $grupo->id,
+                '--ids' => (string) $captura->eventoCrudoId,
+                '--limite' => 1,
+                '--aplicar' => true,
+            ]));
+
+            $mensajeLote = MensajeWhatsapp::query()
+                ->where('evento_crudo_id', $captura->eventoCrudoId)->firstOrFail();
+            $this->assertNotSame($mensajeIndividual->id, $mensajeLote->id);
+            config()->set('mensajero.ia.habilitada', true);
+            config()->set('mensajero.ia.envio_autorizado', true);
+            config()->set('mensajero.ia.conciliacion_maximo_dia_grupo', 1);
+            config()->set('mensajero.ia.lotes_maximo_dia_grupo', 1);
+
+            $this->assertSame('limite_diario',
+                app(PublicarLoteGemini::class)->publicar($grupo->id, [$mensajeLote->id]));
+            $this->assertSame(0, DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     /**
      * @return array{0:ChatMonitoreado,1:MensajeWhatsapp}
      */
