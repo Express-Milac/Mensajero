@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Contracts\Bus\Dispatcher as ContratoDespachador;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -140,6 +143,104 @@ final class PublicarLoteGeminiSqlServerTest extends TestCase
             $this->assertSame(1, DB::table('mensajero_lotes_gemini')
                 ->where('chat_monitoreado_id', $grupo->id)->count());
             Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_fallo_de_publicacion_incierta_exige_revision_y_nunca_republica(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+
+            // El transporte puede haber aceptado el trabajo antes de informar
+            // un error. Simularlo en el contrato de Bus SIN tocar Redis real.
+            $despachos = 0;
+            $despachador = Mockery::mock(ContratoDespachador::class);
+            $despachador->shouldReceive('dispatch')->once()
+                ->with(Mockery::on(static fn ($trabajo): bool =>
+                    $trabajo instanceof AnalizarLoteGeminiTrabajo))
+                ->andReturnUsing(static function () use (&$despachos): never {
+                    $despachos++;
+                    throw new RuntimeException('Resultado incierto de Redis (simulado)');
+                });
+            Bus::swap($despachador);
+
+            $publicador = app(PublicarLoteGemini::class);
+            try {
+                $publicador->publicar($grupo->id, [$mensaje->id]);
+                $this->fail('Una publicación incierta debe impedir confirmar el éxito.');
+            } catch (RuntimeException $error) {
+                $this->assertStringContainsString('incierta', $error->getMessage());
+            }
+
+            $lote = DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->first();
+            $this->assertNotNull($lote);
+            $this->assertSame('requiere_revision', $lote->estado);
+            $this->assertSame('RuntimeException', $lote->error_tipo);
+            $this->assertSame(1, $despachos);
+
+            // La marca y la reserva persistentes bloquean cualquier repetición.
+            $this->assertSame('registrado', $publicador->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(1, $despachos);
+            $this->assertSame(1, DB::table('mensajero_mensajes_lote_gemini')
+                ->where('lote_id', $lote->id)->count());
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_fallo_tardio_de_publicacion_no_revierte_lote_ya_finalizado(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            [$grupo, $mensaje] = $this->prepararGrupoYMensaje();
+
+            // Un consumidor muy rápido pudo finalizar ANTES de que la llamada
+            // de publicación informara un fallo al proceso solicitante.
+            $despachos = 0;
+            $despachador = Mockery::mock(ContratoDespachador::class);
+            $despachador->shouldReceive('dispatch')->once()
+                ->andReturnUsing(static function () use (&$despachos, $grupo): never {
+                    $despachos++;
+                    $lote = DB::table('mensajero_lotes_gemini')
+                        ->where('chat_monitoreado_id', $grupo->id)->first();
+                    if ($lote === null || $lote->estado !== 'publicado') {
+                        throw new RuntimeException('Estado inesperado antes de terminar el lote sintético.');
+                    }
+                    DB::table('mensajero_lotes_gemini')
+                        ->where('id', $lote->id)
+                        ->update([
+                            'estado' => 'finalizado',
+                            'finalizado_en' => now('UTC')->format('Y-m-d H:i:s.u'),
+                        ]);
+                    throw new RuntimeException('Error tardío de Redis (simulado)');
+                });
+            Bus::swap($despachador);
+
+            $publicador = app(PublicarLoteGemini::class);
+            try {
+                $publicador->publicar($grupo->id, [$mensaje->id]);
+                $this->fail('El error tardío del transporte no debe ocultarse.');
+            } catch (RuntimeException $error) {
+                $this->assertStringContainsString('incierta', $error->getMessage());
+            }
+
+            $lote = DB::table('mensajero_lotes_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->first();
+            $this->assertNotNull($lote);
+            $this->assertSame('finalizado', $lote->estado);
+            $this->assertNull($lote->error_tipo);
+            $this->assertSame(1, $despachos);
+
+            $this->assertSame('registrado', $publicador->publicar($grupo->id, [$mensaje->id]));
+            $this->assertSame(1, $despachos);
             Http::assertNothingSent();
         } finally {
             DB::rollBack();
