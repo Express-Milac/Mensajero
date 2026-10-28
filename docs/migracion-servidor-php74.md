@@ -301,3 +301,20 @@ lanza trabajadores. Se detiene si falta el controlador o la base no coincide.
 No correr `phpunit.integracion.xml` hasta comprobar el destino físico;
 varias pruebas de esa suite invocan `artisan migrate` automáticamente.
 No copiar variables de entorno de producción ni guardar contraseñas en Git.
+
+
+## Hallazgo Windows PHP 7.4 / ODBC (28/oct/2026)
+
+La comprobación real del usuario en la copia PHP aislada indicó:
+
+- PHP 7.4.13 NTS x64, `php.ini` de la carpeta privada `Herramientas-Mensajero-PHP74\PHP-7.4.13`.
+- ODBC **Driver 18 for SQL Server** instalado a nivel Windows x64.
+- PHP expone `PDO` y `pdo_sqlite`, pero **NO `pdo_sqlsrv` ni `sqlsrv`**; el guardia SQL se bloqueó SIN conectar a ninguna base.
+- Microsoft documenta compatibilidad entre Drivers PHP SQL Server **5.10.1**, PHP 7.4 y ODBC Driver 18. Paquete Windows oficial `SQLSRV510.ZIP`:
+  https://download.microsoft.com/download/f/4/d/f4d95d48-74ae-4d72-a602-02145a5f29c8/5.10.1/SQLSRV510.ZIP
+- Para esta instalación seleccionar exactamente las DLL NTS de 64 bits:
+  `php_pdo_sqlsrv_74_nts_x64.dll` y `php_sqlsrv_74_nts_x64.dll`.
+
+Nuevo script `herramientas/instalar-sqlsrv-windows-php74.ps1`: comprueba versión PHP, arquitectura, ODBC, descarga oficial sobre HTTPS, selecciona exclusivamente esas DLL, respalda `php.ini`, copia a la carpeta `ext` PRIVADA, habilita extensiones y comprueba su carga; si la carga falla, restaura `php.ini` y borra solo las DLL copiadas por ese intento. **Aún no ejecutado en el equipo del usuario.** No instala MSI, no requiere cambiar Composer ni servicios de Windows y NO modifica el servidor MILAC.
+
+Solo cuando PHP 7.4 reconozca `pdo_sqlsrv` se repetirá el diagnóstico SQL de **solo lectura** y luego se definirá una puerta de migraciones segura hacia `mensajero_integracion_test`. No ejecutar directamente toda la suite SQL Server antes de confirmar la base física, pues algunos tests aplican migraciones.
