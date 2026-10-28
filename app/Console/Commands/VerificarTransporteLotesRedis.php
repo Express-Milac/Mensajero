@@ -57,47 +57,59 @@ final class VerificarTransporteLotesRedis extends Command
         $nombreCola = 'mensajero_lotes_ensayo_'.bin2hex(random_bytes(12));
         $cola = Queue::connection('redis');
         $recibido = null;
+        $publicado = false;
+        $valido = false;
+        $retirado = false;
 
         try {
-            // ID 0 es rechazado ANTES de consultar permisos/SQL o Google en ProcesarLoteGemini.
-            // El trabajo solo se transporta: no se ejecuta handle().
+            // ID 0 queda descartado antes de consultar permisos, SQL o Google.
+            // Aqui solo se transporta el trabajo: no se ejecuta handle().
             $trabajo = (new AnalizarLoteGeminiTrabajo(0))->onQueue($nombreCola);
             $cola->push($trabajo, '', $nombreCola);
+            $publicado = true;
             $recibido = $cola->pop($nombreCola);
 
             if ($recibido === null) {
                 $this->error('Redis no devolvio el trabajo sintetico de la cola exclusiva.');
-
-                return self::FAILURE;
-            }
-
-            $contenido = $recibido->payload();
-            $nombreTrabajo = $contenido['data']['commandName'] ?? null;
-            if ($nombreTrabajo !== AnalizarLoteGeminiTrabajo::class) {
-                $this->error('Redis devolvio un tipo de trabajo inesperado.');
-
-                return self::FAILURE;
-            }
-
-            $this->components->info('Transporte Redis validado: escritura, lectura y clase del trabajo.');
-            $this->line('Cola exclusiva: '.$nombreCola);
-            $this->line('Identificador ficticio: 0.');
-            $this->line('El trabajo NO se ejecuto y sera retirado del area reservada.');
-
-            return self::SUCCESS;
-        } catch (Throwable $error) {
-            $this->error('El transporte Redis fallo. Tipo: '.class_basename($error));
-
-            return self::FAILURE;
-        } finally {
-            // Solo el trabajo de la cola aleatoria creada por ESTA invocacion.
-            if ($recibido !== null) {
-                try {
-                    $recibido->delete();
-                } catch (Throwable $error) {
-                    $this->warn('No se pudo confirmar retirada del ensayo Redis: '.class_basename($error));
+            } else {
+                $contenido = $recibido->payload();
+                $nombreTrabajo = $contenido['data']['commandName'] ?? null;
+                if ($nombreTrabajo !== AnalizarLoteGeminiTrabajo::class) {
+                    $this->error('Redis devolvio un tipo de trabajo inesperado.');
+                } else {
+                    $valido = true;
                 }
             }
+        } catch (Throwable $error) {
+            $this->error('El transporte Redis fallo. Tipo: '.class_basename($error));
+        } finally {
+            // Solo este trabajo de la cola aleatoria. Ante error de lectura,
+            // intentar recuperarlo y retirarlo, sin inspeccionar otras colas.
+            try {
+                if ($recibido === null && $publicado) {
+                    $recibido = $cola->pop($nombreCola);
+                }
+                if ($recibido !== null) {
+                    $recibido->delete();
+                    $retirado = true;
+                }
+            } catch (Throwable $error) {
+                $this->warn('No se pudo confirmar retirada del ensayo: '.class_basename($error));
+            }
         }
+
+        if (! $valido || ! $retirado) {
+            $this->error('Ensayo incompleto; no se debe iniciar ningun trabajador.');
+            $this->line('Cola exclusiva de ensayo para diagnostico: '.$nombreCola);
+
+            return self::FAILURE;
+        }
+
+        $this->components->info('Transporte Redis validado: escritura, lectura y retirada.');
+        $this->line('Cola exclusiva utilizada: '.$nombreCola);
+        $this->line('Trabajo inofensivo: AnalizarLoteGeminiTrabajo(0).');
+        $this->line('No se ejecutaron trabajadores ni se llamo a Google.');
+
+        return self::SUCCESS;
     }
 }
