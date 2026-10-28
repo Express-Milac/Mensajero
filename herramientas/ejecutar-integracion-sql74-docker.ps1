@@ -152,6 +152,12 @@ try {
         throw "Fallo webhook Meta. No lanzar suite completa."
     }
 
+    Write-Host "`n=== PRUEBA FOCAL MULTIMEDIA PHP 7.4 ==="
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --filter MultimediaRecolectorSqlServerTest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo multimedia. No lanzar suite completa."
+    }
+
     Write-Host "`n=== SUITE DE INTEGRACION SQL SERVER PHP 7.4 ==="
     & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
     if ($LASTEXITCODE -ne 0) {
