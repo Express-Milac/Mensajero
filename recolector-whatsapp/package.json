@@ -5,15 +5,13 @@
   "type": "module",
   "scripts": {
     "postinstall": "node scripts/aplicar-parche-baileys.mjs",
-    "desarrollo": "tsx src/principal.ts",
+    "desarrollo": "node scripts/aplicar-parche-baileys.mjs && tsx src/principal.ts",
     "diagnosticar-cola": "tsx src/diagnosticar-cola.ts",
     "drenar-cola": "tsx src/drenar-cola.ts",
     "verificar": "tsc --noEmit",
-    "construir": "tsc",
+    "construir": "node scripts/aplicar-parche-baileys.mjs && tsc",
     "pruebas": "tsx --test tests/**/*.test.ts",
-    "iniciar": "node dist/src/principal.js",
-    "preconstruir": "node scripts/aplicar-parche-baileys.mjs",
-    "preiniciar": "node scripts/aplicar-parche-baileys.mjs"
+    "iniciar": "node scripts/aplicar-parche-baileys.mjs && node dist/src/principal.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "6.7.24",
