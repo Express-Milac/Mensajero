@@ -50,7 +50,8 @@ try {
         "scripts/verificar-base-presupuesto-gemini.php",
         "database/migrations/2026_10_28_000400_crear_reservas_presupuesto_gemini.php",
         "app/Services/IA/ReservarPresupuestoGemini.php",
-        "tests/Integracion/ReservarPresupuestoGeminiSqlServerTest.php"
+        "tests/Integracion/ReservarPresupuestoGeminiSqlServerTest.php",
+        "tests/Integracion/ConcurrenciaPresupuestoGeminiSqlServerTest.php"
     )
     foreach ($archivo in $archivos) {
         php -l $archivo
@@ -68,6 +69,10 @@ try {
     Write-Host "=== 6 PRUEBAS DE RESERVA MONETARIA ==="
     .\vendor\bin\phpunit.bat -c phpunit.integracion.xml tests/Integracion/ReservarPresupuestoGeminiSqlServerTest.php
     if ($LASTEXITCODE -ne 0) { throw "Libro de presupuesto: pruebas no aprobadas." }
+
+    Write-Host "=== CONCURRENCIA ENTRE DOS SESIONES SQL ==="
+    .\vendor\bin\phpunit.bat -c phpunit.integracion.xml tests/Integracion/ConcurrenciaPresupuestoGeminiSqlServerTest.php
+    if ($LASTEXITCODE -ne 0) { throw "Bloqueo global SQL de presupuesto no aprobado." }
 
     Write-Host "=== REGRESION COMPLETA SQL SERVER ==="
     .\vendor\bin\phpunit.bat -c phpunit.integracion.xml
