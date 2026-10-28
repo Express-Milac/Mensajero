@@ -1,5 +1,12 @@
 # Instalación y operación
 
+**IMPORTANTE — Rama PHP 7.4 de MILAC:** las instrucciones históricas que siguen
+corresponden a la rama Laravel 13 / PHP 8.4 y NO deben ejecutarse sobre
+`compatibilidad/php74-milac-20261027`. Para entregar esta rama al compañero
+instalador consulte [ENTREGA-INSTALADOR-MILAC-PHP74.md](ENTREGA-INSTALADOR-MILAC-PHP74.md).
+No se autoriza modificar Apache, Composer global, tablas corporativas,
+permisos o trabajadores hasta contar con ventana y autorización.
+
 Entorno objetivo: servidor propio de MILAC, PHP 8.4+, extensiones `sqlsrv`, `pdo_sqlsrv`, `fileinfo`, ODBC 18, Composer 2, SQL Server y Redis.
 
 Mensajero usa una base SQL Server corporativa existente; no se crea una base productiva separada. Todos los objetos propios comienzan con `mensajero_`.
