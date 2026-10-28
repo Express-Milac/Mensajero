@@ -173,6 +173,59 @@ final class VincularCotizacionPresupuestoGeminiSqlServerTest extends TestCase
         }
     }
 
+    public function test_lote_mixto_con_mensaje_de_otro_grupo_no_reserva_presupuesto(): void
+    {
+        DB::beginTransaction();
+        try {
+            $grupo = $this->crearGrupo();
+            $otroGrupo = $this->crearGrupo();
+            $mensajeValido = $this->crearMensaje($grupo);
+            $mensajeAjeno = $this->crearMensaje($otroGrupo);
+            $loteId = $this->crearLote($grupo, $mensajeValido);
+
+            // La FK valida que el mensaje existe, no que corresponda al
+            // grupo declarado por el lote. El puente debe comprobar TODOS.
+            DB::table('mensajero_mensajes_lote_gemini')->insert([
+                'lote_id' => $loteId,
+                'mensaje_whatsapp_id' => $mensajeAjeno->id,
+                'posicion' => 2,
+            ]);
+
+            $this->configuracionDePrueba(319_073, 1_000_000, 1_000_000);
+            $this->assertSame('fuente_no_valida',
+                app(VincularCotizacionPresupuestoGemini::class)
+                    ->reservar('lote', $loteId, (int) $grupo->id));
+            $this->assertSame(0, DB::table('mensajero_reservas_consumo_gemini')->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_lote_con_mensaje_no_normalizado_no_reserva_presupuesto(): void
+    {
+        DB::beginTransaction();
+        try {
+            $grupo = $this->crearGrupo();
+            $mensaje = $this->crearMensaje($grupo);
+            $loteId = $this->crearLote($grupo, $mensaje);
+
+            DB::table('mensajero_mensajes_whatsapp')->where('id', $mensaje->id)
+                ->update(['estado_captura' => 'capturado']);
+
+            $this->configuracionDePrueba(319_073, 1_000_000, 1_000_000);
+            $this->assertSame('fuente_no_valida',
+                app(VincularCotizacionPresupuestoGemini::class)
+                    ->reservar('lote', $loteId, (int) $grupo->id));
+            $this->assertSame(0, DB::table('mensajero_reservas_consumo_gemini')->count());
+            Bus::assertNothingDispatched();
+            Http::assertNothingSent();
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     private function configuracionDePrueba(int $importe, int $limiteDiario, int $limiteMensual): void
     {
         // Simulación local, no es consentimiento de pagos ni tarifa aprobada.
