@@ -16,7 +16,7 @@ final class PersistirResultadosLoteGemini
     public function __construct(private readonly ValidarAcontecimientosLoteGemini $validador) {}
 
     /**
-     * @param array{acontecimientos:array,modelo:string,tokens_entrada:?int,tokens_salida:?int} $respuesta
+     * @param  array{acontecimientos:array,modelo:string,tokens_entrada:?int,tokens_salida:?int}  $respuesta
      * @return string finalizado | ya_finalizado
      */
     public function guardar(int $loteId, array $respuesta): string

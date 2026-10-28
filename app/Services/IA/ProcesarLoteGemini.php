@@ -88,6 +88,7 @@ final class ProcesarLoteGemini
                 DB::table('mensajero_lotes_gemini')->where('id', $loteId)
                     ->where('estado', 'publicado')
                     ->update(['estado' => 'omitido', 'error_tipo' => 'SinAutorizacionOVigencia']);
+
                 return null;
             }
 
@@ -98,6 +99,7 @@ final class ProcesarLoteGemini
                 DB::table('mensajero_lotes_gemini')->where('id', $loteId)
                     ->where('estado', 'publicado')
                     ->update(['estado' => 'requiere_revision', 'error_tipo' => 'DuplicadoCircuitoIndividual']);
+
                 return null;
             }
 
@@ -122,17 +124,20 @@ final class ProcesarLoteGemini
             $grupoId = (int) $mensajes[0]->chat_monitoreado_id;
             if (! $this->lotes->habilitada() || ! $this->politica->configuracionCompleta()) {
                 $this->marcar($loteId, 'omitido', 'AutorizacionRevocada');
+
                 return 'omitido';
             }
             foreach ($mensajes as $mensaje) {
                 if (! $this->permitido($grupoId, $mensaje)) {
                     $this->marcar($loteId, 'omitido', 'AutorizacionRevocada');
+
                     return 'omitido';
                 }
             }
 
             // Solicitud externa exactamente una vez por ejecución exclusiva.
             $respuesta = $this->cliente->analizar($contexto);
+
             return $this->persistencia->guardar($loteId, $respuesta);
         } catch (Throwable $error) {
             // Tras reclamar el lote no sabemos si Google facturó.
