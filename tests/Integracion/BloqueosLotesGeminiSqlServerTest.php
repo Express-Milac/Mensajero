@@ -74,7 +74,11 @@ final class BloqueosLotesGeminiSqlServerTest extends TestCase
                 $secundaria->selectOne('SELECT DB_NAME() AS nombre')->nombre
             );
             $this->assertNotSame($principal->getPdo(), $secundaria->getPdo());
-            $secundaria->statement('SET LOCK_TIMEOUT 700');
+            // No esperar por bloqueos: la prueba no debe quedar detenida.
+            $secundaria->statement('SET LOCK_TIMEOUT 0');
+            $this->assertSame(0, (int) $secundaria->selectOne('SELECT @@LOCK_TIMEOUT AS milisegundos')->milisegundos);
+            // Acotar también cualquier espera accidental del primer consumidor.
+            $principal->statement('SET LOCK_TIMEOUT 1500');
 
             // Consumidor 1: mantiene el bloqueo del grupo hasta confirmar el reclamo.
             $principal->beginTransaction();
@@ -92,13 +96,17 @@ final class BloqueosLotesGeminiSqlServerTest extends TestCase
             // Consumidor 2: no debe atravesar un bloqueo vigente del grupo.
             $rechazadaPorBloqueo = false;
             try {
-                $secundaria->table('mensajero_chats_monitoreados')
-                    ->where('id', $grupoId)->lockForUpdate()->first(['id']);
+                // NOWAIT es una instrucción de SQL Server: falla de inmediato
+                // si el otro consumidor mantiene un bloqueo incompatible.
+                $secundaria->selectOne(
+                    'SELECT id FROM dbo.mensajero_chats_monitoreados WITH (UPDLOCK, ROWLOCK, NOWAIT) WHERE id = ?',
+                    [$grupoId]
+                );
             } catch (QueryException $error) {
-                $this->assertSame(
-                    1222,
-                    (int) ($error->errorInfo[1] ?? 0),
-                    'Se esperaba exclusivamente el timeout de bloqueo de SQL Server (1222).'
+                $codigo = (int) ($error->errorInfo[1] ?? 0);
+                $this->assertTrue(
+                    $codigo === 1222 || str_contains($error->getMessage(), '1222'),
+                    'Se esperaba exclusivamente el conflicto de bloqueo SQL Server (1222), no otro error.'
                 );
                 $rechazadaPorBloqueo = true;
             }
