@@ -108,7 +108,7 @@ try {
         // Limpiar solamente claves generadas con el identificador aleatorio
         // de ESTA ejecucion y el prefijo efimero ya validado.
         foreach ([$acuse, $clavePendiente, $claveNotificacion, $claveReservada, $claveAplazada] as $clave) {
-            $redis->del([$clave]);
+            $redis->del($clave);
         }
 
         echo "CLAVES_DE_ENSAYO_LIMPIADAS: SI\n";
