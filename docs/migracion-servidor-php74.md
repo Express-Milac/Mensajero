@@ -406,3 +406,31 @@ migración, verificar nombre FÍSICO de base mediante solo lectura.
 El ajuste `TrustServerCertificate=true` fue una excepción efímera de
 diagnóstico, no debe fijarse en producción. Requiere reparación de
 cadena TLS para el despliegue corporativo.
+
+
+## Dos nombres históricos de base SQL de pruebas, sin migraciones (28/oct/2026)
+
+En los proyectos locales `Mensajero-Revision-Normalizacion` y
+`Mensajero-Integracion-Gemini` existen archivos `.env` con SQL Server
+local, credenciales y nombre de base de pruebas. Docker indicó
+contenedor `mensajero-sqlserver` activo. El último ensayo PHP74 se
+detuvo **antes de la conexión**, pues el script exigía exactamente
+`mensajero_integracion_test` y el archivo de origen usa otra base.
+
+Se modificó `herramientas/diagnosticar-sqlsrv-php74.php` para admitir
+EXCLUSIVAMENTE `mensajero_test` y `mensajero_integracion_test`;
+exige `DB_HOST=127.0.0.1|localhost`, `APP_ENV=testing`,
+`DB_CONNECTION=sqlsrv`, sin `DB_URL`, deshabilita IA y exige
+credenciales SQL explícitas para conectarse. Antes de aprobar confirma
+que `SELECT DB_NAME()` coincide EXACTAMENTE con la base solicitada.
+Solo ejecuta dos SELECT, no migraciones ni escrituras.
+
+**Precaución**: ambas bases pueden contener datos de otras pruebas.
+Que la conexión de solo lectura resulte satisfactoria NO permite
+ejecutar aún `phpunit.integracion.xml`, porque esa suite llama
+`artisan migrate`. Se exige una base desechable vacía, creada y
+verificada para esa suite, o aprobación explícita de su reutilización.
+
+**Los cambios de `DB_TRUST_SERVER_CERTIFICATE=true` permanecen solo
+para diagnóstico y solo en variables temporales del proceso.** La
+solución definitiva debe validar la identidad TLS del servidor.
