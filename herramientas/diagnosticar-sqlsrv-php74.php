@@ -20,10 +20,14 @@ if (! extension_loaded('pdo_sqlsrv') || ! in_array('sqlsrv', PDO::getAvailableDr
 // Esta herramienta NUNCA hace migraciones ni modifica tablas.
 $basesPermitidas = ['mensajero_test', 'mensajero_integracion_test'];
 $baseSolicitada = getenv('DB_DATABASE');
+$baseEfimeraEnDocker = is_string($baseSolicitada)
+    && preg_match('/\\Amensajero_php74_[a-f0-9]{10}_test\\z/D', $baseSolicitada) === 1
+    && getenv('MENSAJERO_SQL_DOCKER_VERIFICADO') === 'mensajero-sqlserver'
+    && in_array(getenv('DB_HOST'), ['127.0.0.1', 'localhost'], true);
 
 if (getenv('APP_ENV') !== 'testing'
     || getenv('DB_CONNECTION') !== 'sqlsrv'
-    || ! in_array($baseSolicitada, $basesPermitidas, true)
+    || (! in_array($baseSolicitada, $basesPermitidas, true) && ! $baseEfimeraEnDocker)
     || ! in_array(getenv('DB_URL'), ['', false], true)
     || getenv('IA_HABILITADA') !== 'false'
     || getenv('MENSAJERO_IA_ENVIO_AUTORIZADO') !== 'false'
@@ -125,6 +129,17 @@ try {
     $tablas = $conexion->selectOne(
         "SELECT COUNT(*) AS cantidad FROM sys.tables WHERE name LIKE 'mensajero[_]%'"
     );
+    // Para reutilizar la base efimera, debe contener el esquema de
+    // la migracion anterior: jamás migrar una base ajena o vacia aquí.
+    if ($baseEfimeraEnDocker) {
+        $tablasMigracion = $conexion->selectOne(
+            "SELECT COUNT(*) AS cantidad FROM sys.tables WHERE name = 'mensajero_migraciones'"
+        );
+        if ((int) $tablas->cantidad < 6 || (int) $tablasMigracion->cantidad !== 1) {
+            throw new RuntimeException('Base efimera no contiene esquema de pruebas.');
+        }
+    }
+
     echo 'PHP_VERIFICADO: '.PHP_VERSION.PHP_EOL;
     echo 'BASE_SQL_FISICA_VERIFICADA: '.$baseSolicitada.PHP_EOL;
     echo 'TABLAS_MENSAJERO_EN_BASE_TEST: '.(int) $tablas->cantidad.PHP_EOL;
