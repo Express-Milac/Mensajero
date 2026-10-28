@@ -1,3 +1,7 @@
+# Parametro opcional: reutilizar solamente una base creada por ESTE ensayo.
+# Si no se indica, se crea una nueva base de pruebas en Docker.
+param([string] $BaseExistente = "")
+
 # Pruebas SQL Server reales con PHP 7.4: SOLO Docker local y BASE NUEVA.
 # Este guion CREA UNA BASE de prueba nueva. NO toca mensajero_test.
 # No ejecuta ninguna prueba si la base nueva no se verifica vacia.
@@ -105,24 +109,80 @@ try {
     foreach ($nombre in $valores.Keys) {
         [Environment]::SetEnvironmentVariable($nombre, $valores[$nombre], "Process")
     }
-    Write-Host "=== CREAR BASE NUEVA SOLO EN DOCKER, SIN TOCAR mensajero_test ==="
-    $salida = @(& $php74 $creador)
+    if ([string]::IsNullOrEmpty($BaseExistente)) {
+        Write-Host "=== CREAR BASE NUEVA SOLO EN DOCKER, SIN TOCAR mensajero_test ==="
+        $salida = @(& $php74 $creador)
+        if ($LASTEXITCODE -ne 0) {
+            throw "No se pudo preparar la base de pruebas aislada."
+        }
+        $registro = @($salida | Where-Object {
+            $_ -match '^BASE_DESECHABLE_CREADA: mensajero_php74_[a-f0-9]{10}_test
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw "No se pudo preparar la base de pruebas aislada."
+        throw "Se detectó fallo en pruebas SQL. Revisar salida y corregir código."
     }
-    $registro = @($salida | Where-Object { $_ -match '^BASE_DESECHABLE_CREADA: mensajero_php74_[a-f0-9]{10}_test$' })
-    if ($registro.Count -ne 1 -or $salida -notcontains "BASE_VERIFICADA_VACIA: SI") {
-        throw "No se verifico la base nueva vacia; no se ejecutaran migraciones."
-    }
-    $nueva = ($registro[0] -split ': ', 2)[1]
-    Write-Host "Nueva base exclusiva de PHP 7.4: $nueva"
-    Write-Host "mensajero_test queda sin modificar."
-    $env:DB_DATABASE = $nueva
 
-    Write-Host "`n=== PRIMERA MIGRACION Y ESQUEMA SQL SERVER ==="
+    Write-Host "`n=== INTEGRACION SQL SERVER PHP 7.4 APROBADA ==="
+    Write-Host "La base de prueba creada permanece disponible para auditarla: $nueva"
+} finally {
+    foreach ($nombre in $valores.Keys) {
+        [Environment]::SetEnvironmentVariable($nombre, $anteriores[$nombre], "Process")
+    }
+    $datos = $null
+    $valores = $null
+    Write-Host "Variables de proceso restauradas. Ninguna base fue eliminada."
+}
+
+        })
+        if ($registro.Count -ne 1 -or $salida -notcontains "BASE_VERIFICADA_VACIA: SI") {
+            throw "No se verifico la base nueva vacia; no se ejecutaran migraciones."
+        }
+        $nueva = ($registro[0] -split ': ', 2)[1]
+        $env:DB_DATABASE = $nueva
+        Write-Host "Base nueva y vacia: $nueva"
+    } else {
+        if ($BaseExistente -cnotmatch '^mensajero_php74_[a-f0-9]{10}_test
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --stop-on-failure
+    if ($LASTEXITCODE -ne 0) {
+        throw "Se detectó fallo en pruebas SQL. Revisar salida y corregir código."
+    }
+
+    Write-Host "`n=== INTEGRACION SQL SERVER PHP 7.4 APROBADA ==="
+    Write-Host "La base de prueba creada permanece disponible para auditarla: $nueva"
+} finally {
+    foreach ($nombre in $valores.Keys) {
+        [Environment]::SetEnvironmentVariable($nombre, $anteriores[$nombre], "Process")
+    }
+    $datos = $null
+    $valores = $null
+    Write-Host "Variables de proceso restauradas. Ninguna base fue eliminada."
+}
+) {
+            throw "Nombre de base existente fuera del patron exclusivo SQL74."
+        }
+        $nueva = $BaseExistente
+        $env:DB_DATABASE = $nueva
+        Write-Host "=== REUTILIZAR SOLO BASE EFIMERA PHP 7.4 ==="
+        $verificacion = @(& $php74 ".\herramientas\diagnosticar-sqlsrv-php74.php")
+        if ($LASTEXITCODE -ne 0 -or
+            $verificacion -notcontains "BASE_SQL_FISICA_VERIFICADA: $nueva" -or
+            $verificacion -notcontains "DIAGNOSTICO_SQL74_SOLO_LECTURA_APROBADO") {
+            throw "No se verifico el nombre fisico y esquema de la base efimera."
+        }
+        Write-Host "Base fisica y esquema existente verificados: $nueva"
+    }
+
+    Write-Host "mensajero_test permanece sin cambios."
+    Write-Host "`n=== PRUEBA DE ESQUEMA SQL SERVER PHP 7.4 ==="
     & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --filter EsquemaCapturaSqlServerTest
     if ($LASTEXITCODE -ne 0) {
-        throw "Falló la prueba de esquema. No lanzar suite completa."
+        throw "Fallo la prueba de esquema. No lanzar suite completa."
+    }
+
+    Write-Host "`n=== PRUEBA FOCAL WEBHOOK META PHP 7.4 ==="
+    & $php74 ".\vendor\bin\phpunit" -c phpunit.integracion.xml --filter MetaWebhookSqlServerTest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo webhook Meta. No lanzar suite completa."
     }
 
     Write-Host "`n=== SUITE DE INTEGRACION SQL SERVER PHP 7.4 ==="
