@@ -43,7 +43,7 @@ try {
     }
 
     $app = require $raiz.'/bootstrap/app.php';
-    $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
     if ($app->environment() !== 'testing'
         || config('database.redis.client') !== 'predis'
