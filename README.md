@@ -1,5 +1,17 @@
 # Mensajero
 
+> **Rama de entrega MILAC PHP 7.4:** `compatibilidad/php74-milac-20261027`.
+> Esta rama usa **PHP 7.4.13 / Laravel 8.83.29**, no PHP 8.4/Laravel 13.
+> Pruebas locales aprobadas: **41 pruebas funcionales, 89 aserciones**;
+> **56 pruebas SQL Server, 880 aserciones**; **Redis PING y un trabajo real de
+> cola ficticia procesado y limpiado**. Estos resultados NO autorizan un
+> despliegue en la base corporativa ni operación sin identidad integrada.
+> **Documento para el compañero instalador:**
+> [ENTREGA-INSTALADOR-MILAC-PHP74.md](docs/ENTREGA-INSTALADOR-MILAC-PHP74.md).
+>
+> Los apartados que describen PHP 8.4/Laravel 13 corresponden al historial
+> de otra rama y **no son instrucciones de despliegue de esta revisión**.
+
 Sistema interno de MILAC para convertir mensajes de grupos seleccionados de WhatsApp en evidencia operativa consultable y, más adelante, en eventos interpretados por IA.
 
 ## Arquitectura vigente
