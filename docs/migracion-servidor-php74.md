@@ -434,3 +434,57 @@ verificada para esa suite, o aprobación explícita de su reutilización.
 **Los cambios de `DB_TRUST_SERVER_CERTIFICATE=true` permanecen solo
 para diagnóstico y solo en variables temporales del proceso.** La
 solución definitiva debe validar la identidad TLS del servidor.
+
+
+## SQL Server físico: conexión REAL PHP 7.4.13 aprobada (28/oct/2026)
+
+El usuario ejecutó el diagnóstico de solo lectura con las credenciales de
+su copia `Mensajero-Integracion-Gemini/.env`, restringiendo la sesión al
+SQL Server Docker local y la base `mensajero_test`. Salida certificada:
+
+```text
+CONFIG_TLS_ENCRYPT: yes
+CONFIG_TLS_TRUST_SERVER_CERTIFICATE: true
+TIPO_TLS_TRUST: boolean
+SQL_USUARIO_CONFIGURADO: SI
+SQL_CLAVE_CONFIGURADA: SI
+AUTENTICACION_PRESUNTA: sql_server_explicita
+PHP_VERIFICADO: 7.4.13
+BASE_SQL_FISICA_VERIFICADA: mensajero_test
+TABLAS_MENSAJERO_EN_BASE_TEST: 28
+DIAGNOSTICO_SQL74_SOLO_LECTURA_APROBADO
+=== PHP 7.4 Y SQL SERVER: CONEXION APROBADA ===
+```
+
+**Certificado**: PHP 7.4 + PDO_SQLSRV + ODBC Driver 18 + Laravel 8
+pueden autenticarse y consultar la base local. Las 41 pruebas funcionales
+PHP 7.4 también están aprobadas (89 aserciones). **NO está certificada
+todavía la suite SQL de integración ni el despliegue en MILAC**.
+
+**Importante**: `mensajero_test` conserva 28 tablas, por lo que jamás
+ejecutar allí directamente la suite de integración, que llama migraciones.
+
+Se añadió un par de herramientas:
+
+- `herramientas/crear-base-sql-php74-desechable.php` exige PHP 7.4.13,
+  `pdo_sqlsrv`, variables `testing`, host y credenciales SQL de prueba,
+  señal previa del contenedor Docker y origen `mensajero_test`. Abre
+  `master`, crea exclusivamente una base nueva con nombre aleatorio
+  `mensajero_php74_<10 caracteres hex>_test`, la verifica vacía y
+  comunica el nombre sin revelar secretos. No ejecuta `DROP DATABASE`.
+- `herramientas/ejecutar-integracion-sql74-docker.ps1` valida primero
+  que `mensajero-sqlserver` esté activo y que el puerto del `.env`
+  **coincida con su puerto publicado por Docker**. Reutiliza en memoria
+  las credenciales del entorno anterior, **crea la nueva base desechable**
+  y solo entonces invoca `phpunit.integracion.xml`: primero
+  `EsquemaCapturaSqlServerTest`, luego toda la suite con
+  `--stop-on-failure`. Restaura siempre las variables del proceso y no
+  modifica ni borra `mensajero_test`.
+
+**La creación de la nueva base y la suite están preparadas en GitHub,
+pero NO han sido ejecutadas todavía**. Si falla la creación, comprobar
+permisos de crear bases en el SQL local; no intentar esa operación en el
+servidor corporativo. La nueva base se conserva para auditoría y su
+eliminación posterior requiere revisión y autorización. El modo temporal
+`DB_TRUST_SERVER_CERTIFICATE=true` sigue prohibido en producción,
+donde deberá corregirse la cadena TLS.
