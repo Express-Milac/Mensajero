@@ -55,7 +55,10 @@ try {
     $conexion = $app->make('redis')->connection('default');
     $respuesta = $conexion->ping();
 
-    if ($respuesta !== true && $respuesta !== 'PONG' && $respuesta !== '+PONG') {
+    // Predis 1.x puede devolver objeto Status en lugar de cadena.
+    $textoRespuesta = is_object($respuesta) && method_exists($respuesta, '__toString')
+        ? (string) $respuesta : (is_string($respuesta) ? $respuesta : '');
+    if ($respuesta !== true && strtoupper(ltrim($textoRespuesta, '+')) !== 'PONG') {
         throw new RuntimeException('Redis no respondio PONG.');
     }
 
