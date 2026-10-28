@@ -50,6 +50,7 @@ final class ErroresEnvioLotesGeminiSqlServerTest extends TestCase
         config()->set('mensajero.ia.habilitada', false);
         config()->set('mensajero.ia.envio_autorizado', false);
         config()->set('mensajero.ia.lotes_habilitados', false);
+        config()->set('mensajero.ia.modelo', 'gemini-3.5-flash-lite');
         Bus::fake();
         Http::preventStrayRequests();
     }
@@ -96,6 +97,8 @@ final class ErroresEnvioLotesGeminiSqlServerTest extends TestCase
                 ->where('id', $loteId)->value('estado'));
             $this->assertSame('RuntimeException', DB::table('mensajero_lotes_gemini')
                 ->where('id', $loteId)->value('error_tipo'));
+            $this->assertSame(0, DB::table('mensajero_resultados_lote_gemini')
+                ->where('lote_id', $loteId)->count());
 
             Http::assertSentCount(1);
             Http::assertSent(static fn ($request): bool => $request->method() === 'POST'
