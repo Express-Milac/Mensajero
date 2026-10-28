@@ -234,3 +234,37 @@ COMPOSER_PHAR=/ruta/privada/composer2.phar bash herramientas/resolver-lock-php74
 
 Este procedimiento **todavía no se ha ejecutado con éxito**: el entorno de trabajo disponible tiene PHP 8.4 pero no Composer ni acceso DNS a GitHub/Packagist, y GitHub Actions sigue sin asignar ejecutor. Aunque genere un lock, se requiere después probarlo físicamente con **PHP 7.4.13** y pasar los tests; el valor de `config.platform.php` es solo una simulación del solucionador de Composer.
 
+
+
+## Resultado local real y corrección HTTP simulada — 28/oct/2026
+
+En el directorio de desarrollo `Mensajero-PHP74-Pruebas`, con PHP **7.4.13**
+y PHPUnit **9.6.38**, el usuario ejecutó `phpunit-lotes.xml`:
+**41 pruebas / 83 aserciones, 1 error y 1 fallo**. Los dos problemas
+reproducibles provienen de `ClienteGeminiLoteTest` y del ayudante
+`tests/TestCase.php::simularHttpSinRed()`. La sustitución anterior
+de `connectTimeout()` por `withOptions(['connect_timeout'=>...])`
+ya eliminó dos fallos del pase anterior.
+
+**Causa precisa:** al construir varias reglas HTTP falsas usando
+`Http::fake(['url/*' => respuesta, '*' => callback_que_lanza])`,
+Laravel 8 agrega múltiples callbacks y, al evaluar la colección, ejecuta
+también el callback comodín que lanza, aunque la URL concreta ya coincide.
+No se detectó una llamada HTTP real: el propio test lanzó
+`Petición HTTP no simulada durante pruebas de Mensajero.`.
+
+**Corrección en GitHub:** `tests/TestCase.php` registra ahora un solo
+`Http::fake(Closure)` que devuelve la respuesta de la URL concreta o
+lanza antes de cualquier acceso de red cuando no existe simulación.
+Se conservan el bloqueo de tráfico desconocido y la comprobación de HTTPS.
+
+**Pendiente:** ejecutar de nuevo las 41 pruebas sobre PHP 7.4 real para
+confirmar corrección. No registrar la suite como aprobada hasta recibir
+la salida correspondiente; después probar Laravel 8 con SQL Server test.
+
+**Aviso de Git:** `git branch --show-current` devolvió NULL en la copia
+local; ello es compatible con un HEAD separado. Comprobar con
+`git symbolic-ref --quiet --short HEAD`, recuperar la rama sin perder
+cambios locales y bloquear el despliegue si el árbol no es limpio.
+El mensaje impreso manualmente al final de un bloque de PowerShell no
+corrige el fallo previo de PHPUnit.
