@@ -1,11 +1,10 @@
 # Instalación y operación
 
-**IMPORTANTE — Rama PHP 7.4 de MILAC:** las instrucciones históricas que siguen
-corresponden a la rama Laravel 13 / PHP 8.4 y NO deben ejecutarse sobre
-`compatibilidad/php74-milac-20261027`. Para entregar esta rama al compañero
-instalador consulte [ENTREGA-INSTALADOR-MILAC-PHP74.md](ENTREGA-INSTALADOR-MILAC-PHP74.md).
-No se autoriza modificar Apache, Composer global, tablas corporativas,
-permisos o trabajadores hasta contar con ventana y autorización.
+**La rama `compatibilidad/php74-milac-20261027` usa PHP 7.4.13
+con Laravel 8.83.29.** El texto histórico posterior se refiere a la
+rama anterior PHP 8.4 y no debe utilizarse como procedimiento de esta rama.
+La copia para el servidor no instala ni modifica servicios existentes;
+el equipo de infraestructura define su entorno privado antes de publicarla.
 
 Entorno objetivo: servidor propio de MILAC, PHP 8.4+, extensiones `sqlsrv`, `pdo_sqlsrv`, `fileinfo`, ODBC 18, Composer 2, SQL Server y Redis.
 
