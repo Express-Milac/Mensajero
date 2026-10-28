@@ -1,6 +1,6 @@
 # Ensayo de trabajo real en Redis con PHP 7.4.13
 
-Estado: **preparado en el repositorio, pendiente de ejecucion local**.
+Estado: **APROBADO en Windows con PHP 7.4.13 y Redis local, 28/oct/2026**.
 
 ## Resultado ya comprobado
 
@@ -44,8 +44,25 @@ tras actualizar desde la rama PHP74, ejecutar:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\herramientas\ejecutar-ensayo-cola-redis74.ps1"
 ```
 
-La salida final `ENSAYO_COLA_REDIS74_APROBADO` demuestra el procesamiento
-real con el trabajador local. En caso de error no declarar aprobacion
-ni iniciar trabajadores adicionales; revisar la salida sin imprimir
-ninguna credencial. Redis en Debian 9 y el servidor MILAC siguen sin
-validar y no deben tocarse.
+Resultado real aportado por el usuario en Windows PHP 7.4.13:
+```text
+COLA_EXCLUSIVA_VERIFICADA: mensajero_ensayo_php74_01e6982b7721436faf95736961babeaa
+TRABAJOS_PUBLICADOS: 1
+PREPARACION_COLA_REDIS74_APROBADA
+Processing: Tests\\Soporte\\TrabajoColaRedisPhp74
+Processed:  Tests\\Soporte\\TrabajoColaRedisPhp74
+TRABAJO_PROCESADO: SI
+COLA_VACIA: SI
+CLAVES_DE_ENSAYO_LIMPIADAS: SI
+ENSAYO_COLA_REDIS74_APROBADO
+```
+
+El trabajador uso `queue:work redis --once --tries=1 --timeout=15`
+para consumir un unico trabajo ficticio, y los chequeos confirmaron
+acuse y cola vacia; las claves temporales de ese ensayo se limpiaron.
+
+**Alcance:** certifica PHP 7.4.13 / Laravel 8 / Predis y worker en Redis
+local de Windows, pero **no** certifica procesamiento de eventos reales,
+integracion con SQL + Redis en un mismo flujo, Redis en Debian 9 ni
+instalacion o exposicion publica en MILAC. No iniciar trabajadores de
+produccion hasta auditar el servidor y contar con aprobacion expresa.
