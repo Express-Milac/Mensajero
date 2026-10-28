@@ -67,3 +67,15 @@ bases de datos ni Redis y no modifica servicios ni archivos. Este
 diagnostico esta **pendiente de ejecucion por el usuario en Debian 9**;
 no copiar ni hacer pull en el directorio publicado para ejecutarlo.
 El PHP WEB efectivo, TLS corporativo y autenticacion siguen pendientes.
+
+## Inspeccion de composer.lock en la rama (28/oct/2026)
+
+Se leyo el lock actualmente versionado en GitHub. Contiene
+`laravel/framework v8.83.29`, `platform.php: ^7.4.13` y
+`platform-overrides.php: 7.4.13`; se comprobaron las claves
+`composer.json/config.platform.php=7.4.13` y `content-hash` presente.
+Esto corrige referencias historicas del expediente que describian un
+lock de Laravel 13. No equivale a certificar todas las dependencias
+instaladas del **servidor**: ejecutar `composer check-platform-reqs`
+en copia aislada de PHP7.4, nunca modificar el Composer global 1.6.5
+ni instalar paquetes en produccion sin plan aprobado.
