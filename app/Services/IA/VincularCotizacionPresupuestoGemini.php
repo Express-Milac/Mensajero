@@ -71,15 +71,30 @@ final class VincularCotizacionPresupuestoGemini
                 || ! Schema::hasTable('mensajero_mensajes_lote_gemini')) {
                 return 'deshabilitado';
             }
+            // Debe contener al menos un mensaje, sin importar quién lo
+            // haya introducido en SQL; TODOS deben pertenecer al mismo grupo
+            // y estar normalizados. No basta comprobar uno de los miembros.
             $fuenteValida = DB::table('mensajero_lotes_gemini')
                 ->where('id', $fuenteId)->where('chat_monitoreado_id', $grupoId)
                 ->whereIn('estado', ['reservado', 'publicado'])
-                ->whereExists(function ($consulta) use ($grupoId): void {
+                ->whereExists(function ($consulta): void {
                     $consulta->selectRaw('1')
                         ->from('mensajero_mensajes_lote_gemini AS m')
-                        ->join('mensajero_mensajes_whatsapp AS origen', 'origen.id', '=', 'm.mensaje_whatsapp_id')
+                        ->whereColumn('m.lote_id', 'mensajero_lotes_gemini.id');
+                })
+                ->whereNotExists(function ($consulta) use ($grupoId): void {
+                    $consulta->selectRaw('1')
+                        ->from('mensajero_mensajes_lote_gemini AS m')
+                        ->leftJoin(
+                            'mensajero_mensajes_whatsapp AS origen',
+                            'origen.id', '=', 'm.mensaje_whatsapp_id'
+                        )
                         ->whereColumn('m.lote_id', 'mensajero_lotes_gemini.id')
-                        ->where('origen.chat_monitoreado_id', $grupoId);
+                        ->where(function ($invalido) use ($grupoId): void {
+                            $invalido->whereNull('origen.id')
+                                ->orWhere('origen.chat_monitoreado_id', '<>', $grupoId)
+                                ->orWhere('origen.estado_captura', '<>', 'normalizado');
+                        });
                 })->exists();
         } else {
             if (! Schema::hasTable('mensajero_mensajes_whatsapp')) {
