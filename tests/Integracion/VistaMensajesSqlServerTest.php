@@ -206,7 +206,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Gestor de grupos')
                 ->assertSee('Habilitar grupos')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
-                ->assertSee('Ver conversación')
+                // El gestor actual muestra "Conversación" como acción;
+                // verificar además que lleve al historial del grupo correcto.
+                ->assertSee('href="'.route('mensajes.grupo', $grupo->id).'" class="gestor-ver-grupo"', false)
+                ->assertSee('Conversación')
                 ->assertSee('Acceso controlado')
                 ->assertSee('css/interfaz-unificada.css');
 
