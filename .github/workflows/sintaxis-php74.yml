@@ -112,3 +112,36 @@ jobs:
       - name: Ejecutar pruebas aisladas sin servicios externos
         run: ./vendor/bin/phpunit -c phpunit-lotes.xml
 
+
+  recolector-node20:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Probar recolector separado en Node 20 Linux compatible
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: recolector-whatsapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Node 20 en Linux compatible (no Debian 9)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verificar motor de ejecucion
+        run: |
+          node --version
+          npm --version
+          node -e "if (Number(process.versions.node.split('.')[0]) < 20) process.exit(1)"
+
+      - name: Instalar dependencias con scripts y parche comprobado
+        run: npm install --no-audit --no-fund
+
+      - name: Compilar TypeScript y verificar tipos
+        run: |
+          npm run verificar
+          npm run construir
+
+      - name: Ejecutar pruebas sin conectar WhatsApp
+        run: npm run pruebas
