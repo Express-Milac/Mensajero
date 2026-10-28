@@ -72,6 +72,22 @@ try {
     echo 'CONFIG_TLS_TRUST_SERVER_CERTIFICATE: '.$normalizarTls($confiar).PHP_EOL;
     echo 'TIPO_TLS_TRUST: '.gettype($confiar).PHP_EOL;
 
+    // Nunca imprimir identificadores, valores de entorno, secretos o DSN.
+    // El error 18452 suele revelar que PDO esta intentando autenticacion
+    // integrada al no disponer de credenciales SQL en la configuracion.
+    $usuarioSql = config('database.connections.sqlsrv.username');
+    $claveSql = config('database.connections.sqlsrv.password');
+    $usuarioConfigurado = is_string($usuarioSql) && $usuarioSql !== '';
+    $claveConfigurada = is_string($claveSql) && $claveSql !== '';
+
+    echo 'SQL_USUARIO_CONFIGURADO: '.($usuarioConfigurado ? 'SI' : 'NO').PHP_EOL;
+    echo 'SQL_CLAVE_CONFIGURADA: '.($claveConfigurada ? 'SI' : 'NO').PHP_EOL;
+    echo 'AUTENTICACION_PRESUNTA: '.(
+        $usuarioConfigurado && $claveConfigurada
+            ? 'sql_server_explicita'
+            : 'integrada_o_incompleta'
+    ).PHP_EOL;
+
     $etapa = 'crear_conexion';
     $conexion = Illuminate\Support\Facades\DB::connection('sqlsrv');
     if ($conexion->getDriverName() !== 'sqlsrv') {
