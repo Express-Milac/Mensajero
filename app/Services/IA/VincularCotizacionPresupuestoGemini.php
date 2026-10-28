@@ -67,12 +67,20 @@ final class VincularCotizacionPresupuestoGemini
         }
 
         if ($tipoFuente === 'lote') {
-            if (! Schema::hasTable('mensajero_lotes_gemini')) {
+            if (! Schema::hasTable('mensajero_lotes_gemini')
+                || ! Schema::hasTable('mensajero_mensajes_lote_gemini')) {
                 return 'deshabilitado';
             }
             $fuenteValida = DB::table('mensajero_lotes_gemini')
                 ->where('id', $fuenteId)->where('chat_monitoreado_id', $grupoId)
-                ->whereIn('estado', ['reservado', 'publicado'])->exists();
+                ->whereIn('estado', ['reservado', 'publicado'])
+                ->whereExists(function ($consulta) use ($grupoId): void {
+                    $consulta->selectRaw('1')
+                        ->from('mensajero_mensajes_lote_gemini AS m')
+                        ->join('mensajero_mensajes_whatsapp AS origen', 'origen.id', '=', 'm.mensaje_whatsapp_id')
+                        ->whereColumn('m.lote_id', 'mensajero_lotes_gemini.id')
+                        ->where('origen.chat_monitoreado_id', $grupoId);
+                })->exists();
         } else {
             if (! Schema::hasTable('mensajero_mensajes_whatsapp')) {
                 return 'deshabilitado';
