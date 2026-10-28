@@ -346,3 +346,28 @@ Sin confirmar códigos, NO cambiar automáticamente
 `DB_ENCRYPT` ni `DB_TRUST_SERVER_CERTIFICATE`. Preferir certificado TLS
 válido y nombre coincidente. No usar `--ignore-platform-reqs`,
 ni apuntar PHP7.4 a SQL productivo.
+
+
+## TLS en PHP 7.4: error reproducido tras confianza temporal (28/oct/2026)
+
+Se repitió la conexión física con `DB_ENCRYPT=yes`,
+`DB_TRUST_SERVER_CERTIFICATE=yes` exclusivamente en el proceso de Windows.
+El resultado NO cambió: `ETAPA=abrir_conexion_sql`,
+`SQLSTATE=08001`, código nativo `-2146893019`,
+`CATEGORIA_ORIENTATIVA=tls_o_certificado`. No se alcanzó ninguna
+consulta SQL ni se ejecutaron migraciones.
+
+La documentación de PDO_SQLSRV enumera `TrustServerCertificate=1` o
+`true`; la documentación ODBC 18 también admite `yes` en sus
+cadenas de conexión. No se afirma todavía que esa diferencia sea la
+causa. Se amplió `herramientas/diagnosticar-sqlsrv-php74.php` para
+imprimir SOLO valores de política TLS permitidos y su tipo PHP, sin
+mostrar host, usuarios, secretos ni DSN.
+
+**Próximo ensayo único:** en el entorno aislado usar
+`DB_TRUST_SERVER_CERTIFICATE=true` junto con `DB_ENCRYPT=yes`
+en variables de proceso y verificar el valor efectivo; restaurar las
+variables al terminar. La omisión de validación del certificado NO
+es una solución aceptable para producción ni para un ambiente compartido:
+si el error continúa, la solución es aprovisionar cadena de confianza
+y nombre de certificado correctos con el administrador SQL.
