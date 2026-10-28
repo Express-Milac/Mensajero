@@ -41,6 +41,27 @@ function enteroPositivo(nombre: string, valorPredeterminado: number): number {
   return valor;
 }
 
+export function validarUrlMensajero(valor: string): string {
+  let url: URL;
+
+  try {
+    url = new URL(valor.trim());
+  } catch {
+    throw new Error('MENSAJERO_URL debe ser una URL valida.');
+  }
+
+  const esLocal = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname.toLowerCase());
+  if (!(url.protocol === 'https:' || (url.protocol === 'http:' && esLocal))) {
+    throw new Error('MENSAJERO_URL exige HTTPS fuera de localhost.');
+  }
+
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('MENSAJERO_URL no admite usuario, clave, parametros ni fragmentos.');
+  }
+
+  return url.toString().replace(/\\/+$/, '');
+}
+
 export function cargarConfiguracion(): ConfiguracionRecolector {
   const secreto = requerido('MENSAJERO_PASARELA_SECRETO');
 
@@ -66,7 +87,7 @@ export function cargarConfiguracion(): ConfiguracionRecolector {
   }
 
   return {
-    mensajeroUrl: requerido('MENSAJERO_URL').replace(/\/+$/, ''),
+    mensajeroUrl: validarUrlMensajero(requerido('MENSAJERO_URL')),
     secreto,
     claveConexion: requerido('MENSAJERO_CLAVE_CONEXION'),
     rutaDatos,
