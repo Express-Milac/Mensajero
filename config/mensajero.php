@@ -46,6 +46,16 @@ return [
         'lotes_habilitados' => filter_var(env('MENSAJERO_IA_LOTES_HABILITADOS', false), FILTER_VALIDATE_BOOLEAN),
         'lotes_fecha_inicio' => env('MENSAJERO_IA_LOTES_FECHA_INICIO', ''),
         'lotes_maximo_dia_grupo' => (int) env('MENSAJERO_IA_LOTES_MAXIMO_DIA_GRUPO', 10),
+        // Libro monetario EXPERIMENTAL, sin conexión aún al envío HTTP.
+        // Microusd: entero de 1/1_000_000 USD; todo límite = 0 por defecto.
+        'presupuesto_monetario' => [
+            'habilitado' => filter_var(env('MENSAJERO_IA_PRESUPUESTO_HABILITADO', false), FILTER_VALIDATE_BOOLEAN),
+            'tarifa_validada' => filter_var(env('MENSAJERO_IA_TARIFA_VALIDADA', false), FILTER_VALIDATE_BOOLEAN),
+            'tarifa_referencia' => env('MENSAJERO_IA_TARIFA_REFERENCIA', ''),
+            'reserva_maxima_microusd' => (int) env('MENSAJERO_IA_RESERVA_MAXIMA_MICROUSD', 0),
+            'limite_diario_microusd' => (int) env('MENSAJERO_IA_LIMITE_DIARIO_MICROUSD', 0),
+            'limite_mensual_microusd' => (int) env('MENSAJERO_IA_LIMITE_MENSUAL_MICROUSD', 0),
+        ],
     ],
 
     'meta_whatsapp' => [

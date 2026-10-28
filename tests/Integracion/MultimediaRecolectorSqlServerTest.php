@@ -205,7 +205,8 @@ class MultimediaRecolectorSqlServerTest extends TestCase
 
             $this->get('/mensajes/eventos/'.$archivo->evento_crudo_id)
                 ->assertOk()
-                ->assertSee('Mensaje original')
+                ->assertSee('Detalle del mensaje')
+                ->assertSee('Contenido del mensaje')
                 ->assertSee('Identificadores y verificación SHA-256')
                 ->assertSee('Descargar archivo privado')
                 ->assertSee($rutaVer, false);

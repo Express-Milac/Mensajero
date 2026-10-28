@@ -119,9 +119,9 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Temas clave del día')
                 ->assertSee('Posibles acuerdos mencionados')
                 ->assertSee('Menciones para revisar')
-                ->assertSee('Actualizar ahora')
+                ->assertSee('Comprobando mensajes...')
                 ->assertSee('data-buscar-conversaciones', false)
-                ->assertSee('data-modo-tarjetas="lista"', false)
+                ->assertSee('lista-grupos-directivos centro-lista-grupos modo-lista', false)
                 ->assertSee('Ver mensaje original')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Llegó '.$contenido)
@@ -206,7 +206,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Gestor de grupos')
                 ->assertSee('Habilitar grupos')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
-                ->assertSee('Ver conversación')
+                // El gestor actual muestra "Conversación" como acción;
+                // verificar además que lleve al historial del grupo correcto.
+                ->assertSee('href="'.route('mensajes.grupo', $grupo->id).'" class="gestor-ver-grupo"', false)
+                ->assertSee('Conversación')
                 ->assertSee('Acceso controlado')
                 ->assertSee('css/interfaz-unificada.css');
 
@@ -348,7 +351,7 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee('Temas clave del día')
                 ->assertSee('Captura recolector '.$sufijo)
                 ->assertSee('Captura pasarela '.$sufijo)
-                ->assertSee('Grupos con carruseles independientes')
+                ->assertSee('Izquierda: eventos interpretados · Derecha: mensajes originales')
                 ->assertSee('Carrusel de mensajes de Captura recolector '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Captura pasarela '.$sufijo)
                 ->assertSee('data-grupo-id="'.$grupoRecolector->id.'"', false)

@@ -11,6 +11,7 @@ use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\TestCase;
 
 class NormalizacionLoteSqlServerTest extends TestCase
@@ -34,11 +35,12 @@ class NormalizacionLoteSqlServerTest extends TestCase
             $segundo = $this->crearEvento($grupo);
             $tercero = $this->crearEvento($grupo);
 
+            $salidaConsola = new BufferedOutput;
             $codigo = Artisan::call('mensajero:normalizar-lote', [
                 'grupo' => $grupo->id,
                 '--limite' => 2,
-            ]);
-            $salida = Artisan::output();
+            ], $salidaConsola);
+            $salida = $salidaConsola->fetch();
 
             $this->assertSame(0, $codigo, 'Vista previa fallida: '.$salida);
             $this->assertStringContainsString(
