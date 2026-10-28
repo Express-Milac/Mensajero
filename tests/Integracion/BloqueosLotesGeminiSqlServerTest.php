@@ -74,11 +74,10 @@ final class BloqueosLotesGeminiSqlServerTest extends TestCase
                 $secundaria->selectOne('SELECT DB_NAME() AS nombre')->nombre
             );
             $this->assertNotSame($principal->getPdo(), $secundaria->getPdo());
-            // No esperar por bloqueos: la prueba no debe quedar detenida.
-            $secundaria->statement('SET LOCK_TIMEOUT 0');
-            $this->assertSame(0, (int) $secundaria->selectOne('SELECT @@LOCK_TIMEOUT AS milisegundos')->milisegundos);
-            // Acotar también cualquier espera accidental del primer consumidor.
-            $principal->statement('SET LOCK_TIMEOUT 1500');
+            // La lectura @@LOCK_TIMEOUT puede pertenecer a otro contexto de sesion
+            // que el SET ejecutado mediante PDO. No usarla como prueba de bloqueo.
+            // La consulta contendiente tiene NOWAIT explicitamente, de modo que
+            // ante un bloqueo incompatible SQL Server devuelve inmediatamente 1222.
 
             // Consumidor 1: mantiene el bloqueo del grupo hasta confirmar el reclamo.
             $principal->beginTransaction();
