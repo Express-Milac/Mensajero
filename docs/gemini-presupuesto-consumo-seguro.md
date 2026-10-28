@@ -14,6 +14,28 @@ La configuración de tarifas, presupuesto y activación es cero/falsa por defect
 
 Próxima fase: integrar la reserva monetaria con ambos circuitos **únicamente cuando** exista una cotización máxima sustentada por precios oficiales verificados y límites adecuados de salida/pensamiento. No se deben aprobar tarifas ficticias ni conectar un máximo arbitrario al envío real.
 
+## Referencia de cotización implementada y pendiente de pruebas (28/10/2026)
+
+Se añadió `CotizarCostoReferenciaGemini`, un **cotizador puro** sin consultas SQL, HTTP, Redis ni autorización de pagos. Solo admite el modelo exacto `gemini-3.5-flash-lite` y los circuitos actuales `mensaje` y `lote`; para cualquier modelo/circuito desconocido devuelve `null` (no cotiza).
+
+**Tarifas estándar publicadas por Google al revisar el 28/10/2026**: USD 0.30 / millón de tokens de entrada y USD 2.50 / millón de tokens de salida, incluyendo pensamiento. El modelo permite 1,048,576 tokens de entrada, que se presupuestan COMPLETOS aun cuando el mensaje real sea mucho menor. Los clientes actuales limitan su `maxOutputTokens` a 900 (individual) y 1,800 (lote), parámetro que según Google también incluye tokens de pensamiento.
+
+La referencia se calcula usando solo enteros en microUSD y redondeo hacia arriba por componente:
+
+| Circuito | Entrada máxima reservada | Salida máxima reservada | Total de referencia |
+| --- | ---: | ---: | ---: |
+| Mensaje | 314,573 microUSD | 2,250 microUSD | **316,823 microUSD (USD 0.316823)** |
+| Lote | 314,573 microUSD | 4,500 microUSD | **319,073 microUSD (USD 0.319073)** |
+
+**Limitaciones:** es una referencia conservadora aplicable solamente a las solicitudes `generateContent` estándar actuales, basadas en texto y sin herramientas ni caché explícita. No cubre cargos de otros productos, búsqueda, audio/vídeo enviados como archivos, almacenamiento explícito en caché, ni cambios futuros de tarifa. Aunque utiliza el máximo del modelo, no se presenta como techo universal de facturación. No sustituye una aprobación explícita de modelo, tarifa, moneda, presupuesto y configuración final.
+
+Se añadieron cuatro pruebas puras `tests/Unidad/CotizarCostoReferenciaGeminiTest.php` y el script `scripts/validar-cotizacion-gemini.ps1` para verificar aritmética y ejecutar regresión SQL. **Estas pruebas aún no se han ejecutado en el equipo del usuario**; la validación SQL ya confirmada sigue siendo **86 pruebas y 1,467 aserciones** sobre el commit previo `442bc4d`. No hay modificaciones en la base ni nueva migración en este bloque.
+
+Referencias verificadas:
+- https://ai.google.dev/gemini-api/docs/pricing
+- https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite
+- https://ai.google.dev/gemini-api/docs/thinking
+
 ## Evidencia de la revisión
 
 El circuito individual usa `ClienteGemini` (máximo `maxOutputTokens=900`) y el circuito de lotes usa `ClienteGeminiLote` (`maxOutputTokens=1800`). Ambos consultan el servicio `generateContent` y registran, cuando llegan, `usageMetadata.promptTokenCount` y `candidatesTokenCount`. No se persisten por separado los tokens de pensamiento, caché ni cargos externos. Una falla de transporte puede impedir recibir `usageMetadata` aunque la solicitud haya llegado al proveedor.
