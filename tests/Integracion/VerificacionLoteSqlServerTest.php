@@ -23,6 +23,11 @@ class VerificacionLoteSqlServerTest extends TestCase
         $this->assertSame('sqlsrv', config('database.default'));
         $this->assertStringEndsWith('_test', (string) config('database.connections.sqlsrv.database'));
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+
+        // Estas pruebas necesitan analizar la salida REAL de Artisan::call.
+        // Laravel 8 conserva un OutputStyle simulado tras $this->artisan(),
+        // lo cual deja Artisan::output() vacio aunque se hayan escrito lineas.
+        $this->withoutMockingConsoleOutput();
     }
 
     public function test_verifica_dos_mensajes_y_su_cita_sin_escribir(): void
