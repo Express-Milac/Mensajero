@@ -10,7 +10,7 @@
     "drenar-cola": "tsx src/drenar-cola.ts",
     "verificar": "tsc --noEmit",
     "construir": "node scripts/aplicar-parche-baileys.mjs && tsc",
-    "pruebas": "tsx --test tests/**/*.test.ts",
+    "pruebas": "tsx --test tests/*.test.ts",
     "iniciar": "node scripts/aplicar-parche-baileys.mjs && node dist/src/principal.js"
   },
   "dependencies": {
