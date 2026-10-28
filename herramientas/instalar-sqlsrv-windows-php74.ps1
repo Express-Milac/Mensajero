@@ -22,9 +22,15 @@ if (-not (Test-Path -LiteralPath $php -PathType Leaf) -or
     throw "No se encontro la instalacion PHP 7.4 aislada completa."
 }
 
-$version = (& $php -r 'echo PHP_VERSION_ID,":",PHP_INT_SIZE,":",PHP_ZTS;')
-if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne "70413:8:0") {
-    throw "Se requiere exactamente PHP 7.4.13, 64 bits, NTS. Actual: $version"
+# Expresiones sin comillas internas: seguras con PowerShell 5.1 y php -r.
+$version = & $php -r 'echo PHP_VERSION_ID;'
+if ($LASTEXITCODE -ne 0) { throw "No fue posible obtener PHP_VERSION_ID." }
+$bits = & $php -r 'echo PHP_INT_SIZE;'
+if ($LASTEXITCODE -ne 0) { throw "No fue posible obtener PHP_INT_SIZE." }
+$hilos = & $php -r 'echo PHP_ZTS;'
+if ($LASTEXITCODE -ne 0) { throw "No fue posible obtener PHP_ZTS." }
+if ($version -ne "70413" -or $bits -ne "8" -or $hilos -ne "0") {
+    throw "Se requiere PHP 7.4.13, 64 bits, NTS. Observado: version=$version bytes=$bits hilos=$hilos"
 }
 
 $odbc = @(Get-OdbcDriver -Platform "64-bit" |
