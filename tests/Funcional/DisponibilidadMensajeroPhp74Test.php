@@ -18,6 +18,11 @@ final class DisponibilidadMensajeroPhp74Test extends TestCase
         $this->get('/grupos')->assertStatus(503);
     }
 
+    public function test_el_enrutador_del_servidor_integrado_existe(): void
+    {
+        $this->assertFileExists(base_path('server.php'));
+    }
+
     public function test_disponibilidad_no_expone_datos_operativos(): void
     {
         $respuesta = $this->get('/disponible');
