@@ -79,8 +79,28 @@ $rutaDatos = RutaAbsoluta $origenRecolector $datos
 Exigir (Test-Path -LiteralPath (Join-Path $rutaDatos 'sesion') -PathType Container) 'No se encontro una sesion WhatsApp local existente. No se iniciara ni vinculara otra automaticamente.'
 $almacen = LeerValor $raizContenido 'MENSAJERO_RUTA_ALMACENAMIENTO'
 if ([string]::IsNullOrWhiteSpace($almacen)) { $almacen = 'storage/app/mensajero' }
-$rutaAlmacen = RutaAbsoluta $origen $almacen
-Exigir (Test-Path -LiteralPath $rutaAlmacen -PathType Container) 'No se encontro la ruta multimedia del proyecto original.'
+$rutaAlmacenOriginal = RutaAbsoluta $origen $almacen
+$almacenRecolectorOriginal = LeerValor $recolectorContenido 'RECOLECTOR_RUTA_ALMACENAMIENTO'
+if ([string]::IsNullOrWhiteSpace($almacenRecolectorOriginal)) {
+    $almacenRecolectorOriginal = '../storage/app/mensajero'
+}
+$rutaAlmacenRecolectorOriginal = RutaAbsoluta $origenRecolector $almacenRecolectorOriginal
+$rutaAlmacenDestino = [IO.Path]::GetFullPath((Join-Path $destino 'storage/app/mensajero'))
+$crearAlmacenDestino = $false
+
+if (Test-Path -LiteralPath $rutaAlmacenOriginal -PathType Container) {
+    $rutaAlmacen = $rutaAlmacenOriginal
+    Write-Host 'Se reutilizara el almacenamiento multimedia privado existente.'
+} elseif (Test-Path -LiteralPath $rutaAlmacenRecolectorOriginal -PathType Container) {
+    $rutaAlmacen = $rutaAlmacenRecolectorOriginal
+    Write-Warning 'La ruta multimedia de Laravel original no existe. Se usara la ruta privada existente del recolector.'
+} else {
+    # No crear carpetas en el proyecto original ni bloquear el primer arranque
+    # si nunca se ha descargado multimedia. Ambas aplicaciones apuntaran aqui.
+    $rutaAlmacen = $rutaAlmacenDestino
+    $crearAlmacenDestino = $true
+    Write-Warning 'No existe almacenamiento multimedia anterior. Se preparara un directorio privado nuevo SOLO en Mensajero-PHP74-Pruebas. Archivos historicos de otras rutas no estaran disponibles.'
+}
 
 # Dos configuraciones PRIVADAS nuevas y solo en destino, nunca en Git.
 $raizContenido = EstablecerValor $raizContenido 'APP_ENV' 'local'
@@ -97,6 +117,9 @@ $recolectorContenido = EstablecerValor $recolectorContenido 'RECOLECTOR_RUTA_DAT
 $recolectorContenido = EstablecerValor $recolectorContenido 'RECOLECTOR_RUTA_ALMACENAMIENTO' ('"' + ($rutaAlmacen -replace '\\','/') + '"')
 
 # Solo se llega aqui si toda la validacion previa fue correcta.
+if ($crearAlmacenDestino) {
+    [void][IO.Directory]::CreateDirectory($rutaAlmacenDestino)
+}
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 [IO.File]::WriteAllText($destinoEnv,$raizContenido,$utf8)
 try {
