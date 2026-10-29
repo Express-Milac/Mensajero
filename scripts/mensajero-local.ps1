@@ -202,6 +202,7 @@ function VerificarRedis {
 function ValidarConfiguracion {
     if (-not (Test-Path -LiteralPath (Join-Path $raiz '.env'))) { throw 'Falta .env de Laravel.' }
     if (-not (Test-Path -LiteralPath (Join-Path $recolector '.env'))) { throw 'Falta .env del recolector.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $raiz 'server.php') -PathType Leaf)) { throw 'Falta server.php requerido por artisan serve de Laravel 8. Actualice la rama PHP74.' }
     if (-not (Test-Path -LiteralPath (Join-Path $raiz 'vendor\autoload.php'))) { throw 'Falta vendor; ejecutar composer install.' }
     if (-not (Test-Path -LiteralPath (Join-Path $recolector 'node_modules'))) { throw 'Falta node_modules del recolector; ejecutar npm install.' }
     foreach ($programa in @('php.exe', 'npm.cmd', 'wsl.exe', 'powershell.exe')) {
