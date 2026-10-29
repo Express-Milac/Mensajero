@@ -1,5 +1,5 @@
 <x-layout title="Conversaciones">
-    <section class="centro-pagina-cabecera centro-conversaciones-cabecera" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-panorama-intervalo="12000">
+    <section class="centro-pagina-cabecera centro-conversaciones-cabecera" data-panorama-url="{{ route('mensajes.actualizacion') }}" data-panorama-intervalo="12000">
         <div>
             <span class="centro-hero-marca">MENSAJERO MILAC / CONSULTA</span>
             <h1>Explorar conversaciones</h1>
