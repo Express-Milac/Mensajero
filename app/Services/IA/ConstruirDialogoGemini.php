@@ -10,7 +10,12 @@ use App\Models\MensajeWhatsapp;
  */
 final class ConstruirDialogoGemini
 {
-    public function __construct(private readonly PrepararContextoGemini $preparador) {}
+    private PrepararContextoGemini $preparador;
+
+    public function __construct(PrepararContextoGemini $preparador)
+    {
+        $this->preparador = $preparador;
+    }
 
     /**
      * @param array<int, MensajeWhatsapp> $mensajes

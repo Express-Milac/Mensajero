@@ -72,12 +72,12 @@ class PasarelaSeguraSqlServerTest extends TestCase
                 ->assertJsonPath('mensaje', 'Solicitud de pasarela repetida.');
 
             $idFirmaIncorrecta = 'firma-incorrecta-'.$sufijo;
-            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, firmaValida: false)
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idFirmaIncorrecta, false)
                 ->assertUnauthorized();
             $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idFirmaIncorrecta)->exists());
 
             $idCaducada = 'firma-caducada-'.$sufijo;
-            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, desfaseSegundos: -301)
+            $this->enviarFirmado('/api/pasarela/v1/chats-descubiertos', $descubrimiento, $idCaducada, true, -301)
                 ->assertUnauthorized();
             $this->assertFalse(SolicitudPasarela::query()->where('identificador_solicitud', $idCaducada)->exists());
 
@@ -129,7 +129,7 @@ class PasarelaSeguraSqlServerTest extends TestCase
         array $contenido,
         string $identificador,
         bool $firmaValida = true,
-        int $desfaseSegundos = 0,
+        int $desfaseSegundos = 0
     ): TestResponse {
         $cuerpo = json_encode($contenido, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $marcaTiempo = (string) (now()->getTimestamp() + $desfaseSegundos);

@@ -16,15 +16,12 @@ class ConexionWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'conectado_en' => FechaUtc::class,
             'ultimo_latido_en' => FechaUtc::class,
             'ultima_desconexion_en' => FechaUtc::class,
             'metadatos' => 'array',
         ];
-    }
 
     public function chats(): HasMany
     {

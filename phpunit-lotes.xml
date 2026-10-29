@@ -8,6 +8,7 @@
             <file>tests/Unidad/AgruparMensajesGeminiTest.php</file>
             <file>tests/Unidad/ValidarAcontecimientosLoteGeminiTest.php</file>
             <file>tests/Unidad/PoliticaLotesGeminiTest.php</file>
+            <file>tests/Funcional/DisponibilidadMensajeroPhp74Test.php</file>
             <file>tests/Funcional/ClienteGeminiLoteTest.php</file>
             <file>tests/Funcional/ReservarLoteGeminiTest.php</file>
             <file>tests/Funcional/PresupuestoPublicacionesGeminiTest.php</file>
@@ -17,9 +18,9 @@
             <file>tests/Funcional/ProcesarLoteGeminiTest.php</file>
         </testsuite>
     </testsuites>
-    <source>
-        <include><directory>app</directory></include>
-    </source>
+    <coverage processUncoveredFiles="true">
+        <include><directory suffix=".php">app</directory></include>
+    </coverage>
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_KEY" value="base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" force="true"/>

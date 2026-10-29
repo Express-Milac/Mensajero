@@ -3,7 +3,7 @@
     <nav class="breadcrumbs" aria-label="Ruta de navegación">
         <a href="{{ route('mensajes.indice') }}">Conversaciones</a>
         <span>/</span>
-        <a href="{{ route('mensajes.grupo', $registro->chat_monitoreado_id) }}">{{ $registro->chat?->nombre_interno ?: ($registro->chat?->nombre_grupo ?: 'Grupo #'.$registro->chat_monitoreado_id) }}</a>
+        <a href="{{ route('mensajes.grupo', $registro->chat_monitoreado_id) }}">{{ optional($registro->chat)->nombre_interno ?: (optional($registro->chat)->nombre_grupo ?: 'Grupo #'.$registro->chat_monitoreado_id) }}</a>
         <span>/</span>
         <span>Evento #{{ $registro->id }}</span>
     </nav>
@@ -26,14 +26,13 @@
                 @if($registro->tipo_evento === 'mensaje' && $registro->id_remitente_proveedor)
                     <a class="centro-ver-evidencia" href="{{ route('remitentes.editar', $registro->id) }}">Identificar o corregir nombre de esta persona →</a>
                 @endif
-                <time datetime="{{ $registro->recibido_en?->toIso8601String() }}">{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y · H:i:s') ?? 'Sin fecha' }}</time>
+                <time datetime="{{ ($registro->recibido_en !== null ? $registro->recibido_en->toIso8601String() : '') }}">{{ ($registro->recibido_en !== null ? $registro->recibido_en->timezone(config('app.timezone'))->format('d/m/Y · H:i:s') : 'Sin fecha') }}</time>
             </div>
-            <span class="estado-mensaje">{{ match ($registro->estado_procesamiento) {
+            <span class="estado-mensaje">{{ [
                 'capturado' => 'Capturado',
                 'normalizado' => 'Normalizado',
                 'pendiente_semantica' => 'Pendiente de interpretación',
-                default => 'Estado no clasificado',
-            } }}</span>
+            ][$registro->estado_procesamiento] ?? 'Estado no clasificado' }}</span>
         </div>
         <p class="detalle-contenido">{{ $resumen }}</p>
         <p class="detalle-nota">Mensaje #{{ $registro->id }} · Vista de lectura, sin modificaciones sobre la evidencia original.</p>
@@ -66,7 +65,7 @@
             <summary>Identificadores y verificación SHA-256</summary>
             <dl class="evidence-metadata">
                 <div><dt>Evento</dt><dd>#{{ $registro->id }}</dd></div>
-                <div><dt>Recibido</dt><dd>{{ $registro->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?? 'Sin fecha' }}</dd></div>
+                <div><dt>Recibido</dt><dd>{{ ($registro->recibido_en !== null ? $registro->recibido_en->timezone(config('app.timezone'))->format('d/m/Y H:i:s') : 'Sin fecha') }}</dd></div>
                 <div><dt>Identificador externo</dt><dd class="identifier">{{ $registro->id_evento_externo ?: 'No informado' }}</dd></div>
                 <div><dt>Remitente</dt><dd class="identifier">{{ $remitente }}</dd></div>
                 <div><dt>Mensaje citado</dt><dd class="identifier">{{ $registro->id_mensaje_citado_proveedor ?: 'No informado' }}</dd></div>

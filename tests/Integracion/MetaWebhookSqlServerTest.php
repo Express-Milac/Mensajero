@@ -49,11 +49,11 @@ class MetaWebhookSqlServerTest extends TestCase
             ]);
 
             $primero = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.001',
-                tipo: 'text',
-                contenido: ['text' => ['body' => 'Primera prueba oficial']],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.001',
+                'text',
+                ['text' => ['body' => 'Primera prueba oficial']],
             );
 
             $this->enviarFirmado($primero)
@@ -77,11 +77,11 @@ class MetaWebhookSqlServerTest extends TestCase
             );
 
             $segundo = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.002',
-                tipo: 'text',
-                contenido: ['text' => ['body' => 'Mensaje autorizado']],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.002',
+                'text',
+                ['text' => ['body' => 'Mensaje autorizado']],
             );
 
             $this->enviarFirmado($segundo)
@@ -97,11 +97,11 @@ class MetaWebhookSqlServerTest extends TestCase
             $this->assertSame(1, EventoCrudoWhatsapp::query()->where('conexion_id', $conexion->id)->count());
 
             $pegatina = $this->payload(
-                idNumero: $idNumero,
-                idGrupo: $idGrupo,
-                idMensaje: 'wamid.'.$sufijo.'.003',
-                tipo: 'sticker',
-                contenido: ['sticker' => ['id' => 'media-'.$sufijo]],
+                $idNumero,
+                $idGrupo,
+                'wamid.'.$sufijo.'.003',
+                'sticker',
+                ['sticker' => ['id' => 'media-'.$sufijo]],
             );
 
             $this->enviarFirmado($pegatina)
@@ -123,7 +123,7 @@ class MetaWebhookSqlServerTest extends TestCase
         string $idGrupo,
         string $idMensaje,
         string $tipo,
-        array $contenido,
+        array $contenido
     ): array {
         return [
             'object' => 'whatsapp_business_account',
@@ -141,14 +141,16 @@ class MetaWebhookSqlServerTest extends TestCase
                             'profile' => ['name' => 'Operador de prueba'],
                             'wa_id' => '524611111111',
                         ]],
-                        'messages' => [[
+                        // PHP 7.4 no admite desempacar arreglos con claves de texto.
+                        // array_merge conserva el contenido asociativo y permite
+                        // sobrescribir las propiedades particulares del mensaje.
+                        'messages' => [array_merge([
                             'from' => '524611111111',
                             'id' => $idMensaje,
                             'timestamp' => (string) now()->getTimestamp(),
                             'group_id' => $idGrupo,
                             'type' => $tipo,
-                            ...$contenido,
-                        ]],
+                        ], $contenido)],
                     ],
                 ]],
             ]],

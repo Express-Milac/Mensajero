@@ -131,7 +131,7 @@ final class AnalizarGemini extends Command
 
         $this->info('Grupo: '.$grupoId.' | Mensajes nuevos elegibles: '.$mensajes->count());
         foreach ($mensajes as $mensaje) {
-            $this->line('Mensaje interno #'.$mensaje->id.' | '.$mensaje->recibido_en?->format('Y-m-d H:i:s').' UTC');
+            $this->line('Mensaje interno #'.$mensaje->id.' | '.($mensaje->recibido_en !== null ? $mensaje->recibido_en->format('Y-m-d H:i:s') : '').' UTC');
         }
 
         if (! $this->option('aplicar')) {

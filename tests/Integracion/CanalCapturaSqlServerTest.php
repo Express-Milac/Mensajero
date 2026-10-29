@@ -30,14 +30,14 @@ class CanalCapturaSqlServerTest extends TestCase
                 ->where('conexion_id', $conexion->id)
                 ->count();
             $evento = new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $chat->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'evt-001',
-                mensajeProveedorId: 'msg-001',
-                contenidoCrudo: '{"id":"evt-001","texto":"Unidad lista"}',
-                recibidoEn: CarbonImmutable::parse('2026-10-15T18:00:00Z'),
+                (int) $conexion->id,
+                $chat->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'evt-001',
+                'msg-001',
+                '{"id":"evt-001","texto":"Unidad lista"}',
+                CarbonImmutable::parse('2026-10-15T18:00:00Z')
             );
 
             $ignorado = $captura->ejecutar($evento);
@@ -59,14 +59,14 @@ class CanalCapturaSqlServerTest extends TestCase
             $this->assertSame($buzonInicial + 1, MensajeBuzonSalida::count());
 
             $pegatina = new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $chat->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'sticker',
-                eventoExternoId: 'evt-002',
-                mensajeProveedorId: 'msg-002',
-                contenidoCrudo: '{"id":"evt-002","tipo":"sticker"}',
-                recibidoEn: CarbonImmutable::parse('2026-10-15T18:01:00Z'),
+                (int) $conexion->id,
+                $chat->id_chat_proveedor,
+                'mensaje',
+                'sticker',
+                'evt-002',
+                'msg-002',
+                '{"id":"evt-002","tipo":"sticker"}',
+                CarbonImmutable::parse('2026-10-15T18:01:00Z')
             );
             $ignoradoPegatina = $captura->ejecutar($pegatina);
             $this->assertSame(DisposicionEntrada::IgnorarPegatina, $ignoradoPegatina->disposicion);

@@ -13,15 +13,12 @@ class AuditoriaMonitoreoChat extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'version_autorizacion' => 'integer',
             'es_monitoreado_anterior' => 'boolean',
             'es_monitoreado_nuevo' => 'boolean',
             'cambiado_en' => 'immutable_datetime',
         ];
-    }
 
     public function chat(): BelongsTo
     {

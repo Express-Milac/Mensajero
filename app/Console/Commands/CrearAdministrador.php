@@ -25,7 +25,7 @@ class CrearAdministrador extends Command
 
         $validador = Validator::make($datos, [
             'nombre' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:254', Rule::unique(Usuario::class, 'email')],
+            'email' => ['required', 'email', 'max:254', Rule::unique('mensajero_usuarios', 'email')],
             'password' => 'required|string|min:12|max:1024|confirmed',
         ]);
 

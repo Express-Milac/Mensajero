@@ -15,12 +15,18 @@ use Illuminate\Support\Facades\Schema;
  */
 final class ReservarLoteGemini
 {
-    public function __construct(
-        private readonly PoliticaEnvioGemini $politica,
-        private readonly PoliticaLotesGemini $politicaLotes,
-        private readonly ControlInterpretacionGemini $control,
-        private readonly PresupuestoPublicacionesGemini $presupuesto,
-    ) {}
+    private PoliticaEnvioGemini $politica;
+    private PoliticaLotesGemini $politicaLotes;
+    private ControlInterpretacionGemini $control;
+    private PresupuestoPublicacionesGemini $presupuesto;
+
+    public function __construct(PoliticaEnvioGemini $politica, PoliticaLotesGemini $politicaLotes, ControlInterpretacionGemini $control, PresupuestoPublicacionesGemini $presupuesto)
+    {
+        $this->politica = $politica;
+        $this->politicaLotes = $politicaLotes;
+        $this->control = $control;
+        $this->presupuesto = $presupuesto;
+    }
 
     /**
      * @param array<int,int> $mensajeIds

@@ -49,7 +49,7 @@ class DiagnosticoInfraestructura
             $prueba();
 
             return 'correcto';
-        } catch (Throwable) {
+        } catch (Throwable $error) {
             return 'fallo';
         }
     }

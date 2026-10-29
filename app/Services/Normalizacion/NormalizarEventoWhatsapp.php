@@ -24,7 +24,12 @@ use RuntimeException;
  */
 final class NormalizarEventoWhatsapp
 {
-    public function __construct(private readonly ExtraerContenidoWhatsapp $extraer) {}
+    private ExtraerContenidoWhatsapp $extraer;
+
+    public function __construct(ExtraerContenidoWhatsapp $extraer)
+    {
+        $this->extraer = $extraer;
+    }
 
     public function ejecutar(int $eventoCrudoId): string
     {

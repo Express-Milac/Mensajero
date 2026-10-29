@@ -16,14 +16,11 @@ class PeriodoIntegridadWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'inicio_en' => FechaUtc::class,
             'fin_en' => FechaUtc::class,
             'detalles' => 'array',
         ];
-    }
 
     public function conexion(): BelongsTo
     {

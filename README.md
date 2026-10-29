@@ -1,58 +1,70 @@
-# Mensajero
+# Mensajero MILAC — PHP 7.4.13
 
-Sistema interno de MILAC para convertir mensajes de grupos seleccionados de WhatsApp en evidencia operativa consultable y, más adelante, en eventos interpretados por IA.
+Aplicación Laravel 8.83.29 para capturar y consultar evidencia de los grupos
+de WhatsApp autorizados, con SQL Server corporativo, Redis y almacenamiento
+privado de archivos. La rama `compatibilidad/php74-milac-20261027` contiene
+el código adaptado a PHP 7.4.13 para que el equipo de infraestructura lo
+instale en Debian 9, sin modificar desde desarrollo el servidor existente.
 
-## Arquitectura vigente
+## Componentes
 
-Mensajero conserva dos canales separados:
+- Interfaz Laravel bajo `public/`, con acceso a mensajes sujeto a autenticación;
+  la integración de identidad corporativa todavía está pendiente.
+- SQL Server con tablas propias `mensajero_*` e historial aislado
+  `mensajero_migraciones`; no se debe migrar directamente la base activa.
+- Redis / Predis para colas de trabajos; no ejecutar trabajadores hasta
+  verificar configuración y colas exclusivas del entorno.
+- Archivos multimedia fuera de SQL Server, en disco privado configurable
+  mediante `MENSAJERO_RUTA_ALMACENAMIENTO`.
+- `recolector-whatsapp/`: componente Node separado de Laravel, con su propia
+  sesión, directorio privado y configuración de conexión. Solo grupos permitidos,
+  sin stickers ni captura de otros chats.
 
-- **Meta Cloud API oficial** para conversaciones y grupos compatibles con la plataforma oficial.
-- **Recolector de grupos normales existentes** en `recolector-whatsapp/`, únicamente con un número corporativo secundario dedicado y reemplazable.
+## Compatibilidad verificada localmente
 
-El número principal de MILAC no debe vincularse al recolector no oficial.
+La revisión `f81d222f5abdfc61d188954fefda769c52a06598` fue comprobada
+el 28 de octubre de 2026 con resultados aportados desde Windows:
 
-## Reglas de captura
-- Solo se procesan grupos expresamente autorizados.
-- Nuevos grupos descubiertos nacen no monitoreados.
-- Pegatinas se descartan.
-- Evento crudo + buzón se guardan transaccionalmente e idempotentemente.
-- El recolector escribe cada mensaje autorizado en cola durable local antes de transmitirlo.
-- Una tarea local solo se elimina después de confirmación satisfactoria de Laravel.
-- Reinicios/desconexiones generan periodos de integridad no confirmada.
-- SQL Server no almacena binarios; archivos usan almacenamiento privado configurable.
+- **215 archivos PHP:** sintaxis compatible con el intérprete PHP 7.4.13.
+- **42 pruebas funcionales / 91 aserciones** (PHPUnit 9.6.38, SQLite).
+- **56 pruebas de integración SQL Server / 880 aserciones**, exclusivamente
+  sobre la base de ensayos `mensajero_php74_231a8c29f3_test`.
+- **Redis local:** `PING/PONG`; un trabajo publicado, procesado mediante
+  `queue:work --once`, cola vacía y claves exclusivas limpiadas.
+- **Recolector Node 22.15.0:** TypeScript y compilación correctos;
+  **31 pruebas aprobadas**, incluido HTTPS obligatorio y parche Baileys.
 
-## Estado implementado
-- Laravel 13 / PHP 8.4.
-- SQL Server con tablas `mensajero_*`.
-- Administración y auditoría de grupos.
-- Webhook oficial Meta con validación `X-Hub-Signature-256`.
-- Contrato HMAC interno.
-- `recolector-whatsapp/` con descubrimiento de grupos, filtro local, QR, reconexión, cola durable y monitor de integridad.
-- Comando `mensajero:registrar-conexion-recolector`.
+**Total: 129 pruebas automatizadas aprobadas, sin fallos**, además de
+los controles de sintaxis y Redis. No se conectó WhatsApp real.
 
-## Estado de pruebas
-La base anterior al incremento recolector está certificada localmente: Pint 78 archivos, PHPUnit 32/32 (78 aserciones) y SQL Server 6/6 (100 aserciones) repetido dos veces.
+Estas pruebas validan Windows y la base SQL Server de laboratorio.
+No sustituyen las verificaciones de Debian 9, PHP efectivo de Apache,
+permisos de `www-data`, TLS SQL corporativo ni el funcionamiento
+del recolector en Linux. Baileys requiere Node 20 o superior; el Node
+20 oficial en Linux requiere una biblioteca glibc más nueva que la
+instalada en Debian 9, por lo que el recolector debe ejecutarse en
+un entorno Node/Linux compatible, separado del PHP antiguo.
 
-El recolector agregado en el incremento actual debe certificarse localmente antes de vincular el número dedicado.
+## Condiciones de ejecución en el servidor
 
-## Preparación del POC recolector
+El código se despliega desde esta rama en una carpeta aislada, con
+dependencias Linux resueltas a partir del `composer.lock` existente
+(mediante Composer 2 compatible con PHP 7.4). Nunca copiar `vendor` o
+`node_modules` de Windows ni actualizar el Composer global del servidor.
+Laravel usa variables de entorno o un archivo privado `.env`
+(no versionado) suministrado por infraestructura: `APP_KEY`, `APP_URL`,
+conexión SQL Server con TLS, Redis, ruta de almacenamiento, colas y políticas
+de autenticación. La carpeta `public/` es la única que debe exponerse.
 
-Laravel debe usar exclusivamente `mensajero_test` durante estas pruebas.
+La autenticación `corporativo` falla cerrada hasta integrar la identidad
+MILAC. Para desarrollo existen modos locales, no adecuados para abrir
+mensajes operativos en una red compartida sin controles de acceso.
 
-```powershell
-php artisan mensajero:registrar-conexion-recolector recolector-pruebas --nombre="Recolector MILAC pruebas"
-cd recolector-whatsapp
-Copy-Item .env.example .env
-npm install
-npm run verificar
-npm run pruebas
-```
+Antes de operar, el responsable de infraestructura verifica los permisos de
+escritura efectivos de `www-data` en `storage/` y `bootstrap/cache/`;
+la versión PHP efectiva de Apache; las condiciones TLS, respaldos, acceso
+autorizado y la compatibilidad Linux del recolector Node. No se deben
+alterar otros sistemas, colas o tablas corporativas durante esa verificación.
 
-Completar `.env` local con el mismo `WHATSAPP_PASARELA_SECRETO`/`MENSAJERO_PASARELA_SECRETO` sin compartirlo ni subirlo a Git.
-
-Después ejecutar Laravel y `npm run desarrollo`. El QR se escanea **solo** con el número recolector dedicado.
-
-Ver `recolector-whatsapp/README.md` y `docs/recolector-whatsapp-dedicado.md`.
-
-## Limitación actual
-La metadata de foto/video/audio/documento queda en el evento crudo, pero el binario todavía no se descarga durablemente. El número recolector no debe entrar a grupos operativos reales hasta completar y certificar multimedia, carga, reinicios y reconciliación.
+**Estado:** port PHP 7.4 probado en desarrollo. Pendiente de validación
+y autorización en el servidor real; no es un despliegue automático.

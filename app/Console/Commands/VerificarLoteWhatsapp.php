@@ -88,7 +88,7 @@ final class VerificarLoteWhatsapp extends Command
         foreach ($ids as $id) {
             $evento = $eventos->get($id);
             $proyecciones = $mensajes->get($id);
-            $mensaje = $proyecciones?->first();
+            $mensaje = ($proyecciones === null ? null : $proyecciones->first());
             $errores = [];
 
             if ($evento === null) {
@@ -131,7 +131,7 @@ final class VerificarLoteWhatsapp extends Command
                     if ($original === null) {
                         $citasFueraDelLote++;
                     } else {
-                        $mensajeOriginal = $mensajes->get($original->id)?->first();
+                        $mensajeOriginal = ($mensajes->get($original->id) === null ? null : $mensajes->get($original->id)->first());
 
                         if ($mensajeOriginal === null
                             || (int) $mensaje->mensaje_citado_id !== (int) $mensajeOriginal->id

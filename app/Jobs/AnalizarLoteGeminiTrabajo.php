@@ -22,8 +22,11 @@ final class AnalizarLoteGeminiTrabajo implements ShouldQueue
     public int $tries = 1;
     public int $timeout = 45;
 
-    public function __construct(public readonly int $loteId)
+    public int $loteId;
+
+    public function __construct(int $loteId)
     {
+        $this->loteId = $loteId;
         $this->onConnection('redis');
         // Cola separada: el trabajador del piloto NO consume estos trabajos.
         $this->onQueue('mensajero_ia_lotes');

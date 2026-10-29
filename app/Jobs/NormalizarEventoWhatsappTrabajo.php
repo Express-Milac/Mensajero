@@ -14,7 +14,12 @@ final class NormalizarEventoWhatsappTrabajo implements ShouldQueue
 
     public int $timeout = 60;
 
-    public function __construct(public readonly int $eventoCrudoId) {}
+    public int $eventoCrudoId;
+
+    public function __construct(int $eventoCrudoId)
+    {
+        $this->eventoCrudoId = $eventoCrudoId;
+    }
 
     public function handle(NormalizarEventoWhatsapp $normalizador): void
     {

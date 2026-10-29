@@ -9,20 +9,19 @@
   ],
   "license": "MIT",
   "require": {
-    "php": "^8.4",
-    "laravel/framework": "^13.17",
-    "laravel/tinker": "^3.0",
-    "livewire/livewire": "^4.0",
-    "predis/predis": "^3.0"
+    "php": "^7.4.13",
+    "laravel/framework": "^8.83",
+    "laravel/tinker": "^2.7",
+    "predis/predis": "^1.1",
+    "guzzlehttp/guzzle": "^7.2",
+    "symfony/polyfill-php80": "^1.30",
+    "symfony/polyfill-php81": "^1.30"
   },
   "require-dev": {
-    "fakerphp/faker": "^1.23",
-    "laravel/pail": "^1.2.5",
-    "laravel/pao": "^1.0.6",
-    "laravel/pint": "^1.27",
-    "mockery/mockery": "^1.6",
-    "nunomaduro/collision": "^8.6",
-    "phpunit/phpunit": "^12.5.12"
+    "fakerphp/faker": "^1.20",
+    "mockery/mockery": "^1.5",
+    "nunomaduro/collision": "^5.11",
+    "phpunit/phpunit": "^9.6"
   },
   "autoload": {
     "psr-4": {
@@ -37,10 +36,6 @@
     }
   },
   "scripts": {
-    "dev": [
-      "Composer\\Config::disableProcessTimeout",
-      "@php artisan dev"
-    ],
     "test": [
       "@php artisan config:clear --ansi @no_additional_args",
       "@php artisan test"
@@ -48,12 +43,6 @@
     "post-autoload-dump": [
       "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
       "@php artisan package:discover --ansi"
-    ],
-    "post-update-cmd": [
-      "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
-    ],
-    "post-root-package-install": [
-      "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
     ],
     "pre-package-uninstall": [
       "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
@@ -71,6 +60,9 @@
     "allow-plugins": {
       "pestphp/pest-plugin": true,
       "php-http/discovery": true
+    },
+    "platform": {
+      "php": "7.4.13"
     }
   },
   "minimum-stability": "stable",

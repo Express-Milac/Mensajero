@@ -92,8 +92,7 @@ class ControladorGrupos extends Controller
     public function actualizarMonitoreo(
         Request $request,
         int $chat,
-        CambiarMonitoreoChat $cambiarMonitoreo,
-    ): RedirectResponse|JsonResponse {
+        CambiarMonitoreoChat $cambiarMonitoreo) : \Symfony\Component\HttpFoundation\Response {
         $datos = $request->validate([
             'es_monitoreado' => ['required', 'boolean'],
             'motivo' => ['nullable', 'string', 'max:500'],

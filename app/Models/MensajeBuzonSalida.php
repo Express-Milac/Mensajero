@@ -13,13 +13,10 @@ class MensajeBuzonSalida extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'disponible_en' => FechaUtc::class,
             'reservado_hasta' => FechaUtc::class,
             'enviado_en' => FechaUtc::class,
             'creado_en' => FechaUtc::class,
         ];
-    }
 }

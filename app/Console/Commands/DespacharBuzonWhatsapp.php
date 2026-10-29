@@ -55,7 +55,7 @@ final class DespacharBuzonWhatsapp extends Command
                 })
                 ->first();
 
-            $claveConexion = $seleccionado?->conexion?->clave_conexion;
+            $claveConexion = ($seleccionado === null || $seleccionado->conexion === null ? null : $seleccionado->conexion->clave_conexion);
             $sufijo = is_string($claveConexion)
                 && preg_match('/^ensayo-redis-([0-9a-f]{16})$/D', $claveConexion, $coincidencias) === 1
                     ? $coincidencias[1]
@@ -77,7 +77,7 @@ final class DespacharBuzonWhatsapp extends Command
 
         $resultado = $despachador->ejecutar($limite, $idEvento);
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Publicados: %d. Fallidos: %d.',
             $resultado['publicados'],
             $resultado['fallidos'],

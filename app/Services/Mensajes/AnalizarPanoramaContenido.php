@@ -42,13 +42,15 @@ final class AnalizarPanoramaContenido
         $totalRevision = 0;
         $remitentes = [];
 
-        $identificador?->precargar($eventos);
+        if ($identificador !== null) {
+            $identificador->precargar($eventos);
+        }
 
         foreach ($eventos as $evento) {
             try {
                 $datos = $extraer->ejecutar((string) $evento->contenido);
                 $texto = trim((string) ($datos['texto'] ?? $datos['pie_multimedia'] ?? ''));
-            } catch (Throwable) {
+            } catch (Throwable $error) {
                 // El contenido original sigue intacto; una carga ilegible
                 // no debe bloquear el tablero ni generar inferencias.
                 continue;
@@ -58,7 +60,7 @@ final class AnalizarPanoramaContenido
             if (is_string($remitente) && $remitente !== '') {
                 $clave = hash('sha256', (string) $evento->conexion_id.'|'.$remitente);
                 if (isset($remitentes[$clave]) === false) {
-                    $remitentes[$clave] = ['clave' => $clave, 'nombre' => $identificador?->nombre($evento) ?? 'Persona sin identificar', 'mensajes' => 0];
+                    $remitentes[$clave] = ['clave' => $clave, 'nombre' => ($identificador !== null ? $identificador->nombre($evento) : 'Persona sin identificar'), 'mensajes' => 0];
                 }
                 $remitentes[$clave]['mensajes']++;
                 if ($identificador !== null && $remitentes[$clave]['nombre'] === 'Persona sin identificar') {

@@ -23,8 +23,7 @@ final class ProcesarLoteGeminiTest extends TestCase
     public function test_lotes_apagados_no_consultan_sql_ni_google(): void
     {
         config()->set('mensajero.ia.lotes_habilitados', false);
-        Http::preventStrayRequests();
-        Http::fake();
+        $this->simularHttpSinRed();
 
         $this->assertSame('deshabilitado', app(ProcesarLoteGemini::class)->ejecutar(27));
         Http::assertNothingSent();
@@ -32,8 +31,7 @@ final class ProcesarLoteGeminiTest extends TestCase
 
     public function test_identificador_invalido_no_intenta_google(): void
     {
-        Http::preventStrayRequests();
-        Http::fake();
+        $this->simularHttpSinRed();
 
         $this->assertSame('deshabilitado', app(ProcesarLoteGemini::class)->ejecutar(0));
         Http::assertNothingSent();

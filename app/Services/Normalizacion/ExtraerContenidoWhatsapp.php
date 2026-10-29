@@ -61,12 +61,12 @@ final class ExtraerContenidoWhatsapp
         ];
     }
 
-    private function cadena(mixed $valor): ?string
+    private function cadena($valor): ?string
     {
         return is_string($valor) && $valor !== '' ? $valor : null;
     }
 
-    private function fechaProveedor(mixed $marca): ?CarbonImmutable
+    private function fechaProveedor($marca): ?CarbonImmutable
     {
         if (is_array($marca)) {
             $marca = $marca['low'] ?? $marca['seconds'] ?? null;

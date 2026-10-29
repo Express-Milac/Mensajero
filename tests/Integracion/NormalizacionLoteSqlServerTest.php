@@ -34,18 +34,17 @@ class NormalizacionLoteSqlServerTest extends TestCase
             $segundo = $this->crearEvento($grupo);
             $tercero = $this->crearEvento($grupo);
 
-            $codigo = Artisan::call('mensajero:normalizar-lote', [
+            // Laravel 8 puede redirigir las salidas de consola a su
+            // simulador tras Artisan::migrate; Artisan::output() queda vacio.
+            // El mecanismo oficial de pruebas verifica las lineas
+            // emitidas sin depender del buffer global de Artisan.
+            $this->artisan('mensajero:normalizar-lote', [
                 'grupo' => $grupo->id,
                 '--limite' => 2,
-            ]);
-            $salida = Artisan::output();
-
-            $this->assertSame(0, $codigo, 'Vista previa fallida: '.$salida);
-            $this->assertStringContainsString(
-                'IDs: '.$primero->id.','.$segundo->id,
-                $salida,
-                'La vista previa debe listar exactamente los dos primeros eventos elegibles. Salida: '.$salida,
-            );
+            ])
+                ->expectsOutput('IDs: '.$primero->id.','.$segundo->id)
+                ->expectsOutput('No se ha modificado ningún registro. Para aplicar, indique --ids con los IDs confirmados y --aplicar.')
+                ->assertSuccessful();
 
             $this->assertSame(0, MensajeWhatsapp::query()
                 ->whereIn('evento_crudo_id', [$primero->id, $segundo->id, $tercero->id])
@@ -179,17 +178,17 @@ class NormalizacionLoteSqlServerTest extends TestCase
     {
         $clave = 'lote-'.bin2hex(random_bytes(8));
         $evento = new EventoWhatsappEntrante(
-            conexionId: (int) $grupo->conexion_id,
-            chatId: $grupo->id_chat_proveedor,
-            tipoEvento: 'mensaje',
-            tipoMensaje: 'texto',
-            eventoExternoId: $clave,
-            mensajeProveedorId: $clave,
-            contenidoCrudo: json_encode([
+            (int) $grupo->conexion_id,
+            $grupo->id_chat_proveedor,
+            'mensaje',
+            'texto',
+            $clave,
+            $clave,
+            json_encode([
                 'message' => ['conversation' => 'Texto de prueba sintética'],
             ], JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
+            CarbonImmutable::now('UTC'),
+            'v3-recolector'
         );
 
         $resultado = app(CapturarEventoWhatsappEntrante::class)->ejecutar($evento);

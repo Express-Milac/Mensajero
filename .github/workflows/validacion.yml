@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   calidad:
+    # Laravel 13 / PHP 8.4 no valida la rama de compatibilidad PHP 7.4.
+    if: ${{ !startsWith(github.head_ref, 'compatibilidad/php74-') }}
     name: Sintaxis, pruebas y calidad
     runs-on: ubuntu-latest
     timeout-minutes: 20

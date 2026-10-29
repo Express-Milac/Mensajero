@@ -12,10 +12,14 @@ use RuntimeException;
  */
 final class ClienteGeminiLote
 {
-    public function __construct(
-        private readonly PrepararContextoGemini $preparador,
-        private readonly ValidarAcontecimientosLoteGemini $validador,
-    ) {}
+    private PrepararContextoGemini $preparador;
+    private ValidarAcontecimientosLoteGemini $validador;
+
+    public function __construct(PrepararContextoGemini $preparador, ValidarAcontecimientosLoteGemini $validador)
+    {
+        $this->preparador = $preparador;
+        $this->validador = $validador;
+    }
 
     /**
      * @param array<int,array{id:int,texto:string,tipo:string,emisor?:string,responde_a?:?int}> $contexto
@@ -127,7 +131,7 @@ final class ClienteGeminiLote
         $respuesta = Http::withHeaders([
             'x-goog-api-key' => $clave,
             'Accept' => 'application/json',
-        ])->connectTimeout(5)->timeout(25)
+        ])->withOptions(['connect_timeout' => 5])->timeout(25)
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.$modelo.':generateContent', $solicitud);
 
         if (! $respuesta->successful()) {
@@ -162,7 +166,7 @@ final class ClienteGeminiLote
         ];
     }
 
-    private function enteroONulo(mixed $valor): ?int
+    private function enteroONulo($valor): ?int
     {
         return is_int($valor) && $valor >= 0 ? $valor : null;
     }

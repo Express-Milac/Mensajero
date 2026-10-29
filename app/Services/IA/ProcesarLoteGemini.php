@@ -16,14 +16,22 @@ use Throwable;
  */
 final class ProcesarLoteGemini
 {
-    public function __construct(
-        private readonly PoliticaEnvioGemini $politica,
-        private readonly PoliticaLotesGemini $lotes,
-        private readonly ControlInterpretacionGemini $control,
-        private readonly ConstruirDialogoGemini $dialogo,
-        private readonly ClienteGeminiLote $cliente,
-        private readonly PersistirResultadosLoteGemini $persistencia,
-    ) {}
+    private PoliticaEnvioGemini $politica;
+    private PoliticaLotesGemini $lotes;
+    private ControlInterpretacionGemini $control;
+    private ConstruirDialogoGemini $dialogo;
+    private ClienteGeminiLote $cliente;
+    private PersistirResultadosLoteGemini $persistencia;
+
+    public function __construct(PoliticaEnvioGemini $politica, PoliticaLotesGemini $lotes, ControlInterpretacionGemini $control, ConstruirDialogoGemini $dialogo, ClienteGeminiLote $cliente, PersistirResultadosLoteGemini $persistencia)
+    {
+        $this->politica = $politica;
+        $this->lotes = $lotes;
+        $this->control = $control;
+        $this->dialogo = $dialogo;
+        $this->cliente = $cliente;
+        $this->persistencia = $persistencia;
+    }
 
     public function ejecutar(int $loteId): string
     {

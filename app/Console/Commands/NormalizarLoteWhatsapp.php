@@ -79,7 +79,7 @@ final class NormalizarLoteWhatsapp extends Command
                 ->map(fn ($id): int => (int) $id)
                 ->all();
 
-            $this->components->info(sprintf('Vista previa del grupo #%d: %d mensaje(s) elegibles.', $grupoId, count($ids)));
+            $this->info(sprintf('Vista previa del grupo #%d: %d mensaje(s) elegibles.', $grupoId, count($ids)));
             $this->line('IDs: '.($ids === [] ? '(ninguno)' : implode(',', $ids)));
             $this->line('No se ha modificado ningún registro. Para aplicar, indique --ids con los IDs confirmados y --aplicar.');
 
@@ -169,7 +169,7 @@ final class NormalizarLoteWhatsapp extends Command
             }
         }
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Grupo #%d: %d normalizados, %d ya normalizados, %d IDs evaluados.',
             $grupoId,
             $normalizados,

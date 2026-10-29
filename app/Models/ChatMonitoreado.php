@@ -16,9 +16,7 @@ class ChatMonitoreado extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'es_monitoreado' => 'boolean',
             'es_visible_tablero' => 'boolean',
             'es_activo' => 'boolean',
@@ -26,7 +24,6 @@ class ChatMonitoreado extends Model
             'visto_primera_vez_en' => 'immutable_datetime',
             'visto_ultima_vez_en' => 'immutable_datetime',
         ];
-    }
 
     public function conexion(): BelongsTo
     {

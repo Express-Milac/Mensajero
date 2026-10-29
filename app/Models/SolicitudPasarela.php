@@ -12,11 +12,8 @@ class SolicitudPasarela extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'marca_tiempo_pasarela' => 'integer',
             'recibido_en' => 'immutable_datetime',
         ];
-    }
 }

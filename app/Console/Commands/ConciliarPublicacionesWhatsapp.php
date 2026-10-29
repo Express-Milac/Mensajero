@@ -91,15 +91,18 @@ final class ConciliarPublicacionesWhatsapp extends Command
                     return false;
                 }
 
-                $clave = $evento->conexion?->clave_conexion;
+                $conexion = $evento->conexion;
+                $chat = $evento->chat;
+                $clave = $conexion !== null ? $conexion->clave_conexion : null;
                 if (! is_string($clave)
                     || preg_match('/^ensayo-redis-([0-9a-f]{16})$/D', $clave, $partes) !== 1
                     || $evento->id_evento_externo !== $clave
-                    || $evento->chat?->id_chat_proveedor !== $clave.'@g.us'
-                    || ! $evento->chat?->es_monitoreado
-                    || ! $evento->chat?->es_activo
-                    || $evento->chat?->tipo_chat !== 'grupo'
-                    || (int) $evento->chat?->conexion_id !== (int) $evento->conexion_id) {
+                    || $chat === null
+                    || $chat->id_chat_proveedor !== $clave.'@g.us'
+                    || ! $chat->es_monitoreado
+                    || ! $chat->es_activo
+                    || $chat->tipo_chat !== 'grupo'
+                    || (int) $chat->conexion_id !== (int) $evento->conexion_id) {
                     return false;
                 }
 
@@ -148,7 +151,7 @@ final class ConciliarPublicacionesWhatsapp extends Command
             }
         }
 
-        $this->components->info(sprintf(
+        $this->info(sprintf(
             'Examinados: %d. Elegibles: %d. Restablecidos: %d.',
             $identificadores->count(),
             $elegibles,

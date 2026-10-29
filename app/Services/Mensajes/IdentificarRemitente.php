@@ -69,7 +69,7 @@ final class IdentificarRemitente
         $contacto = $mensaje !== null && $mensaje->relationLoaded('remitente')
             ? $mensaje->getRelation('remitente')
             : null;
-        $nombre = $contacto?->nombre_visible ?: $contacto?->nombre_notificacion;
+        $nombre = $contacto === null ? null : ($contacto->nombre_visible ?: $contacto->nombre_notificacion);
         if (is_string($nombre) && trim($nombre) !== '') {
             return trim($nombre);
         }
@@ -103,7 +103,7 @@ final class IdentificarRemitente
 
         try {
             $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return null;
         }
 
@@ -145,7 +145,7 @@ final class IdentificarRemitente
     {
         try {
             $crudo = json_decode((string) $evento->contenido, true, 64, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+        } catch (JsonException $error) {
             return null;
         }
 

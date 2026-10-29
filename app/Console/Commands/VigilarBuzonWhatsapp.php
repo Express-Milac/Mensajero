@@ -64,7 +64,7 @@ final class VigilarBuzonWhatsapp extends Command
             || $medidas['publicados_antiguos'] > 0
             || $medidas['reservas_vencidas'] > 0;
 
-        $this->components->info('Diagnóstico de buzón SQL Server (solo lectura).');
+        $this->info('Diagnóstico de buzón SQL Server (solo lectura).');
         $this->line('Umbral de atraso: '.$minutos.' minutos.');
         $this->line('Pendientes de publicación: '.$medidas['pendientes_publicacion']);
         $this->line('Pendientes de publicación atrasados: '.$medidas['pendientes_atrasados']);
@@ -75,7 +75,7 @@ final class VigilarBuzonWhatsapp extends Command
         if ($alerta) {
             $this->warn('Atención: existen avisos atrasados. Un aviso antiguo NO prueba que Redis haya perdido el trabajo.');
         } else {
-            $this->components->info('No se detectaron atrasos según el filtro y umbral indicados.');
+            $this->info('No se detectaron atrasos según el filtro y umbral indicados.');
         }
 
         if ($this->option('desglose') === true) {

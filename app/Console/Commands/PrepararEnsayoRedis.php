@@ -38,7 +38,7 @@ final class PrepararEnsayoRedis extends Command
         $simularPerdida = $this->option('simular-perdida') === true;
 
         if ($this->option('aplicar') !== true) {
-            $this->components->info('Vista previa: se creará una conexión de prueba, un grupo ficticio y un único evento de texto.');
+            $this->info('Vista previa: se creará una conexión de prueba, un grupo ficticio y un único evento de texto.');
             if ($simularPerdida) {
                 $this->line('Se simulará un aviso perdido con fecha de publicación de hace 31 minutos; no se publicará nada en Redis.');
             }
@@ -69,17 +69,17 @@ final class PrepararEnsayoRedis extends Command
             ]);
 
             $captura = $capturador->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'ensayo-redis-'.$sufijo,
-                mensajeProveedorId: 'ensayo-redis-'.$sufijo,
-                contenidoCrudo: json_encode([
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'ensayo-redis-'.$sufijo,
+                'ensayo-redis-'.$sufijo,
+                json_encode([
                     'message' => ['conversation' => 'ENSAYO REDIS MILAC - MENSAJE FICTICIO'],
                 ], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
             ));
 
             if ($captura->estado !== 'aceptado' || $captura->eventoCrudoId === null) {
@@ -106,7 +106,7 @@ final class PrepararEnsayoRedis extends Command
             return ['evento_id' => $captura->eventoCrudoId, 'grupo_id' => (int) $grupo->id];
         }, 3);
 
-        $this->components->info('Ensayo preparado únicamente en SQL Server _test.');
+        $this->info('Ensayo preparado únicamente en SQL Server _test.');
         $this->line('Evento sintético: #'.$resultado['evento_id']);
         $this->line('Grupo ficticio: #'.$resultado['grupo_id']);
         $this->line('Cola exclusiva: '.$cola);

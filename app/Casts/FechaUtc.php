@@ -5,7 +5,6 @@ namespace App\Casts;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * SQL Server datetime/datetime2 no guarda zona horaria.
@@ -19,7 +18,7 @@ final class FechaUtc implements CastsAttributes
      */
     public bool $withoutObjectCaching = true;
 
-    public function get(Model $model, string $key, mixed $value, array $attributes): ?CarbonImmutable
+    public function get($model, $key, $value, $attributes): ?CarbonImmutable
     {
         if ($value === null || $value === '') {
             return null;
@@ -32,7 +31,7 @@ final class FechaUtc implements CastsAttributes
         return CarbonImmutable::parse((string) $value, 'UTC')->utc();
     }
 
-    public function set(Model $model, string $key, mixed $value, array $attributes): ?string
+    public function set($model, $key, $value, $attributes): ?string
     {
         if ($value === null || $value === '') {
             return null;

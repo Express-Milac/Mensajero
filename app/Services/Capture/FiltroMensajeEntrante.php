@@ -7,7 +7,7 @@ use App\Models\ChatMonitoreado;
 
 final class FiltroMensajeEntrante
 {
-    public function decidir(?ChatMonitoreado $chat, string $tipoMensaje): DisposicionEntrada
+    public function decidir(?ChatMonitoreado $chat, string $tipoMensaje): string
     {
         if (in_array(mb_strtolower($tipoMensaje), ['sticker', 'pegatina'], true)) {
             return DisposicionEntrada::IgnorarPegatina;

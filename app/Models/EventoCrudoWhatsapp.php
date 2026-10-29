@@ -17,13 +17,10 @@ class EventoCrudoWhatsapp extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'recibido_en' => FechaUtc::class,
             'procesado_en' => FechaUtc::class,
         ];
-    }
 
     public function conexion(): BelongsTo
     {

@@ -1,0 +1,155 @@
+name: Comprobar compatibilidad de sintaxis PHP 7.4
+
+on:
+  push:
+    branches:
+      - 'compatibilidad/php74-*'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sintaxis-php74:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Interpretar codigo con PHP 7.4 real
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Obtener codigo del PR sin credenciales operativas
+        uses: actions/checkout@v4
+
+      - name: Preparar PHP 7.4 independiente
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: none
+
+      - name: Mostrar version del interprete
+        run: php -v
+
+      - name: Detectar archivos incompatibles sin cargar Laravel ni BD
+        run: bash herramientas/comprobar-sintaxis-php74.sh
+
+      - name: Comprobar enrutador requerido por artisan serve en Laravel 8
+        run: |
+          test -f server.php
+          php -l server.php
+
+      - name: Detectar sintaxis PHP8 en vistas sin tocar base de datos
+        run: php herramientas/comprobar-vistas-php74.php
+
+  contratos-base:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Contratos de WhatsApp y roles sin Laravel
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 7.4 real
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: none
+
+      - name: Probar valores de contratos originales en PHP 7.4
+        run: php herramientas/probar-contratos-php74.php
+
+  dependencias-y-arranque:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Resolver Laravel 8 y probar en entorno aislado
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: 'base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      QUEUE_CONNECTION: sync
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      BROADCAST_CONNECTION: 'null'
+      MENSAJERO_IA_LOTES_HABILITADOS: 'false'
+      MENSAJERO_IA_ENVIO_AUTORIZADO: 'false'
+      IA_HABILITADA: 'false'
+
+    steps:
+      - name: Clonar solo este repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar PHP 7.4 y Composer 2 en runner aislado
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, dom, xml, zip, pdo_sqlite, bcmath, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Comprobar herramientas del entorno de pruebas
+        run: |
+          php -v
+          composer --version
+          php -m | grep -Ei 'pdo_sqlite|mbstring|xml|bcmath|fileinfo'
+
+      - name: Validar composer.json y composer.lock sin cambiar versiones
+        run: composer validate --no-check-publish --strict
+
+      - name: Instalar versiones exactas del composer.lock del proyecto
+        run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
+
+      - name: Impedir lock de Laravel 13 o plataforma distinta
+        run: php herramientas/verificar-lock-php74.php
+
+      - name: Verificar requisitos físicos del runner
+        run: composer check-platform-reqs
+
+      - name: Iniciar Artisan sin conectarse a SQL corporativo
+        run: |
+          php artisan --version
+          php artisan route:list
+
+      - name: Compilar todas las vistas con Laravel 8
+        run: php artisan view:cache
+
+      - name: Ejecutar pruebas aisladas sin servicios externos
+        run: ./vendor/bin/phpunit -c phpunit-lotes.xml
+
+
+  recolector-node20:
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    name: Probar recolector separado en Node 20 Linux compatible
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: recolector-whatsapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Node 20 en Linux compatible (no Debian 9)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verificar motor de ejecucion
+        run: |
+          node --version
+          npm --version
+          node -e "if (Number(process.versions.node.split('.')[0]) < 20) process.exit(1)"
+
+      - name: Instalar dependencias con scripts y parche comprobado
+        run: npm install --no-audit --no-fund
+
+      - name: Compilar TypeScript y verificar tipos
+        run: |
+          npm run verificar
+          npm run construir
+
+      - name: Ejecutar pruebas sin conectar WhatsApp
+        run: npm run pruebas

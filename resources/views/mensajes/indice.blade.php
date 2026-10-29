@@ -1,5 +1,5 @@
 <x-layout title="Mensajero MILAC">
-    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion', [], false) }}" data-credencial-tiempo-real="{{ route('mensajes.credencial.tiempo-real', [], false) }}">
+    <section class="centro-hero" data-panorama-url="{{ route('mensajes.actualizacion') }}" data-credencial-tiempo-real="{{ route('mensajes.credencial.tiempo-real') }}">
         <div class="centro-hero-texto">
             <span class="centro-hero-marca">EXPRESS MILAC</span>
             <h1>Mensajero <span>MILAC</span></h1>

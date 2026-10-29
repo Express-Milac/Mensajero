@@ -21,8 +21,11 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
 
     public int $timeout = 45;
 
-    public function __construct(public readonly int $mensajeId)
+    public int $mensajeId;
+
+    public function __construct(int $mensajeId)
     {
+        $this->mensajeId = $mensajeId;
         $this->onConnection('redis');
         $this->onQueue((string) config('mensajero.ia.cola', 'mensajero_ia'));
     }
@@ -56,11 +59,13 @@ final class AnalizarMensajeGeminiTrabajo implements ShouldQueue
      */
     public static function clasificarEstado(string $resultado): string
     {
-        return match ($resultado) {
-            'identificado_ia', 'pendiente_revision', 'sin_evento', 'duplicado' => 'finalizado',
-            'no_elegible', 'sin_texto' => 'omitido',
-            default => 'requiere_revision',
-        };
+        if (in_array($resultado, ['identificado_ia', 'pendiente_revision', 'sin_evento', 'duplicado'], true)) {
+            return 'finalizado';
+        }
+        if (in_array($resultado, ['no_elegible', 'sin_texto'], true)) {
+            return 'omitido';
+        }
+        return 'requiere_revision';
     }
 
     public function failed(?Throwable $error): void

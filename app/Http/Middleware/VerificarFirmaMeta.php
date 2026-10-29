@@ -10,9 +10,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerificarFirmaMeta
 {
-    public function __construct(
-        private readonly ValidadorFirmaMeta $validador,
-    ) {}
+    private ValidadorFirmaMeta $validador;
+
+    public function __construct(ValidadorFirmaMeta $validador)
+    {
+        $this->validador = $validador;
+    }
 
     public function handle(Request $request, Closure $siguiente): Response
     {

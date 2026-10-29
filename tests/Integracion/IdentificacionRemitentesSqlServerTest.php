@@ -53,20 +53,21 @@ class IdentificacionRemitentesSqlServerTest extends TestCase
             $capturar = app(CapturarEventoWhatsappEntrante::class);
             foreach (['Mensaje original de Laura', 'Segunda respuesta de Laura'] as $indice => $texto) {
                 $captura = $capturar->ejecutar(new EventoWhatsappEntrante(
-                    conexionId: (int) $conexion->id,
-                    chatId: $grupo->id_chat_proveedor,
-                    tipoEvento: 'mensaje',
-                    tipoMensaje: 'texto',
-                    eventoExternoId: 'identidad-'.$sufijo.'-'.$indice,
-                    mensajeProveedorId: 'identidad-'.$sufijo.'-'.$indice,
-                    contenidoCrudo: json_encode([
+                    (int) $conexion->id,
+                    $grupo->id_chat_proveedor,
+                    'mensaje',
+                    'texto',
+                    'identidad-'.$sufijo.'-'.$indice,
+                    'identidad-'.$sufijo.'-'.$indice,
+                    json_encode([
                         'key' => ['remoteJid' => $grupo->id_chat_proveedor, 'participant' => $jid],
                         'pushName' => 'Laura WhatsApp',
                         'message' => ['conversation' => $texto],
                     ], JSON_THROW_ON_ERROR),
-                    recibidoEn: CarbonImmutable::now('UTC')->subSeconds($indice),
-                    versionContrato: 'v3-recolector',
-                    remitenteProveedorId: $jid,
+                    CarbonImmutable::now('UTC')->subSeconds($indice),
+                    'v3-recolector',
+                    null,
+                    $jid
                 ));
                 $this->assertSame('aceptado', $captura->estado);
             }
@@ -126,20 +127,21 @@ class IdentificacionRemitentesSqlServerTest extends TestCase
                 'es_monitoreado' => true,
             ]);
             $otraCaptura = $capturar->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $otraConexion->id,
-                chatId: $otroGrupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'identidad-otra-'.$sufijo,
-                mensajeProveedorId: 'identidad-otra-'.$sufijo,
-                contenidoCrudo: json_encode([
+                (int) $otraConexion->id,
+                $otroGrupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'identidad-otra-'.$sufijo,
+                'identidad-otra-'.$sufijo,
+                json_encode([
                     'key' => ['remoteJid' => $otroGrupo->id_chat_proveedor, 'participant' => $jid],
                     'pushName' => 'Otro perfil de WhatsApp',
                     'message' => ['conversation' => 'Mensaje de otra conexión'],
                 ], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: $jid,
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
+                null,
+                $jid
             ));
             $this->assertSame('aceptado', $otraCaptura->estado);
             $this->get('/mensajes/grupos/'.$otroGrupo->id)

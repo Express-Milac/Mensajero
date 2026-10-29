@@ -44,7 +44,7 @@ if ($Servicio -ne '') {
     switch ($Servicio) {
         'web' {
             while ($true) {
-                & php artisan serve --host=127.0.0.1 --port=8000
+                & php artisan serve --host=127.0.0.1 --port=8000 --no-reload
                 Write-Warning 'El servidor web se cerro; se intentara levantar nuevamente.'
                 Start-Sleep -Seconds 5
             }
@@ -202,6 +202,7 @@ function VerificarRedis {
 function ValidarConfiguracion {
     if (-not (Test-Path -LiteralPath (Join-Path $raiz '.env'))) { throw 'Falta .env de Laravel.' }
     if (-not (Test-Path -LiteralPath (Join-Path $recolector '.env'))) { throw 'Falta .env del recolector.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $raiz 'server.php') -PathType Leaf)) { throw 'Falta server.php requerido por artisan serve de Laravel 8. Actualice la rama PHP74.' }
     if (-not (Test-Path -LiteralPath (Join-Path $raiz 'vendor\autoload.php'))) { throw 'Falta vendor; ejecutar composer install.' }
     if (-not (Test-Path -LiteralPath (Join-Path $recolector 'node_modules'))) { throw 'Falta node_modules del recolector; ejecutar npm install.' }
     foreach ($programa in @('php.exe', 'npm.cmd', 'wsl.exe', 'powershell.exe')) {
@@ -242,6 +243,24 @@ function ValidarConfiguracion {
     if ($LASTEXITCODE -ne 0 -or -not $programacion.Contains('mensajero:despachar-buzon')) {
         throw 'El programador Laravel no tiene activado mensajero:despachar-buzon.'
     }
+}
+
+function EsperarServidorWeb {
+    # Un proceso PowerShell ACTIVO no demuestra que PHP haya abierto el puerto.
+    # /disponible es la ruta de vida sin SQL Server ni datos operativos.
+    for ($intento = 1; $intento -le 15; $intento++) {
+        try {
+            $respuesta = Invoke-WebRequest -Uri 'http://127.0.0.1:8000/disponible' -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            if ([int]$respuesta.StatusCode -eq 200) {
+                Write-Host 'WEB LISTA: http://127.0.0.1:8000/tablero' -ForegroundColor Green
+                return
+            }
+        } catch {
+            # Esperar mientras el proceso web termina de arrancar.
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    throw 'Laravel no respondio HTTP 200 en /disponible. Revise la ventana WEB; no se iniciara el resto de procesos.'
 }
 
 function AbrirServicio([string] $nombre, $datos) {
@@ -304,6 +323,7 @@ try {
             }
             try {
                 AbrirServicio 'web' $nuevos
+                EsperarServidorWeb
                 AbrirServicio 'programador' $nuevos
                 AbrirServicio 'normalizador' $nuevos
                 AbrirServicio 'gemini' $nuevos

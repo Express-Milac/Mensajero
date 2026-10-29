@@ -77,13 +77,13 @@ class VistaMensajesSqlServerTest extends TestCase
             $secretoPrueba = 'mensaje_secreto_'.$sufijo;
             $identificadorPrivado = 'contacto-'.$sufijo.'@s.whatsapp.net';
             $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'vista-evento-'.$sufijo,
-                mensajeProveedorId: 'vista-evento-'.$sufijo,
-                contenidoCrudo: json_encode([
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'vista-evento-'.$sufijo,
+                'vista-evento-'.$sufijo,
+                json_encode([
                     'key' => [
                         'remoteJid' => 'grupo-interno-'.$sufijo.'@g.us',
                         'participantPn' => $identificadorPrivado,
@@ -93,9 +93,10 @@ class VistaMensajesSqlServerTest extends TestCase
                         'messageContextInfo' => ['messageSecret' => $secretoPrueba],
                     ],
                 ], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
 
             $this->assertSame('aceptado', $captura->estado);
@@ -119,9 +120,12 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Temas clave del día')
                 ->assertSee('Posibles acuerdos mencionados')
                 ->assertSee('Menciones para revisar')
-                ->assertSee('Actualizar ahora')
+                // El tablero se actualiza por su estado y la ruta de refresco,
+                // sin boton manual. La vista /mensajes si conserva ese boton.
+                ->assertSee('id="estado-actualizacion"', false)
+                ->assertSee('Comprobando mensajes...')
                 ->assertSee('data-buscar-conversaciones', false)
-                ->assertSee('data-modo-tarjetas="lista"', false)
+                ->assertSee('centro-lista-grupos modo-lista', false)
                 ->assertSee('Ver mensaje original')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Llegó '.$contenido)
@@ -171,16 +175,17 @@ class VistaMensajesSqlServerTest extends TestCase
             // sin necesidad de normalizarlo ni volver a cargar la página.
             $mensajeNuevo = 'Nuevo mensaje visible sin recargar '.$sufijo;
             $capturaNueva = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'vista-nuevo-'.$sufijo,
-                mensajeProveedorId: 'vista-nuevo-'.$sufijo,
-                contenidoCrudo: json_encode(['message' => ['conversation' => $mensajeNuevo]], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC')->addSecond(),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'vista-nuevo-'.$sufijo,
+                'vista-nuevo-'.$sufijo,
+                json_encode(['message' => ['conversation' => $mensajeNuevo]], JSON_THROW_ON_ERROR),
+                CarbonImmutable::now('UTC')->addSecond(),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
             $this->assertSame('aceptado', $capturaNueva->estado);
 
@@ -195,6 +200,8 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/mensajes')
                 ->assertOk()
                 ->assertSee('Explorar conversaciones')
+                ->assertSee('Actualizar ahora')
+                ->assertSee('data-actualizar-manual', false)
                 ->assertSee('Conversaciones recientes')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Grupo de prueba visual '.$sufijo)
@@ -206,7 +213,9 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertSee('Gestor de grupos')
                 ->assertSee('Habilitar grupos')
                 ->assertSee('Grupo de prueba visual '.$sufijo)
-                ->assertSee('Ver conversación')
+                // El gestor actual enlaza al historial con la etiqueta "Conversación".
+                // Asegurar el enlace real, no solo un texto presente en la navegación.
+                ->assertSee('href="'.route('mensajes.grupo', $grupo->id).'" class="gestor-ver-grupo">Conversación', false)
                 ->assertSee('Acceso controlado')
                 ->assertSee('css/interfaz-unificada.css');
 
@@ -348,7 +357,10 @@ class VistaMensajesSqlServerTest extends TestCase
                 ->assertDontSee('Temas clave del día')
                 ->assertSee('Captura recolector '.$sufijo)
                 ->assertSee('Captura pasarela '.$sufijo)
-                ->assertSee('Grupos con carruseles independientes')
+                // La plantilla presenta grupos separados en una lista;
+                // cada grupo conserva su carrusel y su identificador propio.
+                ->assertSee('grupos en esta vista')
+                ->assertSee('Seguimiento por grupo: eventos y mensajes originales')
                 ->assertSee('Carrusel de mensajes de Captura recolector '.$sufijo)
                 ->assertSee('Carrusel de mensajes de Captura pasarela '.$sufijo)
                 ->assertSee('data-grupo-id="'.$grupoRecolector->id.'"', false)
@@ -426,16 +438,17 @@ class VistaMensajesSqlServerTest extends TestCase
             $this->get('/mensajes/grupos/'.$grupo->id)->assertNotFound();
 
             $rechazo = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-                conexionId: (int) $conexion->id,
-                chatId: $grupo->id_chat_proveedor,
-                tipoEvento: 'mensaje',
-                tipoMensaje: 'texto',
-                eventoExternoId: 'desactivado-'.$sufijo,
-                mensajeProveedorId: 'desactivado-'.$sufijo,
-                contenidoCrudo: json_encode(['message' => ['conversation' => 'No capturar']], JSON_THROW_ON_ERROR),
-                recibidoEn: CarbonImmutable::now('UTC'),
-                versionContrato: 'v3-recolector',
-                remitenteProveedorId: '5219990000000@s.whatsapp.net',
+                (int) $conexion->id,
+                $grupo->id_chat_proveedor,
+                'mensaje',
+                'texto',
+                'desactivado-'.$sufijo,
+                'desactivado-'.$sufijo,
+                json_encode(['message' => ['conversation' => 'No capturar']], JSON_THROW_ON_ERROR),
+                CarbonImmutable::now('UTC'),
+                'v3-recolector',
+                null,
+                '5219990000000@s.whatsapp.net'
             ));
             $this->assertNotSame('aceptado', $rechazo->estado);
             $this->assertSame(0, EventoCrudoWhatsapp::query()

@@ -4,26 +4,61 @@ namespace App\Data\WhatsApp;
 
 use Carbon\CarbonImmutable;
 
-final readonly class EventoWhatsappEntrante
+final class EventoWhatsappEntrante
 {
+    public int $conexionId;
+    public string $chatId;
+    public string $tipoEvento;
+    public string $tipoMensaje;
+    public ?string $eventoExternoId;
+    public ?string $mensajeProveedorId;
+    public string $contenidoCrudo;
+    public CarbonImmutable $recibidoEn;
+    public string $versionContrato;
+    public ?ArchivoWhatsappEntrante $archivo;
+    public ?string $remitenteProveedorId;
+    public ?string $mensajeCitadoProveedorId;
+    public ?string $mensajeObjetivoProveedorId;
+    public ?string $nombreRemitente;
+    public ?string $fuenteNombreRemitente;
+    public ?string $telefonoRemitente;
+
     public function __construct(
-        public int $conexionId,
-        public string $chatId,
-        public string $tipoEvento,
-        public string $tipoMensaje,
-        public ?string $eventoExternoId,
-        public ?string $mensajeProveedorId,
-        public string $contenidoCrudo,
-        public CarbonImmutable $recibidoEn,
-        public string $versionContrato = 'v1',
-        public ?ArchivoWhatsappEntrante $archivo = null,
-        public ?string $remitenteProveedorId = null,
-        public ?string $mensajeCitadoProveedorId = null,
-        public ?string $mensajeObjetivoProveedorId = null,
-        public ?string $nombreRemitente = null,
-        public ?string $fuenteNombreRemitente = null,
-        public ?string $telefonoRemitente = null,
-    ) {}
+        int $conexionId,
+        string $chatId,
+        string $tipoEvento,
+        string $tipoMensaje,
+        ?string $eventoExternoId,
+        ?string $mensajeProveedorId,
+        string $contenidoCrudo,
+        CarbonImmutable $recibidoEn,
+        string $versionContrato = 'v1',
+        ?ArchivoWhatsappEntrante $archivo = null,
+        ?string $remitenteProveedorId = null,
+        ?string $mensajeCitadoProveedorId = null,
+        ?string $mensajeObjetivoProveedorId = null,
+        ?string $nombreRemitente = null,
+        ?string $fuenteNombreRemitente = null,
+        ?string $telefonoRemitente = null 
+    ) {
+        $this->conexionId = $conexionId;
+        $this->chatId = $chatId;
+        $this->tipoEvento = $tipoEvento;
+        $this->tipoMensaje = $tipoMensaje;
+        $this->eventoExternoId = $eventoExternoId;
+        $this->mensajeProveedorId = $mensajeProveedorId;
+        $this->contenidoCrudo = $contenidoCrudo;
+        $this->recibidoEn = $recibidoEn;
+        $this->versionContrato = $versionContrato;
+        $this->archivo = $archivo;
+        $this->remitenteProveedorId = $remitenteProveedorId;
+        $this->mensajeCitadoProveedorId = $mensajeCitadoProveedorId;
+        $this->mensajeObjetivoProveedorId = $mensajeObjetivoProveedorId;
+        $this->nombreRemitente = $nombreRemitente;
+        $this->fuenteNombreRemitente = $fuenteNombreRemitente;
+        $this->telefonoRemitente = $telefonoRemitente;
+    }
+
 
     public function hashContenidoSha256(): string
     {

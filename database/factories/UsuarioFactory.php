@@ -17,15 +17,15 @@ class UsuarioFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'nombre' => $this->faker->name,
+            'email' => $this->faker->unique()->safeEmail,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('contrasena-prueba'),
             'remember_token' => Str::random(10),
         ];
     }
 
-    public function sinVerificar(): static
+    public function sinVerificar(): self
     {
         return $this->state(fn (array $atributos) => [
             'email_verified_at' => null,

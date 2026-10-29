@@ -225,7 +225,7 @@
 
                     <div class="remitente-grupo">
                         <span>Último grupo</span>
-                        <strong title="{{ $fila['evento']->chat?->nombre_interno ?: ($fila['evento']->chat?->nombre_grupo ?: 'Grupo sin nombre') }}">{{ $fila['evento']->chat?->nombre_interno ?: ($fila['evento']->chat?->nombre_grupo ?: 'Grupo sin nombre') }}</strong>
+                        <strong title="{{ optional($fila['evento']->chat)->nombre_interno ?: (optional($fila['evento']->chat)->nombre_grupo ?: 'Grupo sin nombre') }}">{{ optional($fila['evento']->chat)->nombre_interno ?: (optional($fila['evento']->chat)->nombre_grupo ?: 'Grupo sin nombre') }}</strong>
                     </div>
 
                     <div class="remitente-datos">
@@ -239,7 +239,7 @@
                         </div>
                         <div class="remitente-dato remitente-dato-fecha">
                             <span>Última participación</span>
-                            <strong>{{ $fila['evento']->recibido_en?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? 'Sin fecha' }}</strong>
+                            <strong>{{ ($fila['evento']->recibido_en !== null ? $fila['evento']->recibido_en->timezone(config('app.timezone'))->format('d/m/Y H:i') : 'Sin fecha') }}</strong>
                         </div>
                     </div>
 

@@ -40,7 +40,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
 
             $respuesta = $this->capturar($conexion, $chat, 'respuesta-'.$sufijo, [
                 'message' => ['extendedTextMessage' => ['text' => 'Recibido']],
-            ], remitente: $remitente, citado: $idOriginal);
+            ], $remitente, $idOriginal);
 
             $normalizador = app(NormalizarEventoWhatsapp::class);
             $this->assertSame('normalizado', $normalizador->ejecutar((int) $respuesta->id));
@@ -55,7 +55,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
             $original = $this->capturar($conexion, $chat, $idOriginal, [
                 'message' => ['conversation' => 'Unidad disponible'],
                 'messageTimestamp' => 1792429200,
-            ], remitente: $remitente);
+            ], $remitente);
 
             $this->assertSame('normalizado', $normalizador->ejecutar((int) $original->id));
             $this->assertSame('duplicado', $normalizador->ejecutar((int) $original->id));
@@ -86,7 +86,7 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
 
             $edicion = $this->capturar($conexion, $chat, 'edicion-'.$sufijo, [
                 'message' => ['protocolMessage' => ['type' => 14]],
-            ], tipoEvento: 'edicion', objetivo: 'original-'.$sufijo);
+            ], null, null, 'edicion', 'original-'.$sufijo);
 
             $normalizador = app(NormalizarEventoWhatsapp::class);
             $this->assertSame('pendiente_semantica', $normalizador->ejecutar((int) $edicion->id));
@@ -262,21 +262,22 @@ class NormalizacionWhatsappSqlServerTest extends TestCase
         ?string $remitente = null,
         ?string $citado = null,
         string $tipoEvento = 'mensaje',
-        ?string $objetivo = null,
+        ?string $objetivo = null
     ): EventoCrudoWhatsapp {
         $captura = app(CapturarEventoWhatsappEntrante::class)->ejecutar(new EventoWhatsappEntrante(
-            conexionId: (int) $conexion->id,
-            chatId: $chat->id_chat_proveedor,
-            tipoEvento: $tipoEvento,
-            tipoMensaje: 'texto',
-            eventoExternoId: $idExterno,
-            mensajeProveedorId: $idExterno,
-            contenidoCrudo: json_encode($contenido, JSON_THROW_ON_ERROR),
-            recibidoEn: CarbonImmutable::now('UTC'),
-            versionContrato: 'v3-recolector',
-            remitenteProveedorId: $remitente,
-            mensajeCitadoProveedorId: $citado,
-            mensajeObjetivoProveedorId: $objetivo,
+            (int) $conexion->id,
+            $chat->id_chat_proveedor,
+            $tipoEvento,
+            'texto',
+            $idExterno,
+            $idExterno,
+            json_encode($contenido, JSON_THROW_ON_ERROR),
+            CarbonImmutable::now('UTC'),
+            'v3-recolector',
+            null,
+            $remitente,
+            $citado,
+            $objetivo
         ));
 
         $this->assertSame('aceptado', $captura->estado);

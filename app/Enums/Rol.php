@@ -2,18 +2,26 @@
 
 namespace App\Enums;
 
-enum Rol: string
+/** Roles persistidos como cadenas en SQL Server, compatibles con PHP 7.4. */
+final class Rol
 {
-    case Administrador = 'administrador';
-    case Supervisor = 'supervisor';
-    case Visualizador = 'visualizador';
+    public const Administrador = 'administrador';
+    public const Supervisor = 'supervisor';
+    public const Visualizador = 'visualizador';
 
-    public function etiqueta(): string
+    public static function etiqueta(string $rol): string
     {
-        return match ($this) {
-            self::Administrador => 'Administrador',
-            self::Supervisor => 'Supervisor',
-            self::Visualizador => 'Visualizador',
-        };
+        switch ($rol) {
+            case self::Administrador:
+                return 'Administrador';
+            case self::Supervisor:
+                return 'Supervisor';
+            case self::Visualizador:
+                return 'Visualizador';
+            default:
+                return 'Desconocido';
+        }
     }
+
+    private function __construct() {}
 }
