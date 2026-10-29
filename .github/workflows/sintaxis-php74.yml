@@ -33,6 +33,11 @@ jobs:
       - name: Detectar archivos incompatibles sin cargar Laravel ni BD
         run: bash herramientas/comprobar-sintaxis-php74.sh
 
+      - name: Comprobar enrutador requerido por artisan serve en Laravel 8
+        run: |
+          test -f server.php
+          php -l server.php
+
       - name: Detectar sintaxis PHP8 en vistas sin tocar base de datos
         run: php herramientas/comprobar-vistas-php74.php
 
