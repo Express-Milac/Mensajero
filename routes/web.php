@@ -11,7 +11,9 @@ use App\Http\Controllers\Remitentes\ControladorRemitentes;
 use App\Services\DiagnosticoInfraestructura;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/tablero');
+Route::get('/', function () {
+    return redirect()->route('tablero');
+});
 
 // Laravel 13 registraba esta ruta desde bootstrap/app.php.
 // Laravel 8 necesita declararla expresamente; no verifica SQL ni revela datos.
