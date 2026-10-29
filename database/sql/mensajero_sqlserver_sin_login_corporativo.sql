@@ -314,3 +314,153 @@ ALTER TABLE dbo.[mensajero_identidades_remitentes] ADD CONSTRAINT [mensajero_ide
 ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [nombre_remitente] nvarchar(120) NULL;
 ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [fuente_nombre_remitente] nvarchar(16) NULL;
 ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [telefono_remitente] nvarchar(20) NULL;
+
+-- Migracion: 2026_10_21_235959_crear_analisis_operativos_ia.php
+CREATE TABLE dbo.[mensajero_analisis_operativos_ia] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [mensaje_whatsapp_id] bigint NOT NULL,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [estado] nvarchar(32) NOT NULL,
+    [categoria] nvarchar(40) NULL,
+    [titulo] nvarchar(180) NULL,
+    [resumen] nvarchar(max) NULL,
+    [evidencias_json] nvarchar(max) NOT NULL,
+    [modelo] nvarchar(90) NOT NULL,
+    [hash_contexto] nvarchar(64) NOT NULL,
+    [tokens_entrada] int NULL,
+    [tokens_salida] int NULL,
+    [creado_en] datetime2(6) NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_ia_mensaje_unico] ON dbo.[mensajero_analisis_operativos_ia] ([mensaje_whatsapp_id]);
+CREATE INDEX [mensajero_ia_grupo_fecha] ON dbo.[mensajero_analisis_operativos_ia] ([chat_monitoreado_id], [creado_en]);
+
+-- Migracion: 2026_10_23_000100_crear_acontecimientos_operativos.php
+CREATE TABLE dbo.[mensajero_acontecimientos_operativos] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [analisis_ia_id] bigint NOT NULL,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [mensaje_objetivo_id] bigint NOT NULL,
+    [categoria] nvarchar(40) NOT NULL,
+    [titulo] nvarchar(180) NOT NULL,
+    [resumen] nvarchar(max) NOT NULL,
+    [estado] nvarchar(32) NOT NULL DEFAULT (N'pendiente_revision'),
+    [creado_en] datetime2(6) NOT NULL,
+    [actualizado_en] datetime2(6) NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_acontecimiento_analisis_uq] ON dbo.[mensajero_acontecimientos_operativos] ([analisis_ia_id]);
+CREATE INDEX [mensajero_acontecimiento_grupo_fecha] ON dbo.[mensajero_acontecimientos_operativos] ([chat_monitoreado_id], [creado_en]);
+ALTER TABLE dbo.[mensajero_acontecimientos_operativos] ADD CONSTRAINT [mensajero_acontecimiento_analisis_fk] FOREIGN KEY ([analisis_ia_id]) REFERENCES dbo.[mensajero_analisis_operativos_ia] ([id]);
+ALTER TABLE dbo.[mensajero_acontecimientos_operativos] ADD CONSTRAINT [mensajero_acontecimiento_grupo_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
+ALTER TABLE dbo.[mensajero_acontecimientos_operativos] ADD CONSTRAINT [mensajero_acontecimiento_objetivo_fk] FOREIGN KEY ([mensaje_objetivo_id]) REFERENCES dbo.[mensajero_mensajes_whatsapp] ([id]);
+CREATE TABLE dbo.[mensajero_evidencias_acontecimientos] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [acontecimiento_id] bigint NOT NULL,
+    [mensaje_whatsapp_id] bigint NOT NULL,
+    [vinculo] nvarchar(32) NOT NULL,
+    [creado_en] datetime2(6) NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_evidencia_acontecimiento_uq] ON dbo.[mensajero_evidencias_acontecimientos] ([acontecimiento_id], [mensaje_whatsapp_id]);
+CREATE INDEX [mensajero_evidencia_mensaje_idx] ON dbo.[mensajero_evidencias_acontecimientos] ([mensaje_whatsapp_id]);
+ALTER TABLE dbo.[mensajero_evidencias_acontecimientos] ADD CONSTRAINT [mensajero_evidencia_acontecimiento_fk] FOREIGN KEY ([acontecimiento_id]) REFERENCES dbo.[mensajero_acontecimientos_operativos] ([id]);
+ALTER TABLE dbo.[mensajero_evidencias_acontecimientos] ADD CONSTRAINT [mensajero_evidencia_mensaje_fk] FOREIGN KEY ([mensaje_whatsapp_id]) REFERENCES dbo.[mensajero_mensajes_whatsapp] ([id]);
+
+-- Migracion: 2026_10_23_000200_crear_auditoria_operativa.php
+CREATE TABLE dbo.[mensajero_auditoria_acontecimientos] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [acontecimiento_id] bigint NOT NULL,
+    [estado_anterior] nvarchar(32) NOT NULL,
+    [estado_nuevo] nvarchar(32) NOT NULL,
+    [actor_tipo] nvarchar(40) NOT NULL,
+    [actor_id] bigint NULL,
+    [registrado_en] datetime2(6) NOT NULL
+);
+CREATE INDEX [mensajero_auditoria_operativa_idx] ON dbo.[mensajero_auditoria_acontecimientos] ([acontecimiento_id], [registrado_en]);
+ALTER TABLE dbo.[mensajero_auditoria_acontecimientos] ADD CONSTRAINT [mensajero_auditoria_operativa_acontecimiento_fk] FOREIGN KEY ([acontecimiento_id]) REFERENCES dbo.[mensajero_acontecimientos_operativos] ([id]);
+
+-- Migracion: 2026_10_24_000100_crear_control_publicaciones_gemini.php
+CREATE TABLE dbo.[mensajero_control_publicaciones_gemini] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [mensaje_whatsapp_id] bigint NOT NULL,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [estado] nvarchar(32) NOT NULL,
+    [origen] nvarchar(24) NOT NULL DEFAULT (N'conciliacion'),
+    [reservado_en] datetime2(6) NOT NULL,
+    [publicado_en] datetime2(6) NULL,
+    [error_tipo] nvarchar(120) NULL
+);
+CREATE UNIQUE INDEX [mensajero_ia_publicacion_mensaje_uq] ON dbo.[mensajero_control_publicaciones_gemini] ([mensaje_whatsapp_id]);
+CREATE INDEX [mensajero_ia_publicacion_grupo_fecha_idx] ON dbo.[mensajero_control_publicaciones_gemini] ([chat_monitoreado_id], [reservado_en]);
+ALTER TABLE dbo.[mensajero_control_publicaciones_gemini] ADD CONSTRAINT [mensajero_ia_publicacion_mensaje_fk] FOREIGN KEY ([mensaje_whatsapp_id]) REFERENCES dbo.[mensajero_mensajes_whatsapp] ([id]);
+ALTER TABLE dbo.[mensajero_control_publicaciones_gemini] ADD CONSTRAINT [mensajero_ia_publicacion_grupo_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
+
+-- Migracion: 2026_10_24_000200_crear_control_interpretacion_ia.php
+CREATE TABLE dbo.[mensajero_control_interpretacion_ia] (
+    [chat_monitoreado_id] bigint NOT NULL PRIMARY KEY,
+    [habilitado] bit NOT NULL DEFAULT (0),
+    [inicio_en] datetime2(6) NULL,
+    [actualizado_en] datetime2(6) NOT NULL
+);
+CREATE TABLE dbo.[mensajero_auditoria_interpretacion_ia] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [habilitado_anterior] bit NOT NULL,
+    [habilitado_nuevo] bit NOT NULL,
+    [actor_tipo] nvarchar(40) NOT NULL,
+    [actor_id] bigint NULL,
+    [registrado_en] datetime2(6) NOT NULL
+);
+CREATE INDEX [mensajero_auditoria_ia_grupo_fecha] ON dbo.[mensajero_auditoria_interpretacion_ia] ([chat_monitoreado_id], [registrado_en]);
+
+-- Migracion: 2026_10_26_000300_crear_lotes_gemini.php
+CREATE TABLE dbo.[mensajero_lotes_gemini] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [hash_mensajes] nvarchar(64) NOT NULL,
+    [estado] nvarchar(32) NOT NULL,
+    [origen] nvarchar(24) NOT NULL DEFAULT (N'planificacion'),
+    [reservado_en] datetime2(6) NOT NULL,
+    [publicado_en] datetime2(6) NULL,
+    [finalizado_en] datetime2(6) NULL,
+    [modelo] nvarchar(90) NULL,
+    [tokens_entrada] int NULL,
+    [tokens_salida] int NULL,
+    [error_tipo] nvarchar(120) NULL
+);
+CREATE UNIQUE INDEX [mensajero_lote_ia_grupo_hash_uq] ON dbo.[mensajero_lotes_gemini] ([chat_monitoreado_id], [hash_mensajes]);
+CREATE INDEX [mensajero_lote_ia_grupo_fecha_idx] ON dbo.[mensajero_lotes_gemini] ([chat_monitoreado_id], [reservado_en]);
+ALTER TABLE dbo.[mensajero_lotes_gemini] ADD CONSTRAINT [mensajero_lote_ia_grupo_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
+CREATE TABLE dbo.[mensajero_mensajes_lote_gemini] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [lote_id] bigint NOT NULL,
+    [mensaje_whatsapp_id] bigint NOT NULL,
+    [posicion] tinyint NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_lote_ia_mensaje_unico] ON dbo.[mensajero_mensajes_lote_gemini] ([mensaje_whatsapp_id]);
+CREATE UNIQUE INDEX [mensajero_lote_ia_posicion_unica] ON dbo.[mensajero_mensajes_lote_gemini] ([lote_id], [posicion]);
+ALTER TABLE dbo.[mensajero_mensajes_lote_gemini] ADD CONSTRAINT [mensajero_lote_ia_mensaje_lote_fk] FOREIGN KEY ([lote_id]) REFERENCES dbo.[mensajero_lotes_gemini] ([id]);
+ALTER TABLE dbo.[mensajero_mensajes_lote_gemini] ADD CONSTRAINT [mensajero_lote_ia_mensaje_original_fk] FOREIGN KEY ([mensaje_whatsapp_id]) REFERENCES dbo.[mensajero_mensajes_whatsapp] ([id]);
+CREATE TABLE dbo.[mensajero_resultados_lote_gemini] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [lote_id] bigint NOT NULL,
+    [posicion] tinyint NOT NULL,
+    [categoria] nvarchar(40) NOT NULL,
+    [titulo] nvarchar(180) NOT NULL,
+    [resumen] nvarchar(max) NOT NULL,
+    [estado] nvarchar(32) NOT NULL DEFAULT (N'identificado_ia'),
+    [creado_en] datetime2(6) NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_lote_resultado_posicion_uq] ON dbo.[mensajero_resultados_lote_gemini] ([lote_id], [posicion]);
+ALTER TABLE dbo.[mensajero_resultados_lote_gemini] ADD CONSTRAINT [mensajero_lote_resultado_lote_fk] FOREIGN KEY ([lote_id]) REFERENCES dbo.[mensajero_lotes_gemini] ([id]);
+CREATE TABLE dbo.[mensajero_evidencias_resultado_lote_gemini] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [resultado_lote_id] bigint NOT NULL,
+    [mensaje_whatsapp_id] bigint NOT NULL
+);
+CREATE UNIQUE INDEX [mensajero_lote_resultado_evidencia_uq] ON dbo.[mensajero_evidencias_resultado_lote_gemini] ([resultado_lote_id], [mensaje_whatsapp_id]);
+ALTER TABLE dbo.[mensajero_evidencias_resultado_lote_gemini] ADD CONSTRAINT [mensajero_lote_resultado_evidencia_resultado_fk] FOREIGN KEY ([resultado_lote_id]) REFERENCES dbo.[mensajero_resultados_lote_gemini] ([id]);
+ALTER TABLE dbo.[mensajero_evidencias_resultado_lote_gemini] ADD CONSTRAINT [mensajero_lote_resultado_evidencia_mensaje_fk] FOREIGN KEY ([mensaje_whatsapp_id]) REFERENCES dbo.[mensajero_mensajes_whatsapp] ([id]);
+
+-- Estado inicial seguro: Gemini global deshabilitado (equivalente a la migracion).
+INSERT INTO dbo.[mensajero_control_interpretacion_ia]
+([chat_monitoreado_id], [habilitado], [inicio_en], [actualizado_en])
+VALUES (0, 0, NULL, SYSUTCDATETIME());
