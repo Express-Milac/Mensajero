@@ -225,3 +225,92 @@ CREATE TABLE dbo.[mensajero_solicitudes_pasarela] (
 );
 CREATE UNIQUE INDEX [mensajero_solicitudes_pasarela_identificador_uq] ON dbo.[mensajero_solicitudes_pasarela] ([identificador_solicitud]);
 CREATE INDEX [mensajero_solicitudes_pasarela_recibido_idx] ON dbo.[mensajero_solicitudes_pasarela] ([recibido_en]);
+
+-- Migracion: 2026_10_16_000500_indexar_conexiones_meta.php
+CREATE INDEX [mensajero_conexiones_proveedor_externa_idx] ON dbo.[mensajero_conexiones_whatsapp] ([proveedor], [id_cuenta_externa]);
+
+-- Migracion: 2026_10_16_000600_crear_periodos_integridad_whatsapp.php
+CREATE TABLE dbo.[mensajero_periodos_integridad_whatsapp] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [conexion_id] bigint NOT NULL,
+    [identificador_periodo] nchar(64) NOT NULL,
+    [inicio_en] datetime2(6) NOT NULL,
+    [fin_en] datetime2(6) NOT NULL,
+    [causa] nvarchar(64) NOT NULL,
+    [detalles] nvarchar(max) NULL,
+    [creado_en] datetime2(6) NULL,
+    [actualizado_en] datetime2(6) NULL
+);
+CREATE UNIQUE INDEX [mensajero_integridad_conexion_periodo_uq] ON dbo.[mensajero_periodos_integridad_whatsapp] ([conexion_id], [identificador_periodo]);
+CREATE INDEX [mensajero_integridad_conexion_fechas_idx] ON dbo.[mensajero_periodos_integridad_whatsapp] ([conexion_id], [inicio_en], [fin_en]);
+ALTER TABLE dbo.[mensajero_periodos_integridad_whatsapp] ADD CONSTRAINT [mensajero_integridad_conexion_fk] FOREIGN KEY ([conexion_id]) REFERENCES dbo.[mensajero_conexiones_whatsapp] ([id]);
+
+-- Migracion: 2026_10_16_000700_crear_archivos_whatsapp.php
+CREATE TABLE dbo.[mensajero_archivos_whatsapp] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [conexion_id] bigint NOT NULL,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [evento_crudo_id] bigint NOT NULL,
+    [identificador_archivo] nchar(64) NOT NULL,
+    [id_mensaje_proveedor] nvarchar(191) COLLATE Latin1_General_100_BIN2 NULL,
+    [tipo_mensaje] nvarchar(32) NOT NULL,
+    [tipo_mime] nvarchar(191) NULL,
+    [nombre_original] nvarchar(255) NULL,
+    [extension] nvarchar(16) NULL,
+    [tamano_bytes] bigint NOT NULL,
+    [hash_sha256] nchar(64) NOT NULL,
+    [disco] nvarchar(64) NOT NULL DEFAULT (N'mensajero_local'),
+    [ruta_relativa] nvarchar(1024) NOT NULL,
+    [estado] nvarchar(24) NOT NULL DEFAULT (N'verificado'),
+    [creado_en] datetime2(6) NULL,
+    [actualizado_en] datetime2(6) NULL
+);
+CREATE UNIQUE INDEX [mensajero_archivos_conexion_identificador_uq] ON dbo.[mensajero_archivos_whatsapp] ([conexion_id], [identificador_archivo]);
+CREATE UNIQUE INDEX [mensajero_archivos_evento_uq] ON dbo.[mensajero_archivos_whatsapp] ([evento_crudo_id]);
+CREATE INDEX [mensajero_archivos_chat_creado_idx] ON dbo.[mensajero_archivos_whatsapp] ([chat_monitoreado_id], [creado_en]);
+CREATE INDEX [mensajero_archivos_hash_idx] ON dbo.[mensajero_archivos_whatsapp] ([hash_sha256]);
+ALTER TABLE dbo.[mensajero_archivos_whatsapp] ADD CONSTRAINT [mensajero_archivos_conexion_fk] FOREIGN KEY ([conexion_id]) REFERENCES dbo.[mensajero_conexiones_whatsapp] ([id]);
+ALTER TABLE dbo.[mensajero_archivos_whatsapp] ADD CONSTRAINT [mensajero_archivos_chat_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
+ALTER TABLE dbo.[mensajero_archivos_whatsapp] ADD CONSTRAINT [mensajero_archivos_evento_fk] FOREIGN KEY ([evento_crudo_id]) REFERENCES dbo.[mensajero_eventos_crudos_whatsapp] ([id]);
+
+-- Migracion: 2026_10_16_000800_enriquecer_eventos_crudos_whatsapp.php
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [tipo_mensaje] nvarchar(64) NULL;
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [id_remitente_proveedor] nvarchar(191) COLLATE Latin1_General_100_BIN2 NULL;
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [id_mensaje_citado_proveedor] nvarchar(191) COLLATE Latin1_General_100_BIN2 NULL;
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [id_mensaje_objetivo_proveedor] nvarchar(191) COLLATE Latin1_General_100_BIN2 NULL;
+CREATE INDEX [mensajero_eventos_chat_tipo_recibido_idx] ON dbo.[mensajero_eventos_crudos_whatsapp] ([chat_monitoreado_id], [tipo_evento], [tipo_mensaje], [recibido_en]);
+CREATE INDEX [mensajero_eventos_chat_remitente_idx] ON dbo.[mensajero_eventos_crudos_whatsapp] ([chat_monitoreado_id], [id_remitente_proveedor], [recibido_en]);
+CREATE INDEX [mensajero_eventos_chat_objetivo_idx] ON dbo.[mensajero_eventos_crudos_whatsapp] ([chat_monitoreado_id], [id_mensaje_objetivo_proveedor]);
+
+-- Migracion: 2026_10_20_190000_agregar_visibilidad_tablero_chats.php
+ALTER TABLE dbo.[mensajero_chats_monitoreados] ADD [es_visible_tablero] bit NOT NULL DEFAULT (1);
+CREATE TABLE dbo.[mensajero_auditoria_visibilidad_grupos] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [chat_monitoreado_id] bigint NOT NULL,
+    [visible_anterior] bit NOT NULL,
+    [visible_nuevo] bit NOT NULL,
+    [actor_tipo] nvarchar(32) NOT NULL,
+    [actor_id] bigint NULL,
+    [registrado_en] datetime2(6) NOT NULL
+);
+CREATE INDEX [mensajero_auditoria_visibilidad_idx] ON dbo.[mensajero_auditoria_visibilidad_grupos] ([chat_monitoreado_id], [registrado_en]);
+ALTER TABLE dbo.[mensajero_auditoria_visibilidad_grupos] ADD CONSTRAINT [mensajero_auditoria_visibilidad_chat_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
+
+-- Migracion: 2026_10_20_200000_crear_identidades_remitentes.php
+CREATE TABLE dbo.[mensajero_identidades_remitentes] (
+    [id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [conexion_id] bigint NOT NULL,
+    [id_remitente_proveedor] nvarchar(191) COLLATE Latin1_General_100_BIN2 NOT NULL,
+    [nombre_interno] nvarchar(120) NOT NULL,
+    [actor_tipo] nvarchar(32) NOT NULL,
+    [actor_id] bigint NULL,
+    [creado_en] datetime2(6) NULL,
+    [actualizado_en] datetime2(6) NULL
+);
+CREATE UNIQUE INDEX [mensajero_identidad_conexion_remitente_uq] ON dbo.[mensajero_identidades_remitentes] ([conexion_id], [id_remitente_proveedor]);
+ALTER TABLE dbo.[mensajero_identidades_remitentes] ADD CONSTRAINT [mensajero_identidad_conexion_fk] FOREIGN KEY ([conexion_id]) REFERENCES dbo.[mensajero_conexiones_whatsapp] ([id]);
+
+-- Migracion: 2026_10_21_000001_identificar_remitentes_en_eventos.php
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [nombre_remitente] nvarchar(120) NULL;
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [fuente_nombre_remitente] nvarchar(16) NULL;
+ALTER TABLE dbo.[mensajero_eventos_crudos_whatsapp] ADD [telefono_remitente] nvarchar(20) NULL;
