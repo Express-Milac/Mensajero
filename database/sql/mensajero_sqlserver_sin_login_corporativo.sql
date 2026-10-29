@@ -31,6 +31,8 @@ CREATE TABLE dbo.[mensajero_sesiones] (
     [payload] nvarchar(max) NOT NULL,
     [last_activity] int NOT NULL
 );
+CREATE INDEX [mensajero_sesiones_user_id_index] ON dbo.[mensajero_sesiones] ([user_id]);
+CREATE INDEX [mensajero_sesiones_last_activity_index] ON dbo.[mensajero_sesiones] ([last_activity]);
 
 -- Migracion: 0001_01_01_000001_crear_tablas_cache.php
 CREATE TABLE dbo.[mensajero_cache] (
@@ -38,11 +40,13 @@ CREATE TABLE dbo.[mensajero_cache] (
     [value] nvarchar(max) NOT NULL,
     [expiration] bigint NOT NULL
 );
+CREATE INDEX [mensajero_cache_expiration_index] ON dbo.[mensajero_cache] ([expiration]);
 CREATE TABLE dbo.[mensajero_bloqueos_cache] (
     [key] nvarchar(255) NOT NULL PRIMARY KEY,
     [owner] nvarchar(255) NOT NULL,
     [expiration] bigint NOT NULL
 );
+CREATE INDEX [mensajero_bloqueos_cache_expiration_index] ON dbo.[mensajero_bloqueos_cache] ([expiration]);
 
 -- Migracion: 0001_01_01_000002_crear_tablas_trabajos.php
 CREATE TABLE dbo.[mensajero_trabajos] (
@@ -54,6 +58,7 @@ CREATE TABLE dbo.[mensajero_trabajos] (
     [available_at] int NOT NULL,
     [created_at] int NOT NULL
 );
+CREATE INDEX [mensajero_trabajos_queue_index] ON dbo.[mensajero_trabajos] ([queue]);
 CREATE TABLE dbo.[mensajero_lotes_trabajos] (
     [id] nvarchar(255) NOT NULL PRIMARY KEY,
     [name] nvarchar(255) NOT NULL,
@@ -75,7 +80,8 @@ CREATE TABLE dbo.[mensajero_trabajos_fallidos] (
     [exception] nvarchar(max) NOT NULL,
     [failed_at] datetime2(6) NOT NULL DEFAULT (SYSDATETIME())
 );
-CREATE INDEX [failed_at] ON dbo.[mensajero_trabajos_fallidos] ([connection], [queue]);
+CREATE UNIQUE INDEX [mensajero_trabajos_fallidos_uuid_unique] ON dbo.[mensajero_trabajos_fallidos] ([uuid]);
+CREATE INDEX [mensajero_trabajos_fallidos_connection_queue_failed_at_index] ON dbo.[mensajero_trabajos_fallidos] ([connection], [queue], [failed_at]);
 
 -- Migracion: 2026_10_15_000100_crear_nucleo_captura_mensajero.php
 CREATE TABLE dbo.[mensajero_conexiones_whatsapp] (
@@ -213,6 +219,7 @@ CREATE TABLE dbo.[mensajero_auditoria_monitoreo_chats] (
 );
 CREATE UNIQUE INDEX [mensajero_auditoria_chat_version_uq] ON dbo.[mensajero_auditoria_monitoreo_chats] ([chat_monitoreado_id], [version_autorizacion]);
 CREATE INDEX [mensajero_auditoria_cambiado_idx] ON dbo.[mensajero_auditoria_monitoreo_chats] ([cambiado_en], [id]);
+ALTER TABLE dbo.[mensajero_auditoria_monitoreo_chats] ADD CONSTRAINT [mensajero_auditoria_chat_fk] FOREIGN KEY ([chat_monitoreado_id]) REFERENCES dbo.[mensajero_chats_monitoreados] ([id]);
 
 -- Migracion: 2026_10_15_000400_crear_solicitudes_pasarela.php
 CREATE TABLE dbo.[mensajero_solicitudes_pasarela] (
@@ -464,3 +471,40 @@ ALTER TABLE dbo.[mensajero_evidencias_resultado_lote_gemini] ADD CONSTRAINT [men
 INSERT INTO dbo.[mensajero_control_interpretacion_ia]
 ([chat_monitoreado_id], [habilitado], [inicio_en], [actualizado_en])
 VALUES (0, 0, NULL, SYSUTCDATETIME());
+
+-- Registrar migraciones para que Laravel no recree el esquema (incluido el
+-- primer archivo, cuyo catálogo local de usuarios fue deliberadamente omitido).
+CREATE TABLE dbo.[mensajero_migraciones] (
+    [id] int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [migration] nvarchar(255) NOT NULL,
+    [batch] int NOT NULL
+);
+INSERT INTO dbo.[mensajero_migraciones] ([migration], [batch]) VALUES
+    (N'0001_01_01_000000_crear_tablas_usuarios', 1),
+    (N'0001_01_01_000001_crear_tablas_cache', 1),
+    (N'0001_01_01_000002_crear_tablas_trabajos', 1),
+    (N'2026_10_15_000100_crear_nucleo_captura_mensajero', 1),
+    (N'2026_10_15_000200_crear_mensajes_whatsapp_mensajero', 1),
+    (N'2026_10_15_000300_crear_auditoria_monitoreo_chats', 1),
+    (N'2026_10_15_000400_crear_solicitudes_pasarela', 1),
+    (N'2026_10_16_000500_indexar_conexiones_meta', 1),
+    (N'2026_10_16_000600_crear_periodos_integridad_whatsapp', 1),
+    (N'2026_10_16_000700_crear_archivos_whatsapp', 1),
+    (N'2026_10_16_000800_enriquecer_eventos_crudos_whatsapp', 1),
+    (N'2026_10_20_190000_agregar_visibilidad_tablero_chats', 1),
+    (N'2026_10_20_200000_crear_identidades_remitentes', 1),
+    (N'2026_10_21_000001_identificar_remitentes_en_eventos', 1),
+    (N'2026_10_21_235959_crear_analisis_operativos_ia', 1),
+    (N'2026_10_23_000100_crear_acontecimientos_operativos', 1),
+    (N'2026_10_23_000200_crear_auditoria_operativa', 1),
+    (N'2026_10_24_000100_crear_control_publicaciones_gemini', 1),
+    (N'2026_10_24_000200_crear_control_interpretacion_ia', 1),
+    (N'2026_10_26_000300_crear_lotes_gemini', 1);
+
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+PRINT N'INSTALACION SQL MENSAJERO CON LOGIN EMPRESARIAL EXTERNO: COMPLETADA';
