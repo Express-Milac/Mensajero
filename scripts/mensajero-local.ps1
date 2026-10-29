@@ -244,6 +244,24 @@ function ValidarConfiguracion {
     }
 }
 
+function EsperarServidorWeb {
+    # Un proceso PowerShell ACTIVO no demuestra que PHP haya abierto el puerto.
+    # /disponible es la ruta de vida sin SQL Server ni datos operativos.
+    for ($intento = 1; $intento -le 15; $intento++) {
+        try {
+            $respuesta = Invoke-WebRequest -Uri 'http://127.0.0.1:8000/disponible' -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            if ([int]$respuesta.StatusCode -eq 200) {
+                Write-Host 'WEB LISTA: http://127.0.0.1:8000/tablero' -ForegroundColor Green
+                return
+            }
+        } catch {
+            # Esperar mientras el proceso web termina de arrancar.
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    throw 'Laravel no respondio HTTP 200 en /disponible. Revise la ventana WEB; no se iniciara el resto de procesos.'
+}
+
 function AbrirServicio([string] $nombre, $datos) {
     $marca = [guid]::NewGuid().ToString('N')
     $argumentos = '-NoProfile -ExecutionPolicy Bypass -File "' + $PSCommandPath + '" -Servicio ' + $nombre + ' -Marca ' + $marca
@@ -304,6 +322,7 @@ try {
             }
             try {
                 AbrirServicio 'web' $nuevos
+                EsperarServidorWeb
                 AbrirServicio 'programador' $nuevos
                 AbrirServicio 'normalizador' $nuevos
                 AbrirServicio 'gemini' $nuevos
