@@ -44,7 +44,7 @@ if ($Servicio -ne '') {
     switch ($Servicio) {
         'web' {
             while ($true) {
-                & php artisan serve --host=127.0.0.1 --port=8000
+                & php artisan serve --host=127.0.0.1 --port=8000 --no-reload
                 Write-Warning 'El servidor web se cerro; se intentara levantar nuevamente.'
                 Start-Sleep -Seconds 5
             }
