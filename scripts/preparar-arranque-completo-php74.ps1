@@ -116,7 +116,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo limpiar la cache local Laravel.' }
     $seguro = & $php74 artisan tinker --execute="echo 'BD='.config('database.connections.sqlsrv.database').';HOST='.config('database.connections.sqlsrv.host').';MODO='.config('mensajero.autenticacion.modo').PHP_EOL;"
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo cargar la configuracion Laravel del clon.' }
-    Exigir ((@($seguro) -join '').Trim() -eq 'BD=mensajero_test;HOST='+$dbHost+';MODO=deshabilitado') 'La configuracion efectiva no es la base local autorizada o el modo POC.'
+    $esperado = "BD=mensajero_test;HOST=$dbHost;MODO=deshabilitado"
+    Exigir ((@($seguro) -join '').Trim() -ceq $esperado) 'La configuracion efectiva no es la base local autorizada o el modo POC.'
     Write-Host 'PHP 7.4 / SQL LOCAL / WHATSAPP EXISTENTE: CONFIGURADOS.' -ForegroundColor Green
     Write-Host 'No se ha iniciado ningun servicio ni enviado nada a Gemini.'
     Write-Host 'Ahora iniciar el lanzador en esta misma consola:'
