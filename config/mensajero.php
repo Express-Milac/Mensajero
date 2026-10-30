@@ -101,6 +101,11 @@ return [
         // No procesar datos históricos hasta aprobar integración SQL Server.
         'habilitada' => (bool) env('MENSAJERO_NORMALIZACION_HABILITADA', false),
         'cola' => env('MENSAJERO_COLA_NORMALIZACION', 'mensajero_normalizacion'),
+        // Fallar cerrado: nunca ejecutar el despacho general desde el programador
+        // sin fijar explícitamente grupo y corte UTC del piloto autorizado.
+        'despacho_automatico_protegido' => filter_var(env('MENSAJERO_DESPACHO_AUTOMATICO_PROTEGIDO', false), FILTER_VALIDATE_BOOLEAN),
+        'despacho_automatico_grupo' => (int) env('MENSAJERO_DESPACHO_AUTOMATICO_GRUPO', 0),
+        'despacho_automatico_desde_utc' => env('MENSAJERO_DESPACHO_AUTOMATICO_DESDE_UTC', ''),
     ],
 
     'multimedia' => [

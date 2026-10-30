@@ -9,8 +9,11 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        if (config('mensajero.normalizacion.habilitada', false)) {
-            $schedule->command('mensajero:despachar-buzon --limite=100')
+        // El programador nunca debe vaciar un buzón histórico sin un corte
+        // explícito. El comando vuelve a comprobar permisos y fechas al correr.
+        if (config('mensajero.normalizacion.habilitada', false) === true
+            && config('mensajero.normalizacion.despacho_automatico_protegido', false) === true) {
+            $schedule->command('mensajero:despachar-buzon --automatico-protegido --limite=20')
                 ->everyMinute()->withoutOverlapping();
         }
 
