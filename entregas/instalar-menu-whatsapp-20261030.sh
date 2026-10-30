@@ -64,7 +64,7 @@ ubicacion=coincidencias[0]
 insertar=ubicacion.group('indent') + "    @include('components.partes.navegacion-administracion-whatsapp')\n"
 nuevo=contenido[:ubicacion.start()] + insertar + contenido[ubicacion.start():]
 destino.write_text(nuevo, encoding='utf-8')
-os.chmod(destino, stat.S_IMODE(origen.stat().st_mode))
+os.chmod(str(destino), stat.S_IMODE(origen.stat().st_mode))
 PY
 
 # Si la vista no admite compilación, abandonar sin modificar la navegación.
