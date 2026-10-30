@@ -17,13 +17,25 @@ final class DespacharBuzonWhatsapp
     /**
      * @return array{publicados: int, fallidos: int}
      */
-    public function ejecutar(int $limite = 100, ?int $eventoCrudoId = null): array
-    {
+    public function ejecutar(
+        int $limite = 100,
+        ?int $eventoCrudoId = null,
+        ?int $grupoFiltro = null,
+        ?string $desdeUtc = null
+    ): array {
+        if (($grupoFiltro === null) !== ($desdeUtc === null)) {
+            throw new \\InvalidArgumentException('El filtro protegido requiere grupo y corte UTC juntos.');
+        }
+
+        if ($grupoFiltro !== null && ($grupoFiltro < 1 || $desdeUtc === '')) {
+            throw new \\InvalidArgumentException('Grupo o corte UTC inválidos para el despacho protegido.');
+        }
+
         $resultado = ['publicados' => 0, 'fallidos' => 0];
         $limite = max(1, min($limite, 500));
 
         for ($indice = 0; $indice < $limite; $indice++) {
-            $tarea = DB::transaction(function () use ($eventoCrudoId): ?MensajeBuzonSalida {
+            $tarea = DB::transaction(function () use ($eventoCrudoId, $grupoFiltro, $desdeUtc): ?MensajeBuzonSalida {
                 $ahora = now('UTC');
                 $ahoraSql = $ahora->format('Y-m-d H:i:s.u');
                 $consulta = MensajeBuzonSalida::query()
@@ -38,6 +50,18 @@ final class DespacharBuzonWhatsapp
 
                 if ($eventoCrudoId !== null) {
                     $consulta->where('entidad_id', $eventoCrudoId);
+                }
+
+                if ($grupoFiltro !== null) {
+                    // El filtro se aplica DENTRO de la reserva transaccional;
+                    // jamás seleccionar IDs externamente y vaciar el buzón general.
+                    $consulta->whereIn('entidad_id', function ($subconsulta) use ($grupoFiltro, $desdeUtc): void {
+                        $subconsulta->select('id')
+                            ->from('mensajero_eventos_crudos_whatsapp')
+                            ->where('chat_monitoreado_id', $grupoFiltro)
+                            ->where('estado_procesamiento', 'capturado')
+                            ->where('recibido_en', '>=', $desdeUtc);
+                    });
                 }
 
                 $tarea = $consulta->orderBy('id')->lockForUpdate()->first();
