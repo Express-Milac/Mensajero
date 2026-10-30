@@ -24,11 +24,11 @@ final class DespacharBuzonWhatsapp
         ?string $desdeUtc = null
     ): array {
         if (($grupoFiltro === null) !== ($desdeUtc === null)) {
-            throw new \\InvalidArgumentException('El filtro protegido requiere grupo y corte UTC juntos.');
+            throw new \InvalidArgumentException('El filtro protegido requiere grupo y corte UTC juntos.');
         }
 
         if ($grupoFiltro !== null && ($grupoFiltro < 1 || $desdeUtc === '')) {
-            throw new \\InvalidArgumentException('Grupo o corte UTC inválidos para el despacho protegido.');
+            throw new \InvalidArgumentException('Grupo o corte UTC inválidos para el despacho protegido.');
         }
 
         $resultado = ['publicados' => 0, 'fallidos' => 0];
