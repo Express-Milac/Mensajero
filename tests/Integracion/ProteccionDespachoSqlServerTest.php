@@ -9,6 +9,7 @@ use App\Models\ConexionWhatsapp;
 use App\Models\EventoCrudoWhatsapp;
 use App\Models\MensajeBuzonSalida;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
+use App\Services\Normalizacion\DespacharBuzonWhatsapp as ServicioDespacharBuzon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -137,6 +138,58 @@ class ProteccionDespachoSqlServerTest extends TestCase
         } finally {
             DB::rollBack();
         }
+    }
+
+    public function test_despacho_protegido_selecciona_solo_grupo_y_fecha_autorizados(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            $grupoPermitido = $this->crearGrupo();
+            $grupoAjeno = $this->crearGrupo();
+
+            $antiguo = $this->crearEvento($grupoPermitido);
+            $nuevo = $this->crearEvento($grupoPermitido);
+            $ajeno = $this->crearEvento($grupoAjeno);
+
+            $ahora = CarbonImmutable::now('UTC');
+            $corte = $ahora->subMinutes(2)->format('Y-m-d H:i:s.u');
+
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $antiguo->id)
+                ->update(['recibido_en' => $ahora->subMinutes(5)->format('Y-m-d H:i:s.u')]);
+
+            Queue::fake();
+
+            $respuesta = app(ServicioDespacharBuzon::class)
+                ->ejecutar(20, null, (int) $grupoPermitido->id, $corte);
+
+            $this->assertSame(['publicados' => 1, 'fallidos' => 0], $respuesta);
+            $this->assertNotNull(MensajeBuzonSalida::query()
+                ->where('entidad_id', $nuevo->id)->firstOrFail()->enviado_en);
+            $this->assertNull(MensajeBuzonSalida::query()
+                ->where('entidad_id', $antiguo->id)->firstOrFail()->enviado_en);
+            $this->assertNull(MensajeBuzonSalida::query()
+                ->where('entidad_id', $ajeno->id)->firstOrFail()->enviado_en);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_comando_automatico_falla_cerrado_sin_habilitacion_explicita(): void
+    {
+        config([
+            'mensajero.normalizacion.habilitada' => true,
+            'mensajero.normalizacion.despacho_automatico_protegido' => false,
+        ]);
+
+        Queue::fake();
+
+        $this->assertSame(1, Artisan::call('mensajero:despachar-buzon', [
+            '--automatico-protegido' => true,
+            '--limite' => 20,
+        ]));
+        Queue::assertNothingPushed();
     }
 
     private function colaDelGrupo(ChatMonitoreado $grupo): string
