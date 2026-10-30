@@ -11,7 +11,8 @@ final class DespacharBuzonWhatsapp extends Command
     protected $signature = 'mensajero:despachar-buzon
         {--limite=100 : Máximo de elementos por ejecución (1 a 500)}
         {--evento-id= : Procesar únicamente un evento crudo, útil para diagnóstico}
-        {--cola-ensayo= : Cola única de un ensayo sintético; obligatoria si la normalización automática está apagada}';
+        {--cola-ensayo= : Cola única de un ensayo sintético; obligatoria si la normalización automática está apagada}
+        {--automatico-protegido : Modo del programador: exige grupo autorizado y corte UTC de configuración}';
 
     protected $description = 'Publica eventos crudos pendientes de SQL Server a la cola Redis de normalización';
 
@@ -29,6 +30,59 @@ final class DespacharBuzonWhatsapp extends Command
         }
 
         $colaEnsayo = trim((string) $this->option('cola-ensayo'));
+
+        $grupoFiltro = null;
+        $desdeUtc = null;
+
+        if ($this->option('automatico-protegido')) {
+            if (config('mensajero.normalizacion.habilitada', false) !== true
+                || config('mensajero.normalizacion.despacho_automatico_protegido', false) !== true
+                || $idEvento !== null || $colaEnsayo !== '') {
+                $this->error('Despacho protegido inhabilitado o combinado con opciones manuales.');
+                return self::FAILURE;
+            }
+
+            $grupoFiltro = (int) config('mensajero.normalizacion.despacho_automatico_grupo', 0);
+            $corteConfigurado = trim((string) config('mensajero.normalizacion.despacho_automatico_desde_utc', ''));
+
+            // Fecha estricta, explícita y en UTC; no tomar la fecha actual como
+            // valor predeterminado ni sustituir un corte inválido.
+            $fechaConfigurada = \DateTimeImmutable::createFromFormat(
+                '!Y-m-d\TH:i:s\Z', $corteConfigurado, new \DateTimeZone('UTC')
+            );
+
+            if ($grupoFiltro < 1 || $fechaConfigurada === false
+                || $fechaConfigurada->format('Y-m-d\TH:i:s\Z') !== $corteConfigurado) {
+                $this->error('Falta grupo o corte UTC válido (AAAA-MM-DDTHH:MM:SSZ).');
+                return self::FAILURE;
+            }
+
+            $control = app(\App\Services\IA\ControlInterpretacionGemini::class);
+            $politica = app(\App\Services\IA\PoliticaEnvioGemini::class);
+            $grupos = $control->gruposHabilitados();
+            sort($grupos);
+
+            $corteGeneral = $politica->fechaInicioGrupo($grupoFiltro);
+            $corteGrupo = $control->corteEfectivoGrupo($grupoFiltro);
+
+            if (! $politica->configuracionCompleta()
+                || ! $control->estado(0)['habilitado']
+                || $grupos !== [$grupoFiltro]
+                || $corteGeneral === null || $corteGrupo === null
+                || ! $control->permite($grupoFiltro, $corteGrupo)) {
+                $this->error('La política de IA o la autorización del grupo no es válida.');
+                return self::FAILURE;
+            }
+
+            // Ninguna configuración de normalización puede adelantar el corte
+            // de autorización de Google: siempre se usa el más reciente.
+            $utc = new \DateTimeZone('UTC');
+            $desdeUtc = max(
+                $fechaConfigurada->format('Y-m-d H:i:s.u'),
+                $corteGeneral->setTimezone($utc)->format('Y-m-d H:i:s.u'),
+                $corteGrupo->setTimezone($utc)->format('Y-m-d H:i:s.u')
+            );
+        }
 
         // Sin activación automática, impedir publicar el histórico o mensajes
         // reales, aunque el operador proporcione un ID válido.
@@ -75,7 +129,7 @@ final class DespacharBuzonWhatsapp extends Command
             return self::FAILURE;
         }
 
-        $resultado = $despachador->ejecutar($limite, $idEvento);
+        $resultado = $despachador->ejecutar($limite, $idEvento, $grupoFiltro, $desdeUtc);
 
         $this->info(sprintf(
             'Publicados: %d. Fallidos: %d.',
