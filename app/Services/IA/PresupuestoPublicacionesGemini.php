@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Cupo compartido por grupo y día UTC, tanto para mensajes individuales
+ * Cupo configurable compartido por grupo y día UTC, tanto para mensajes individuales
  * como para lotes. Debe consultarse bajo el mismo bloqueo SQL del grupo.
  *
  * Una reserva incierta también consume cupo: nunca suponer que Google
@@ -17,6 +17,17 @@ final class PresupuestoPublicacionesGemini
     public function limiteDiario(): int
     {
         $piloto = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
+        // Valor explícito 0: sin cuota diaria para el piloto individual.
+        // Los lotes experimentales conservan su propio límite si se habilitan.
+        if ($piloto === 0) {
+            if (config('mensajero.ia.lotes_habilitados') === true) {
+                $lotes = (int) config('mensajero.ia.lotes_maximo_dia_grupo', 10);
+                return $lotes >= 1 && $lotes <= 30 ? $lotes : 0;
+            }
+
+            return PHP_INT_MAX;
+        }
+
         if ($piloto < 1 || $piloto > 30) {
             return 0;
         }
@@ -54,6 +65,9 @@ final class PresupuestoPublicacionesGemini
     public function permiteReserva(int $grupoId): bool
     {
         $limite = $this->limiteDiario();
-        return $limite > 0 && $this->consumidasHoy($grupoId) < $limite;
+        // Sin cuota diaria no es necesario contar las reservas anteriores.
+        // Se mantienen los permisos, cortes y reservas únicas en el publicador.
+        return $limite === PHP_INT_MAX
+            || ($limite > 0 && $this->consumidasHoy($grupoId) < $limite);
     }
 }
