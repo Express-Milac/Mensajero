@@ -67,7 +67,7 @@ final class DespacharBuzonWhatsapp extends Command
 
             if (! $politica->configuracionCompleta()
                 || ! $control->estado(0)['habilitado']
-                || $grupos !== [$grupoFiltro]
+                || ! in_array($grupoFiltro, $grupos, true)
                 || $corteGeneral === null || $corteGrupo === null
                 || ! $control->permite($grupoFiltro, $corteGrupo)) {
                 $this->error('La política de IA o la autorización del grupo no es válida.');
