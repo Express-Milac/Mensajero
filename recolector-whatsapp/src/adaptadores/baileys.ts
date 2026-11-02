@@ -727,7 +727,7 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
         }
 
         const flujo = await downloadMediaMessage(
-          descargable as Parameters<typeof downloadMediaMessage>[0],
+          descargable as unknown as Parameters<typeof downloadMediaMessage>[0],
           'stream',
           {},
           {
