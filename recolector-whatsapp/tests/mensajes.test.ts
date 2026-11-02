@@ -5,6 +5,7 @@ import {
   clasificarTipoMensaje,
   desarrollarContenido,
   esContenidoInternoWhatsapp,
+  prepararMensajeDescargaMultimedia,
 } from '../src/mensajes.js';
 
 test('clasifica texto, foto, video, audio, documento y sticker', () => {
@@ -136,4 +137,35 @@ test('identifica secretEncryptedMessage como envoltura interna y no como mensaje
     },
   }), true);
   assert.equal(esContenidoInternoWhatsapp({ conversation: 'mensaje real' }), false);
+});
+
+
+test('desenvuelve associatedChildMessage para descarga y conserva metadatos originales', () => {
+  const original = {
+    key: { remoteJid: '120363000000000000@g.us', id: 'MEDIA-001' },
+    messageTimestamp: 1_792_176_000,
+    message: {
+      associatedChildMessage: {
+        message: { imageMessage: { mimetype: 'image/jpeg', caption: 'evidencia' } },
+      },
+    },
+  };
+  const descarga = prepararMensajeDescargaMultimedia(original, 'foto');
+  assert.deepEqual(descarga?.key, original.key);
+  assert.deepEqual(descarga?.message, { imageMessage: { mimetype: 'image/jpeg', caption: 'evidencia' } });
+  assert.ok('associatedChildMessage' in original.message);
+});
+
+test('prepara contenido multimedia en varias envolturas y rechaza tipos incompatibles', () => {
+  const original = {
+    key: { id: 'MEDIA-002' },
+    message: { ephemeralMessage: { message: { viewOnceMessageV2: {
+      message: { documentMessage: { mimetype: 'application/pdf' } },
+    } } } },
+  };
+  assert.deepEqual(prepararMensajeDescargaMultimedia(original, 'documento')?.message, {
+    documentMessage: { mimetype: 'application/pdf' },
+  });
+  assert.equal(prepararMensajeDescargaMultimedia(original, 'foto'), null);
+  assert.equal(prepararMensajeDescargaMultimedia({}, 'foto'), null);
 });

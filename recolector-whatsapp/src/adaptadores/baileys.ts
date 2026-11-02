@@ -21,6 +21,7 @@ import {
   desarrollarContenido,
   esContenidoInternoWhatsapp,
   fechaIsoDesdeMarca,
+  prepararMensajeDescargaMultimedia,
 } from '../mensajes.js';
 import type {
   AdaptadorWhatsapp,
@@ -720,8 +721,13 @@ export class AdaptadorBaileys implements AdaptadorWhatsapp {
           throw new Error('La conexión de WhatsApp no está disponible para descargar multimedia.');
         }
 
+        const descargable = prepararMensajeDescargaMultimedia(mensajeCompleto, tipoMensaje);
+        if (descargable === null) {
+          throw new Error('El mensaje no contiene multimedia descargable en la envoltura esperada.');
+        }
+
         const flujo = await downloadMediaMessage(
-          mensajeCompleto as Parameters<typeof downloadMediaMessage>[0],
+          descargable as unknown as Parameters<typeof downloadMediaMessage>[0],
           'stream',
           {},
           {

@@ -124,6 +124,32 @@ export function desarrollarContenido(valor: unknown): Record<string, unknown> | 
   return actual;
 }
 
+/**
+ * Baileys necesita la propiedad message directamente con el tipo multimedia.
+ * El contenido original puede estar envuelto (associatedChildMessage, etc.);
+ * se conserva la clave y metadatos del evento y no se altera el mensaje crudo.
+ */
+export function prepararMensajeDescargaMultimedia(
+  mensajeCompleto: unknown,
+  tipoMensaje: string,
+): Record<string, unknown> | null {
+  const original = comoRegistro(mensajeCompleto);
+  const contenido = desarrollarContenido(original?.message);
+  const campos: Record<string, string> = {
+    foto: 'imageMessage',
+    video: 'videoMessage',
+    audio: 'audioMessage',
+    documento: 'documentMessage',
+  };
+  const campo = campos[tipoMensaje];
+
+  if (original === null || contenido === null || campo === undefined || !tieneValor(contenido, campo)) {
+    return null;
+  }
+
+  return { ...original, message: { [campo]: contenido[campo] } };
+}
+
 export function clasificarTipoMensaje(valor: unknown): string {
   const contenido = desarrollarContenido(valor);
 
