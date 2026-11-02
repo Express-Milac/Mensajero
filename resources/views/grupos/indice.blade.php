@@ -97,10 +97,18 @@
                                 @method('PATCH')
                                 <input type="hidden" name="es_monitoreado" value="0">
                                 <label class="gestor-interruptor" for="habilitar-grupo-{{ $grupo->id }}">
-                                    <input id="habilitar-grupo-{{ $grupo->id }}" type="checkbox" role="switch"
-                                           name="es_monitoreado" value="1" data-switch-visibilidad
-                                           aria-label="Habilitar captura y tablero de {{ $tituloGrupo }}"
-                                           @checked($autorizado) @disabled(! $grupo->es_activo)>
+                                    <input
+                                        id="habilitar-grupo-{{ $grupo->id }}"
+                                        type="checkbox"
+                                        role="switch"
+                                        name="es_monitoreado"
+                                        value="1"
+                                        data-switch-visibilidad
+                                        aria-label="Habilitar captura y tablero de {{ $tituloGrupo }}"
+                                        aria-checked="{{ $autorizado ? 'true' : 'false' }}"
+                                        @if($autorizado) checked="checked" @endif
+                                        @if(! $grupo->es_activo) disabled="disabled" @endif
+                                    >
                                     <span class="gestor-pista-switch" aria-hidden="true"></span>
                                     <span class="gestor-texto-switch" data-etiqueta-visibilidad>{{ $autorizado ? 'Habilitado' : 'Deshabilitado' }}</span>
                                 </label>
