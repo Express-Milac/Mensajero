@@ -82,9 +82,10 @@ final class EstadoGemini extends Command
                 $hoy = DB::table('mensajero_control_publicaciones_gemini')
                     ->where('chat_monitoreado_id', $grupoId)
                     ->where('reservado_en', '>=', $inicioHoy)->count();
-                $limite = (int) config('mensajero.ia.conciliacion_maximo_dia_grupo', 10);
-                $this->line('Solicitudes reservadas hoy (UTC): '.$hoy.' / '.$limite);
-                if ($limite > 0 && $hoy >= $limite) {
+                $limiteDiario = app(\App\Services\IA\PresupuestoPublicacionesGemini::class)->limiteDiario();
+                $etiquetaLimite = $limiteDiario === PHP_INT_MAX ? 'SIN LIMITE' : (string) $limiteDiario;
+                $this->line('Solicitudes reservadas hoy (UTC): '.$hoy.' / '.$etiquetaLimite);
+                if ($limiteDiario !== PHP_INT_MAX && $limiteDiario > 0 && $hoy >= $limiteDiario) {
                     $this->warn('CUPO IA DEL GRUPO AGOTADO: no se publican nuevos mensajes hasta el siguiente día UTC.');
                 }
                 $this->warn('Los estados reservado/publicado sin resultado NO deben reenviarse automáticamente.');
