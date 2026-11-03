@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { chmod, mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
+import { mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { MensajeProveedor } from '../tipos.js';
 
@@ -108,14 +108,24 @@ export class AlmacenMultimediaDurable {
   }
 
   private async prepararDirectoriosCompartidos(rutaRelativa: string): Promise<void> {
-    // Los directorios intermedios deben conservar el grupo de la raiz privada
-    // y ser atravesables por www-data incluso con una umask restrictiva.
+    // El administrador configura una sola vez la raiz privada con setgid y
+    // grupo www-data. Linux propaga ambos a subdirectorios y archivos nuevos.
+    // No ejecutar chmod(2750) desde el proceso sin privilegios: si no pertenece
+    // al grupo www-data, Linux puede quitar el bit setgid silenciosamente.
     let directorio = this.rutaRaiz;
+    const raiz = await stat(directorio);
+    if (!raiz.isDirectory() || (raiz.mode & 0o2000) === 0) {
+      throw new Error('La raiz multimedia debe ser un directorio con herencia setgid.');
+    }
 
     for (const segmento of rutaRelativa.split('/').slice(0, -1)) {
       directorio = join(directorio, segmento);
       await mkdir(directorio, { recursive: true, mode: 0o750 });
-      await chmod(directorio, 0o2750);
+      const datos = await stat(directorio);
+
+      if (!datos.isDirectory() || datos.gid !== raiz.gid || (datos.mode & 0o2000) === 0) {
+        throw new Error('El directorio multimedia no conserva el grupo privado ni setgid.');
+      }
     }
   }
 
