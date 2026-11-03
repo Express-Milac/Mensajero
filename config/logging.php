@@ -58,22 +58,12 @@ return [
             'ignore_exceptions' => false,
         ],
 
-        // Un solo archivo: maximo 1,000 eventos y 5 MB totales.
-        // Activar con LOG_CHANNEL=limitado; no requiere nuevos servicios.
-        'limitado' => [
-            'driver' => 'custom',
-            'via' => App\\Logging\\CrearCanalLogLimitado::class,
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'warning'),
-            'max_records' => 1000,
-            'max_bytes' => 5 * 1024 * 1024,
-        ],
-
+        // Limite unico para el canal existente stack -> single.
         // Mantiene la clave "single" para compatibilidad con LOG_STACK=single.
         // El almacenamiento es un unico JSONL acotado, no StreamHandler.
         'single' => [
             'driver' => 'custom',
-            'via' => App\\Logging\\CrearCanalLogLimitado::class,
+            'via' => App\Logging\CrearCanalLogLimitado::class,
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'warning'),
             'max_records' => 1000,
