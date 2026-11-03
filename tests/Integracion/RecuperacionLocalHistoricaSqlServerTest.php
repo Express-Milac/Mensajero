@@ -147,13 +147,48 @@ final class RecuperacionLocalHistoricaSqlServerTest extends TestCase
         }
     }
 
-    public function test_rechaza_recuperacion_sin_corte_gemini(): void
+    public function test_permite_recuperacion_local_sin_autorizacion_de_gemini(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            $grupo = $this->crearGrupo();
+            $antiguo = $this->crearEvento($grupo);
+            $reciente = $this->crearEvento($grupo);
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $antiguo->id)
+                ->update(['recibido_en' => CarbonImmutable::now('UTC')->subDay()->format('Y-m-d H:i:s.u')]);
+            config(['mensajero.normalizacion.habilitada' => true]);
+            // Sin consentimiento individual ni global Gemini.
+            $control = app(ControlInterpretacionGemini::class);
+            $this->assertNull($control->corteEfectivoGrupo((int) $grupo->id));
+
+            Queue::fake();
+            $params = ['grupo' => $grupo->id, '--limite' => 3];
+            $this->assertSame(0, Artisan::call('mensajero:recuperar-historico-local', $params), Artisan::output());
+            Queue::assertNothingPushed();
+
+            $this->assertSame(0, Artisan::call('mensajero:recuperar-historico-local',
+                $params + ['--aplicar' => true]
+            ), Artisan::output());
+            Queue::assertPushed(NormalizarEventoWhatsappTrabajo::class, function ($trabajo) use ($antiguo) {
+                return $trabajo->eventoCrudoId === (int) $antiguo->id && $trabajo->soloLocal === true;
+            });
+            $this->assertNull(MensajeBuzonSalida::query()->where('entidad_id', $reciente->id)
+                ->firstOrFail()->enviado_en);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_rechaza_grupo_no_monitoreado(): void
     {
         DB::beginTransaction();
 
         try {
             $grupo = $this->crearGrupo();
             $evento = $this->crearEvento($grupo);
+            $grupo->update(['es_monitoreado' => false]);
             config(['mensajero.normalizacion.habilitada' => true]);
             Queue::fake();
 
@@ -164,6 +199,62 @@ final class RecuperacionLocalHistoricaSqlServerTest extends TestCase
             Queue::assertNothingPushed();
             $this->assertNull(MensajeBuzonSalida::query()
                 ->where('entidad_id', $evento->id)->firstOrFail()->enviado_en);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_recuperacion_no_incluye_mensajes_posteriores_al_corte_gemini(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            $grupo = $this->crearGrupo();
+            $antiguo = $this->crearEvento($grupo);
+            $posterior = $this->crearEvento($grupo);
+            config([
+                'mensajero.normalizacion.habilitada' => true,
+                'mensajero.ia.habilitada' => true,
+                'mensajero.ia.envio_autorizado' => true,
+                'mensajero.ia.servicio_pagado_confirmado' => true,
+                'mensajero.ia.clave_api' => 'clave-ficticia-pruebas',
+                'mensajero.ia.fecha_inicio' => '2026-10-21T00:00:00-06:00',
+            ]);
+
+            $control = app(ControlInterpretacionGemini::class);
+            $control->cambiar((int) $grupo->id, true, 'prueba_sql', null);
+            $control->cambiar(0, true, 'prueba_sql', null);
+
+            $ahora = CarbonImmutable::now('UTC');
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $antiguo->id)
+                ->update(['recibido_en' => $ahora->subDay()->format('Y-m-d H:i:s.u')]);
+
+            // Mensaje dentro del rango de consentimiento efectivo, aunque viejo
+            // para el flujo en vivo. No convertirlo a trabajo soloLocal.
+            $corte = $control->corteEfectivoGrupo((int) $grupo->id);
+            $this->assertNotNull($corte);
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $posterior->id)
+                ->update(['recibido_en' => $ahora->subMinutes(12)->format('Y-m-d H:i:s.u')]);
+            // El corte recién activado es 'ahora': posterior aún es anterior al corte.
+            // Por eso se mueve a después de él, sin depender de tiempos de ejecución.
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $posterior->id)
+                ->update(['recibido_en' => $corte->modify('+1 second')->format('Y-m-d H:i:s.u')]);
+
+            Queue::fake();
+            $this->assertSame(0, Artisan::call('mensajero:recuperar-historico-local', [
+                'grupo' => $grupo->id,
+                '--limite' => 3,
+                '--aplicar' => true,
+            ]), Artisan::output());
+
+            Queue::assertPushed(NormalizarEventoWhatsappTrabajo::class, function ($trabajo) use ($antiguo) {
+                return $trabajo->eventoCrudoId === (int) $antiguo->id && $trabajo->soloLocal;
+            });
+            $this->assertNull(MensajeBuzonSalida::query()->where('entidad_id', $posterior->id)
+                ->firstOrFail()->enviado_en);
         } finally {
             DB::rollBack();
         }
