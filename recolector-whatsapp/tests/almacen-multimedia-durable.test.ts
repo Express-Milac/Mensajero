@@ -29,6 +29,9 @@ function semanticaBase(): Pick<
 
 test('persiste multimedia de forma durable con hash, tamaño y ruta privada', async () => {
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
+  // El recolector puede ejecutarse con umask 0077; debe seguir creando
+  // directorios accesibles para el grupo y restaurar el valor original.
+  const mascaraOriginal = process.umask(0o077);
 
   try {
     // Simular la raiz privada provisionada previamente con herencia setgid.
@@ -70,7 +73,9 @@ test('persiste multimedia de forma durable con hash, tamaño y ruta privada', as
     const directorio = await stat(join(ruta, 'multimedia', 'whatsapp', 'recolector-pruebas', '2026', '10'));
     assert.equal(archivo.mode & 0o777, 0o640, 'www-data debe poder leer mediante el grupo compartido');
     assert.equal(directorio.mode & 0o7777, 0o2750, 'el directorio debe ser privado y atravesable por el grupo');
+    assert.equal(process.umask(), 0o077, 'el almacen no debe alterar la mascara general del proceso');
   } finally {
+    process.umask(mascaraOriginal);
     await rm(ruta, { recursive: true, force: true });
   }
 });
