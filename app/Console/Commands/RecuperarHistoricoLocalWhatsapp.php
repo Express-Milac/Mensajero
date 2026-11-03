@@ -9,12 +9,11 @@ use App\Services\IA\PoliticaEnvioGemini;
 use App\Services\Normalizacion\DespacharBuzonWhatsapp;
 use DateTimeZone;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 /**
- * Recupera exclusivamente la proyeccion LOCAL de mensajes anteriores al corte
- * de consentimiento Gemini. Por defecto solo ofrece vista previa.
- * Nunca modifica las fechas de autorizacion ni publica trabajos de Gemini.
+ * Recupera exclusivamente la proyeccion LOCAL de mensajes antiguos.
+ * No necesita autorización Gemini para grupos autorizados para el tablero.
+ * Por defecto solo ofrece vista previa y nunca modifica consentimientos.
  */
 final class RecuperarHistoricoLocalWhatsapp extends Command
 {
@@ -23,7 +22,7 @@ final class RecuperarHistoricoLocalWhatsapp extends Command
         {--limite=20 : Maximo de eventos por ejecucion, de 1 a 20}
         {--aplicar : Publica exclusivamente trabajos de normalizacion local}';
 
-    protected $description = 'Recupera la normalizacion local anterior al consentimiento Gemini, con vista previa por defecto';
+    protected $description = 'Recupera eventos antiguos en modo exclusivamente local, sin enviarlos a Gemini';
 
     public function handle(
         DespacharBuzonWhatsapp $despachador,
@@ -57,17 +56,25 @@ final class RecuperarHistoricoLocalWhatsapp extends Command
             return self::FAILURE;
         }
 
-        $cortePolitica = $politica->fechaInicioGrupo($grupoId);
+        // Todos los grupos pueden normalizarse LOCALMENTE aunque no tengan
+        // consentimiento para Gemini. Evitar eventos muy recientes para no
+        // competir con el despachador protegido ni el flujo ordinario.
+        $antesUtc = now('UTC')->subMinutes(10)->format('Y-m-d H:i:s.u');
         $corteControl = $control->corteEfectivoGrupo($grupoId);
-        if ($cortePolitica === null || $corteControl === null) {
-            $this->error('No hay un corte Gemini valido y consentido para este grupo; se rechaza la recuperacion.');
-            return self::FAILURE;
-        }
 
-        // El limite superior estricto excluye todo mensaje que pueda ser elegible
-        // para Gemini. No permitir fechas manuales ni retroceder autorizaciones.
-        $corte = $cortePolitica >= $corteControl ? $cortePolitica : $corteControl;
-        $antesUtc = $corte->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+        if ($corteControl !== null) {
+            // En grupos con consentimiento vigente, recuperar solamente
+            // anteriores al corte efectivo de IA. El corte más reciente de
+            // política o control prevalece; nunca adelantarlo.
+            $cortePolitica = $politica->fechaInicioGrupo($grupoId);
+            $corte = $cortePolitica !== null && $cortePolitica > $corteControl
+                ? $cortePolitica : $corteControl;
+
+            $inicioIaUtc = $corte->setTimezone(new DateTimeZone('UTC'))
+                ->format('Y-m-d H:i:s.u');
+
+            $antesUtc = min($antesUtc, $inicioIaUtc);
+        }
 
         $candidatos = MensajeBuzonSalida::query()
             ->where('tema', 'whatsapp.crudo.aceptado')
@@ -83,8 +90,8 @@ final class RecuperarHistoricoLocalWhatsapp extends Command
             })
             ->count();
 
-        $this->info('Grupo #'.$grupoId.' | corte de exclusion Gemini UTC: '.$antesUtc);
-        $this->info('Pendientes de normalizacion local anteriores al corte: '.$candidatos);
+        $this->info('Grupo #'.$grupoId.' | fecha maxima EXCLUSIVA de recuperacion local UTC: '.$antesUtc);
+        $this->info('Pendientes elegibles para recuperacion local: '.$candidatos);
         $this->line('Lote maximo solicitado: '.$limite);
 
         if ($this->option('aplicar') !== true) {
