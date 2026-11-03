@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -60,8 +60,14 @@ test('persiste multimedia de forma durable con hash, tamaño y ruta privada', as
       /^multimedia\/whatsapp\/recolector-pruebas\/2026\/10\/[a-f0-9]{64}\.pdf$/,
     );
 
-    const contenido = await readFile(join(ruta, ...guardado.rutaRelativa.split('/')), 'utf8');
+    const rutaArchivo = join(ruta, ...guardado.rutaRelativa.split('/'));
+    const contenido = await readFile(rutaArchivo, 'utf8');
     assert.equal(contenido, 'hola multimedia');
+
+    const archivo = await stat(rutaArchivo);
+    const directorio = await stat(join(ruta, 'multimedia', 'whatsapp', 'recolector-pruebas', '2026', '10'));
+    assert.equal(archivo.mode & 0o777, 0o640, 'www-data debe poder leer mediante el grupo compartido');
+    assert.equal(directorio.mode & 0o7777, 0o2750, 'el directorio debe ser privado y atravesable por el grupo');
   } finally {
     await rm(ruta, { recursive: true, force: true });
   }
