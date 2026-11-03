@@ -58,11 +58,16 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        // Limite unico para el canal existente stack -> single.
+        // Mantiene la clave "single" para compatibilidad con LOG_STACK=single.
+        // El almacenamiento es un unico JSONL acotado, no StreamHandler.
         'single' => [
-            'driver' => 'single',
+            'driver' => 'custom',
+            'via' => App\Logging\CrearCanalLogLimitado::class,
             'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'replace_placeholders' => true,
+            'level' => env('LOG_LEVEL', 'warning'),
+            'max_records' => 1000,
+            'max_bytes' => 5 * 1024 * 1024,
         ],
 
         'daily' => [
