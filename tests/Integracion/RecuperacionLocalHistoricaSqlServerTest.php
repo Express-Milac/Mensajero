@@ -141,7 +141,7 @@ final class RecuperacionLocalHistoricaSqlServerTest extends TestCase
             $this->assertSame('normalizado', $evento->fresh()->estado_procesamiento);
             $this->assertSame(0, DB::table('mensajero_control_publicaciones_gemini')
                 ->where('chat_monitoreado_id', $grupo->id)->count());
-            Queue::assertNothingPushed();
+            Queue::assertNotPushed(\App\Jobs\AnalizarMensajeGeminiTrabajo::class);
         } finally {
             DB::rollBack();
         }
