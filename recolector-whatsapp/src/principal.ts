@@ -287,17 +287,27 @@ async function bombearCola(): Promise<void> {
   let espera = configuracion.intervaloColaMs;
 
   while (!cerrando) {
-    const tareas = await cola.listar();
+    // Evita reenviar de golpe miles de tareas retenidas tras una desconexion.
+    const tareas = (await cola.listar()).slice(0, 10);
     let huboFallo = false;
 
     for (const tarea of tareas) {
-      if (!await enviarTarea(tarea)) {
-        huboFallo = true;
+      if (cerrando) {
+        break;
       }
+
+      if (!await enviarTarea(tarea)) {
+        // Conserva la tarea en disco y detiene este ciclo ante HTTP 422/429
+        // u otro fallo. No satura la pasarela ni abandona tareas pendientes.
+        huboFallo = true;
+        break;
+      }
+
+      await dormir(2000);
     }
 
     espera = huboFallo
-      ? Math.min(espera * 2, configuracion.maxReintentoMs)
+      ? Math.max(60_000, Math.min(espera * 2, configuracion.maxReintentoMs))
       : configuracion.intervaloColaMs;
 
     await dormir(tareas.length > 0 && !huboFallo ? 100 : espera);
