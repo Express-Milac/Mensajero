@@ -11,6 +11,7 @@ use App\Models\MensajeBuzonSalida;
 use App\Services\Capture\CapturarEventoWhatsappEntrante;
 use App\Services\IA\ControlInterpretacionGemini;
 use App\Services\Normalizacion\DespacharBuzonWhatsapp;
+use App\Services\Normalizacion\NormalizarEventoWhatsapp;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +107,41 @@ final class RecuperacionLocalHistoricaSqlServerTest extends TestCase
                 return $trabajo->eventoCrudoId === (int) $evento->id
                     && $trabajo->soloLocal === true;
             });
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_normalizar_solo_local_impide_gemini_aun_si_fecha_fuera_elegible(): void
+    {
+        DB::beginTransaction();
+
+        try {
+            $grupo = $this->crearGrupo();
+            $evento = $this->crearEvento($grupo);
+            config([
+                'mensajero.ia.habilitada' => true,
+                'mensajero.ia.envio_autorizado' => true,
+                'mensajero.ia.servicio_pagado_confirmado' => true,
+                'mensajero.ia.clave_api' => 'clave-ficticia-pruebas',
+                'mensajero.ia.fecha_inicio' => '2026-10-21T00:00:00-06:00',
+            ]);
+
+            $control = app(ControlInterpretacionGemini::class);
+            $control->cambiar((int) $grupo->id, true, 'prueba_sql', null);
+            $control->cambiar(0, true, 'prueba_sql', null);
+            $futuro = CarbonImmutable::now('UTC')->addMinute();
+            DB::table('mensajero_eventos_crudos_whatsapp')
+                ->where('id', $evento->id)
+                ->update(['recibido_en' => $futuro->format('Y-m-d H:i:s.u')]);
+
+            Queue::fake();
+            $this->assertSame('normalizado', app(NormalizarEventoWhatsapp::class)
+                ->ejecutar((int) $evento->id, true));
+            $this->assertSame('normalizado', $evento->fresh()->estado_procesamiento);
+            $this->assertSame(0, DB::table('mensajero_control_publicaciones_gemini')
+                ->where('chat_monitoreado_id', $grupo->id)->count());
+            Queue::assertNothingPushed();
         } finally {
             DB::rollBack();
         }
