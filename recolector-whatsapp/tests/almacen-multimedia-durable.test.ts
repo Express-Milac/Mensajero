@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -29,8 +29,13 @@ function semanticaBase(): Pick<
 
 test('persiste multimedia de forma durable con hash, tamaño y ruta privada', async () => {
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
+  // El recolector puede ejecutarse con umask 0077; debe seguir creando
+  // directorios accesibles para el grupo y restaurar el valor original.
+  const mascaraOriginal = process.umask(0o077);
 
   try {
+    // Simular la raiz privada provisionada previamente con herencia setgid.
+    await chmod(ruta, 0o2750);
     const almacen = new AlmacenMultimediaDurable(ruta, 'recolector-pruebas');
     const mensaje: MensajeProveedor = {
       chatId: 'grupo-prueba@g.us',
@@ -60,9 +65,17 @@ test('persiste multimedia de forma durable con hash, tamaño y ruta privada', as
       /^multimedia\/whatsapp\/recolector-pruebas\/2026\/10\/[a-f0-9]{64}\.pdf$/,
     );
 
-    const contenido = await readFile(join(ruta, ...guardado.rutaRelativa.split('/')), 'utf8');
+    const rutaArchivo = join(ruta, ...guardado.rutaRelativa.split('/'));
+    const contenido = await readFile(rutaArchivo, 'utf8');
     assert.equal(contenido, 'hola multimedia');
+
+    const archivo = await stat(rutaArchivo);
+    const directorio = await stat(join(ruta, 'multimedia', 'whatsapp', 'recolector-pruebas', '2026', '10'));
+    assert.equal(archivo.mode & 0o777, 0o640, 'www-data debe poder leer mediante el grupo compartido');
+    assert.equal(directorio.mode & 0o7777, 0o2750, 'el directorio debe ser privado y atravesable por el grupo');
+    assert.equal(process.umask(), 0o077, 'el almacen no debe alterar la mascara general del proceso');
   } finally {
+    process.umask(mascaraOriginal);
     await rm(ruta, { recursive: true, force: true });
   }
 });
@@ -71,6 +84,8 @@ test('reutiliza un archivo durable existente sin volver a descargarlo', async ()
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
 
   try {
+    // Simular la raiz privada provisionada previamente con herencia setgid.
+    await chmod(ruta, 0o2750);
     const almacen = new AlmacenMultimediaDurable(ruta, 'recolector-pruebas');
     let descargas = 0;
     const mensaje: MensajeProveedor = {

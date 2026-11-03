@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import { mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
-import { dirname, extname, join } from 'node:path';
+import { createReadStream, mkdirSync } from 'node:fs';
+import { open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import type { MensajeProveedor } from '../tipos.js';
 
 export interface MultimediaPersistida {
@@ -56,7 +56,7 @@ export class AlmacenMultimediaDurable {
       };
     }
 
-    await mkdir(dirname(rutaAbsoluta), { recursive: true });
+    await this.prepararDirectoriosCompartidos(rutaRelativa);
     const temporal = `${rutaAbsoluta}.${process.pid}.${randomUUID()}.tmp`;
     const archivo = await open(temporal, 'wx', 0o600);
     const hash = createHash('sha256');
@@ -77,6 +77,9 @@ export class AlmacenMultimediaDurable {
         await this.escribirCompleto(archivo, datos);
       }
 
+      await archivo.sync();
+      // open(0600) protege el temporal mientras se escribe; chmod permite leerlo al proceso web.
+      await archivo.chmod(0o640);
       await archivo.sync();
     } catch (error) {
       await archivo.close().catch(() => undefined);
@@ -102,6 +105,40 @@ export class AlmacenMultimediaDurable {
       nombreOriginal,
       extension,
     };
+  }
+
+  private async prepararDirectoriosCompartidos(rutaRelativa: string): Promise<void> {
+    // El administrador configura una sola vez la raiz privada con setgid y
+    // grupo www-data. Linux propaga ambos a subdirectorios y archivos nuevos.
+    // No ejecutar chmod(2750) desde el proceso sin privilegios: si no pertenece
+    // al grupo www-data, Linux puede quitar el bit setgid silenciosamente.
+    let directorio = this.rutaRaiz;
+    const raiz = await stat(directorio);
+    if (!raiz.isDirectory() || (raiz.mode & 0o2000) === 0) {
+      throw new Error('La raiz multimedia debe ser un directorio con herencia setgid.');
+    }
+
+    // mkdir aplica el umask del gestor; en este servidor puede ser 0077,
+    // dando directorios 2700 aunque se solicite 0750. Ajustar la mascara
+    // SOLO durante la llamada sincronica evita carreras entre await y
+    // conserva la mascara general de Node para el resto del proceso.
+    const rutaDirectorio = join(directorio, ...rutaRelativa.split('/').slice(0, -1));
+    const mascaraAnterior = process.umask(0o027);
+    try {
+      mkdirSync(rutaDirectorio, { recursive: true, mode: 0o750 });
+    } finally {
+      process.umask(mascaraAnterior);
+    }
+
+    for (const segmento of rutaRelativa.split('/').slice(0, -1)) {
+      directorio = join(directorio, segmento);
+      const datos = await stat(directorio);
+
+      if (!datos.isDirectory() || datos.gid !== raiz.gid
+        || (datos.mode & 0o2000) === 0 || (datos.mode & 0o050) !== 0o050) {
+        throw new Error('El directorio multimedia no conserva grupo privado, setgid o acceso de grupo.');
+      }
+    }
   }
 
   private identificador(mensaje: MensajeProveedor): string {

@@ -18,6 +18,7 @@ import {
   ColaDescargaMultimediaDurable,
   type TareaDescargaMultimediaDurable,
 } from './multimedia/cola-descarga-multimedia-durable.js';
+import { PlanificadorReintentosMultimedia } from './multimedia/planificador-reintentos.js';
 import type { EstadoConexion, MensajeProveedor } from './tipos.js';
 import { iniciarServidorTiempoReal } from './tiempo-real/servidor.js';
 
@@ -30,6 +31,7 @@ const cliente = new ClienteMensajero(
 );
 const cola = new ColaDurable(configuracion.rutaDatos);
 const colaDescargasMultimedia = new ColaDescargaMultimediaDurable(configuracion.rutaDatos);
+const reintentosDescarga = new PlanificadorReintentosMultimedia();
 const monitor = new MonitorIntegridad(configuracion.rutaDatos);
 const adaptador = new AdaptadorBaileys(configuracion.rutaSesion, logger);
 const almacenMultimedia = new AlmacenMultimediaDurable(
@@ -242,7 +244,17 @@ async function procesarDescargaMultimedia(
 
     return true;
   } catch (error) {
-    registrarError(error, 'La descarga multimedia permanece pendiente para reintento durable.');
+    // No registrar el error completo de Baileys: puede contener metadatos
+    // internos del proveedor. Conservar solo diagnosticos no sensibles.
+    const proveedor = typeof error === 'object' && error !== null && 'output' in error
+      ? (error as { output?: { statusCode?: unknown } }).output?.statusCode
+      : null;
+    logger.error({
+      etapa,
+      tipo: tarea.mensaje.tipoMensaje,
+      estado_proveedor: typeof proveedor === 'number' ? proveedor : null,
+      tipo_error: error instanceof Error ? error.name : 'desconocido',
+    }, 'La descarga multimedia permanece pendiente para reintento durable.');
 
     if (reportarPrimerFallo) {
       try {
@@ -287,17 +299,27 @@ async function bombearCola(): Promise<void> {
   let espera = configuracion.intervaloColaMs;
 
   while (!cerrando) {
-    const tareas = await cola.listar();
+    // Evita reenviar de golpe miles de tareas retenidas tras una desconexion.
+    const tareas = (await cola.listar()).slice(0, 10);
     let huboFallo = false;
 
     for (const tarea of tareas) {
-      if (!await enviarTarea(tarea)) {
-        huboFallo = true;
+      if (cerrando) {
+        break;
       }
+
+      if (!await enviarTarea(tarea)) {
+        // Conserva la tarea en disco y detiene este ciclo ante HTTP 422/429
+        // u otro fallo. No satura la pasarela ni abandona tareas pendientes.
+        huboFallo = true;
+        break;
+      }
+
+      await dormir(2000);
     }
 
     espera = huboFallo
-      ? Math.min(espera * 2, configuracion.maxReintentoMs)
+      ? Math.max(60_000, Math.min(espera * 2, configuracion.maxReintentoMs))
       : configuracion.intervaloColaMs;
 
     await dormir(tareas.length > 0 && !huboFallo ? 100 : espera);
@@ -305,23 +327,39 @@ async function bombearCola(): Promise<void> {
 }
 
 async function cicloDescargasMultimedia(): Promise<void> {
-  let espera = configuracion.intervaloColaMs;
+  // Limitar el volumen de solicitudes a WhatsApp y evitar que tres tareas
+  // viejas con fallo bloqueen por siempre el resto de la cola.
+  const maximoPorCiclo = 3;
 
   while (!cerrando) {
-    const tareas = await colaDescargasMultimedia.listar();
-    let huboFallo = false;
+    try {
+      const tareas = await colaDescargasMultimedia.listar();
+      let procesadas = 0;
 
-    for (const tarea of tareas) {
-      if (!await procesarDescargaMultimedia(tarea)) {
-        huboFallo = true;
+      for (const tarea of tareas) {
+        if (cerrando || procesadas >= maximoPorCiclo) {
+          break;
+        }
+
+        // No descargar adjuntos si el grupo ya no está autorizado.
+        if (!chatsAutorizados.has(tarea.mensaje.chatId)
+            || !reintentosDescarga.listo(tarea.clave)) {
+          continue;
+        }
+
+        const confirmada = await procesarDescargaMultimedia(tarea);
+        if (confirmada) {
+          reintentosDescarga.confirmar(tarea.clave);
+        } else {
+          reintentosDescarga.registrarFallo(tarea.clave);
+        }
+        procesadas++;
       }
+    } catch (error) {
+      registrarError(error, 'No fue posible revisar la cola durable de descargas.');
     }
 
-    espera = huboFallo
-      ? Math.min(espera * 2, configuracion.maxReintentoMs)
-      : configuracion.intervaloColaMs;
-
-    await dormir(tareas.length > 0 && !huboFallo ? 100 : espera);
+    await dormir(Math.max(configuracion.intervaloColaMs, 5_000));
   }
 }
 
