@@ -226,22 +226,18 @@ final class RecuperacionLocalHistoricaSqlServerTest extends TestCase
             $control->cambiar(0, true, 'prueba_sql', null);
 
             $ahora = CarbonImmutable::now('UTC');
+            // Solo en la BD _test: simular autorización iniciada hace 30 min.
+            // Ambos mensajes quedan fuera de la ventana de tiempo real de
+            // diez minutos, pero solo uno es anterior al consentimiento.
+            DB::table('mensajero_control_interpretacion_ia')
+                ->whereIn('chat_monitoreado_id', [0, (int) $grupo->id])
+                ->update(['inicio_en' => $ahora->subMinutes(30)->format('Y-m-d H:i:s.u')]);
             DB::table('mensajero_eventos_crudos_whatsapp')
                 ->where('id', $antiguo->id)
                 ->update(['recibido_en' => $ahora->subDay()->format('Y-m-d H:i:s.u')]);
-
-            // Mensaje dentro del rango de consentimiento efectivo, aunque viejo
-            // para el flujo en vivo. No convertirlo a trabajo soloLocal.
-            $corte = $control->corteEfectivoGrupo((int) $grupo->id);
-            $this->assertNotNull($corte);
             DB::table('mensajero_eventos_crudos_whatsapp')
                 ->where('id', $posterior->id)
                 ->update(['recibido_en' => $ahora->subMinutes(12)->format('Y-m-d H:i:s.u')]);
-            // El corte recién activado es 'ahora': posterior aún es anterior al corte.
-            // Por eso se mueve a después de él, sin depender de tiempos de ejecución.
-            DB::table('mensajero_eventos_crudos_whatsapp')
-                ->where('id', $posterior->id)
-                ->update(['recibido_en' => $corte->modify('+1 second')->format('Y-m-d H:i:s.u')]);
 
             Queue::fake();
             $this->assertSame(0, Artisan::call('mensajero:recuperar-historico-local', [
