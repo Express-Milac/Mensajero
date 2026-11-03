@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -31,6 +31,8 @@ test('persiste multimedia de forma durable con hash, tamaño y ruta privada', as
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
 
   try {
+    // Simular la raiz privada provisionada previamente con herencia setgid.
+    await chmod(ruta, 0o2750);
     const almacen = new AlmacenMultimediaDurable(ruta, 'recolector-pruebas');
     const mensaje: MensajeProveedor = {
       chatId: 'grupo-prueba@g.us',
@@ -77,6 +79,8 @@ test('reutiliza un archivo durable existente sin volver a descargarlo', async ()
   const ruta = await mkdtemp(join(tmpdir(), 'mensajero-multimedia-'));
 
   try {
+    // Simular la raiz privada provisionada previamente con herencia setgid.
+    await chmod(ruta, 0o2750);
     const almacen = new AlmacenMultimediaDurable(ruta, 'recolector-pruebas');
     let descargas = 0;
     const mensaje: MensajeProveedor = {
