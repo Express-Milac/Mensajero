@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import { mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
+import { createReadStream, mkdirSync } from 'node:fs';
+import { open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { MensajeProveedor } from '../tipos.js';
 
@@ -118,13 +118,25 @@ export class AlmacenMultimediaDurable {
       throw new Error('La raiz multimedia debe ser un directorio con herencia setgid.');
     }
 
+    // mkdir aplica el umask del gestor; en este servidor puede ser 0077,
+    // dando directorios 2700 aunque se solicite 0750. Ajustar la mascara
+    // SOLO durante la llamada sincronica evita carreras entre await y
+    // conserva la mascara general de Node para el resto del proceso.
+    const rutaDirectorio = join(directorio, ...rutaRelativa.split('/').slice(0, -1));
+    const mascaraAnterior = process.umask(0o027);
+    try {
+      mkdirSync(rutaDirectorio, { recursive: true, mode: 0o750 });
+    } finally {
+      process.umask(mascaraAnterior);
+    }
+
     for (const segmento of rutaRelativa.split('/').slice(0, -1)) {
       directorio = join(directorio, segmento);
-      await mkdir(directorio, { recursive: true, mode: 0o750 });
       const datos = await stat(directorio);
 
-      if (!datos.isDirectory() || datos.gid !== raiz.gid || (datos.mode & 0o2000) === 0) {
-        throw new Error('El directorio multimedia no conserva el grupo privado ni setgid.');
+      if (!datos.isDirectory() || datos.gid !== raiz.gid
+        || (datos.mode & 0o2000) === 0 || (datos.mode & 0o050) !== 0o050) {
+        throw new Error('El directorio multimedia no conserva grupo privado, setgid o acceso de grupo.');
       }
     }
   }
