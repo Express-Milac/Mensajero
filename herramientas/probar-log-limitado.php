@@ -63,6 +63,25 @@ try {
     comprobar(! empty($ultimo['registro_abreviado']), 'evento gigante debe abreviarse');
     comprobar(filesize($limitadoBytes) <= 8192, 'el evento gigante no debe romper el limite');
 
+    // Confirmar tambien que Laravel puede instanciar la fabrica del canal.
+    $fabrica = new \App\Logging\CrearCanalLogLimitado();
+    $canal = $fabrica([
+        'path' => $rutaTemporal.'/canal.log',
+        'level' => 'warning',
+        'max_records' => 3,
+        'max_bytes' => 4096,
+    ]);
+    $canal->debug('Esto no debe entrar en el registro');
+    for ($i = 1; $i <= 4; $i++) {
+        $canal->warning('Canal Laravel '.$i);
+    }
+    $registrosCanal = file($rutaTemporal.'/canal.log', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    comprobar(count($registrosCanal) === 3, 'la fabrica conserva solo tres eventos en ensayo');
+    comprobar(
+        strpos($registrosCanal[0], 'Canal Laravel 2') !== false,
+        'la fabrica conserva los eventos mas recientes'
+    );
+
     echo "CORRECTO: 1000 eventos, 5 MB, JSONL, descarte de antiguos y evento gigante.\n";
 } finally {
     foreach (glob($rutaTemporal.'/*') ?: [] as $archivo) {
