@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
-import { dirname, extname, join } from 'node:path';
+import { chmod, mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import type { MensajeProveedor } from '../tipos.js';
 
 export interface MultimediaPersistida {
@@ -56,7 +56,7 @@ export class AlmacenMultimediaDurable {
       };
     }
 
-    await mkdir(dirname(rutaAbsoluta), { recursive: true });
+    await this.prepararDirectoriosCompartidos(rutaRelativa);
     const temporal = `${rutaAbsoluta}.${process.pid}.${randomUUID()}.tmp`;
     const archivo = await open(temporal, 'wx', 0o600);
     const hash = createHash('sha256');
@@ -77,6 +77,9 @@ export class AlmacenMultimediaDurable {
         await this.escribirCompleto(archivo, datos);
       }
 
+      await archivo.sync();
+      // open(0600) protege el temporal mientras se escribe; chmod permite leerlo al proceso web.
+      await archivo.chmod(0o640);
       await archivo.sync();
     } catch (error) {
       await archivo.close().catch(() => undefined);
@@ -102,6 +105,18 @@ export class AlmacenMultimediaDurable {
       nombreOriginal,
       extension,
     };
+  }
+
+  private async prepararDirectoriosCompartidos(rutaRelativa: string): Promise<void> {
+    // Los directorios intermedios deben conservar el grupo de la raiz privada
+    // y ser atravesables por www-data incluso con una umask restrictiva.
+    let directorio = this.rutaRaiz;
+
+    for (const segmento of rutaRelativa.split('/').slice(0, -1)) {
+      directorio = join(directorio, segmento);
+      await mkdir(directorio, { recursive: true, mode: 0o750 });
+      await chmod(directorio, 0o2750);
+    }
   }
 
   private identificador(mensaje: MensajeProveedor): string {
