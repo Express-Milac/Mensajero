@@ -21,21 +21,30 @@ final class DespacharBuzonWhatsapp
         int $limite = 100,
         ?int $eventoCrudoId = null,
         ?int $grupoFiltro = null,
-        ?string $desdeUtc = null
+        ?string $desdeUtc = null,
+        bool $soloLocal = false,
+        ?string $antesUtc = null
     ): array {
-        if (($grupoFiltro === null) !== ($desdeUtc === null)) {
-            throw new \InvalidArgumentException('El filtro protegido requiere grupo y corte UTC juntos.');
-        }
+        if ($soloLocal) {
+            if ($grupoFiltro === null || $grupoFiltro < 1
+                || $desdeUtc !== null || $antesUtc === null || $antesUtc === '') {
+                throw new \InvalidArgumentException('La recuperación local requiere grupo y corte superior UTC.');
+            }
+        } else {
+            if ($antesUtc !== null || (($grupoFiltro === null) !== ($desdeUtc === null))) {
+                throw new \InvalidArgumentException('El filtro protegido requiere grupo y corte UTC juntos.');
+            }
 
-        if ($grupoFiltro !== null && ($grupoFiltro < 1 || $desdeUtc === '')) {
-            throw new \InvalidArgumentException('Grupo o corte UTC inválidos para el despacho protegido.');
+            if ($grupoFiltro !== null && ($grupoFiltro < 1 || $desdeUtc === '')) {
+                throw new \InvalidArgumentException('Grupo o corte UTC inválidos para el despacho protegido.');
+            }
         }
 
         $resultado = ['publicados' => 0, 'fallidos' => 0];
         $limite = max(1, min($limite, 500));
 
         for ($indice = 0; $indice < $limite; $indice++) {
-            $tarea = DB::transaction(function () use ($eventoCrudoId, $grupoFiltro, $desdeUtc): ?MensajeBuzonSalida {
+            $tarea = DB::transaction(function () use ($eventoCrudoId, $grupoFiltro, $desdeUtc, $antesUtc): ?MensajeBuzonSalida {
                 $ahora = now('UTC');
                 $ahoraSql = $ahora->format('Y-m-d H:i:s.u');
                 $consulta = MensajeBuzonSalida::query()
@@ -55,12 +64,18 @@ final class DespacharBuzonWhatsapp
                 if ($grupoFiltro !== null) {
                     // El filtro se aplica DENTRO de la reserva transaccional;
                     // jamás seleccionar IDs externamente y vaciar el buzón general.
-                    $consulta->whereIn('entidad_id', function ($subconsulta) use ($grupoFiltro, $desdeUtc): void {
+                    $consulta->whereIn('entidad_id', function ($subconsulta) use ($grupoFiltro, $desdeUtc, $antesUtc): void {
                         $subconsulta->select('id')
                             ->from('mensajero_eventos_crudos_whatsapp')
                             ->where('chat_monitoreado_id', $grupoFiltro)
-                            ->where('estado_procesamiento', 'capturado')
-                            ->where('recibido_en', '>=', $desdeUtc);
+                            ->where('estado_procesamiento', 'capturado');
+
+                        if ($desdeUtc !== null) {
+                            $subconsulta->where('recibido_en', '>=', $desdeUtc);
+                        }
+                        if ($antesUtc !== null) {
+                            $subconsulta->where('recibido_en', '<', $antesUtc);
+                        }
                     });
                 }
 
@@ -84,7 +99,7 @@ final class DespacharBuzonWhatsapp
             try {
                 Queue::connection('redis')->pushOn(
                     config('mensajero.normalizacion.cola', 'mensajero_normalizacion'),
-                    new NormalizarEventoWhatsappTrabajo((int) $tarea->entidad_id),
+                    new NormalizarEventoWhatsappTrabajo((int) $tarea->entidad_id, $soloLocal),
                 );
 
                 MensajeBuzonSalida::query()
