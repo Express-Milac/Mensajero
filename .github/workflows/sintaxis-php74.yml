@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   sintaxis-php74:
-    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-') || github.head_ref == 'correccion/recuperacion-local-historica-20261103'
     name: Interpretar codigo con PHP 7.4 real
     runs-on: ubuntu-22.04
     timeout-minutes: 15
@@ -42,7 +42,7 @@ jobs:
         run: php herramientas/comprobar-vistas-php74.php
 
   contratos-base:
-    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-') || github.head_ref == 'correccion/recuperacion-local-historica-20261103'
     name: Contratos de WhatsApp y roles sin Laravel
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -61,7 +61,7 @@ jobs:
         run: php herramientas/probar-contratos-php74.php
 
   dependencias-y-arranque:
-    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-') || github.head_ref == 'correccion/recuperacion-local-historica-20261103'
     name: Resolver Laravel 8 y probar en entorno aislado
     runs-on: ubuntu-22.04
     timeout-minutes: 25
@@ -122,7 +122,7 @@ jobs:
 
 
   recolector-node20:
-    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-')
+    if: startsWith(github.head_ref, 'compatibilidad/php74-') || startsWith(github.ref, 'refs/heads/compatibilidad/php74-') || github.head_ref == 'correccion/recuperacion-local-historica-20261103'
     name: Probar recolector separado en Node 20 Linux compatible
     runs-on: ubuntu-22.04
     timeout-minutes: 20
