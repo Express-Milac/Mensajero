@@ -17,7 +17,7 @@ final class NormalizarEventoWhatsappTrabajo implements ShouldQueue
     public int $eventoCrudoId;
 
     /** Nunca publicar trabajos de Gemini desde una recuperación local histórica. */
-    public bool $soloLocal;
+    public bool $soloLocal = false;
 
     public function __construct(int $eventoCrudoId, bool $soloLocal = false)
     {
