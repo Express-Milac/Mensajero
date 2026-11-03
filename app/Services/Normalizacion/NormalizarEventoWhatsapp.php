@@ -31,7 +31,7 @@ final class NormalizarEventoWhatsapp
         $this->extraer = $extraer;
     }
 
-    public function ejecutar(int $eventoCrudoId): string
+    public function ejecutar(int $eventoCrudoId, bool $soloLocal = false): string
     {
         $resultado = DB::transaction(function () use ($eventoCrudoId): string {
             $evento = EventoCrudoWhatsapp::query()
@@ -195,7 +195,7 @@ final class NormalizarEventoWhatsapp
                         : (in_array($proyeccion->tipo_mensaje, ['foto','video','documento'], true)
                             && trim((string) $proyeccion->pie_multimedia) !== '');
 
-                    if ($textoAnalizable
+                    if (! $soloLocal && $textoAnalizable
                         && $proyeccion->recibido_en !== null
                         && app(PoliticaEnvioGemini::class)->autoriza(
                             (int) $proyeccion->chat_monitoreado_id, $proyeccion->recibido_en
